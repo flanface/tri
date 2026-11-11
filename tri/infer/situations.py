@@ -108,7 +108,7 @@ class _Situations:
                 if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
                     fam = ls.keys[j]
             arch = family_key(ls.names.get(fam, fam)) if fam is not None else None
-            wr = weapon_rules(b, arch or (force or {}).get("name") or name)
+            wr = self._forbid_chain(weapon_rules(b, arch or (force or {}).get("name") or name))
             mem = self._same_family(memory, arch)
             guard = self._weapon_guard(wr, avail)
             if guard:                                                # v3.4: a weapon-required pick and its prerequisite
@@ -281,7 +281,7 @@ class _Situations:
     def _weapon_base(self, b: Build, memory: Dict[str, tuple]):
         """(build with the rules' lock waivers, the archetype-free rules, memory
         without claims that keep or add a forbidden pick). math §2.8c."""
-        wr = weapon_rules(b)
+        wr = self._forbid_chain(weapon_rules(b))
         if wr.waive:                                  # the waiver covers the prerequisite chain (Knight's Rally > Turtle Shell)
             waive = set(wr.waive) | {x for w in wr.waive for x in self.c.prereq_closure(w)}
             wr = dataclasses.replace(wr, waive=waive)
@@ -291,6 +291,28 @@ class _Situations:
         if wr.forbid and memory:
             memory = {k: v for k, v in memory.items() if not (k in wr.forbid and v[0] in ("add", "keep"))}
         return b, wr, memory
+
+    def _forbid_chain(self, wr):
+        """v3.8.1: a weapon rule's never(x) also forbids every pick whose hard
+        prerequisite chain contains x (removed, unavailable, kept out of review)."""
+        if not wr.forbid:
+            return wr
+        forbid = dict(wr.forbid)
+        for it in self.c.ids:
+            if it in forbid:
+                continue
+            todo, seen = list(self.c.items[it].prerequisites), set()
+            while todo:
+                x = todo.pop()
+                if x in seen:
+                    continue
+                seen.add(x)
+                if x in wr.forbid:
+                    forbid[it] = f"needs {x}: {wr.forbid[x]}"
+                    break
+                if x in self.c.index:
+                    todo.extend(self.c.items[x].prerequisites)
+        return wr if len(forbid) == len(wr.forbid) else dataclasses.replace(wr, forbid=forbid)
 
     def _weapon_guard(self, wr, avail) -> set:
         """v3.4: the weapon-required picks whose stats are met, with their hard

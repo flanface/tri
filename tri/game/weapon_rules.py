@@ -10,11 +10,13 @@ w0 is the first.
          or Support                             => Speed Demon is required
          (Trackstar, Support: worth decides)
     FF   w in {Cursed Flames, Pleeksty's Inferno} => never Flaming Flourish
-    TS   w0 light, w0 not in TS_LIGHT_OK        => never Turtle Shell
+    TS   some equipped w in TS_HEAVY_NO        => never Turtle Shell (v3.8.1; over w0)
+         w0 light, w0 not in TS_LIGHT_OK        => never Turtle Shell
          w0 light, w0 in TS_LIGHT_OK            => Turtle Shell allowed (lock waived; worth decides)
          w0 medium or heavy, not in TS_HEAVY_NO => Turtle Shell is required (lock waived)
 
-"never" removes the pick and makes it unavailable; "required" takes it at the
+"never" removes the pick and makes it unavailable (with every pick whose
+prerequisite chain needs it, tri.infer.situations); "required" takes it at the
 foundational pass whenever its stat requirements are met. Both hold over
 reviews: a review claim that contradicts one is dropped. A build that records
 no weapon gets none of these (the weapon question asks for it).
@@ -31,7 +33,7 @@ FLAMING_FLOURISH = "Flaming Flourish"
 TURTLE_SHELL = "Turtle Shell"
 
 FF_NO = frozenset({"Cursed Flames", "Pleeksty's Inferno"})
-TS_LIGHT_OK = frozenset({"The Flippers of Fate", "Flareblood Kamas"})
+TS_LIGHT_OK = frozenset({"The Flippers of Fate", "Flareblood Kamas", "Frostthorn"})
 TS_HEAVY_NO = frozenset({"Purple Cloud", "Wyrmtooth", "Railblade", "Duskpole", "Sancticar", "Imperial Staff"})
 SD_WORTH = ("trackstar", "support")          # archetypes where worth decides Speed Demon
 
@@ -108,7 +110,10 @@ def weapon_rules(b, archetype: Optional[str] = None) -> WeaponRules:
         out.forbid[FLAMING_FLOURISH] = f"not with {ff[0]}"
     w0 = ws[0]
     wt = (T.get(w0) or {}).get("weight")
-    if wt == "Light":
+    no = [w for w in W.equipped(b) if w in TS_HEAVY_NO]
+    if no:                                        # v3.8.1: forced no Turtle Shell, whatever w0 is
+        out.forbid[TURTLE_SHELL] = f"never with {no[0]}"
+    elif wt == "Light":
         if w0 in TS_LIGHT_OK:
             out.waive.add(TURTLE_SHELL)
         else:

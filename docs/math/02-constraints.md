@@ -315,7 +315,7 @@ The corpus records weapons too rarely to learn three talents that depend on them
 $$
 \begin{aligned}
 F_{\text{no}} &= \{\text{Cursed Flames},\ \text{Pleeksty's Inferno}\},\\
-L_{\text{ok}} &= \{\text{The Flippers of Fate},\ \text{Flareblood Kamas}\},\\
+L_{\text{ok}} &= \{\text{The Flippers of Fate},\ \text{Flareblood Kamas},\ \text{Frostthorn}\},\\
 H_{\text{no}} &= \{\text{Purple Cloud},\ \text{Wyrmtooth},\ \text{Railblade},\ \text{Duskpole},\ \text{Sancticar},\ \text{Imperial Staff}\}.
 \end{aligned}
 $$
@@ -327,11 +327,20 @@ $$
 &\exists w\in W_0:\ \beta(w) &&\Rightarrow\ \text{never(Speed Demon)}\\
 &\forall w\in W_0:\ \neg\beta(w),\ A\notin\{\text{Trackstar},\text{Support}\} &&\Rightarrow\ \text{req(Speed Demon)}\\
 &W_0\cap F_{\text{no}}\neq\varnothing &&\Rightarrow\ \text{never(Flaming Flourish)}\\
+&E(B)\cap H_{\text{no}}\neq\varnothing &&\Rightarrow\ \text{never(Turtle Shell)}\\
 &\lambda(w_0)=\text{light},\ w_0\notin L_{\text{ok}} &&\Rightarrow\ \text{never(Turtle Shell)}\\
-&\lambda(w_0)=\text{light},\ w_0\in L_{\text{ok}} &&\Rightarrow\ \text{Turtle Shell}\in V(B)\\
-&\lambda(w_0)\in\{\text{medium},\text{heavy}\},\ w_0\notin H_{\text{no}} &&\Rightarrow\ \text{req(Turtle Shell)},\ \text{Turtle Shell}\in V(B)
+&\lambda(w_0)=\text{light},\ w_0\in L_{\text{ok}},\ E(B)\cap H_{\text{no}}=\varnothing &&\Rightarrow\ \text{Turtle Shell}\in V(B)\\
+&\lambda(w_0)\in\{\text{medium},\text{heavy}\},\ E(B)\cap H_{\text{no}}=\varnothing &&\Rightarrow\ \text{req(Turtle Shell)},\ \text{Turtle Shell}\in V(B)
 \end{aligned}
 $$
+
+with $E(B)\supseteq W_0(B)$ every equipped weapon (v3.8.1). A never rule reaches the prerequisite chain upward: with $P^*(y)$ the hard prerequisites of $y$, transitively,
+
+$$
+\text{never}(x)\ \wedge\ x\in P^*(y)\ \Rightarrow\ \text{never}(y),
+$$
+
+and a review claim that adds or keeps a forbidden pick is dropped.
 
 On Trackstar and Support, worth decides Speed Demon. Names match exactly (Prototype Railblade is not Railblade). $W_0=\varnothing$ gives no rule; the weapon question asks for one (Section 14.2).
 

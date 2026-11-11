@@ -35,8 +35,9 @@ Both are written in symbols, so they are short and you can compare them at a gla
   | `bleed(w) ⇒ ¬Speed Demon` | a weapon that already bleeds never gets Speed Demon |
   | `¬bleed(w) ∧ A ∉ {trackstar, support} ⇒ Speed Demon` | otherwise always take it; on trackstar and support, worth decides |
   | `w ∈ {Cursed Flames, Pleeksty's Inferno} ⇒ ¬Flaming Flourish` | never Flaming Flourish with these |
-  | `light(w) ⇒ ¬Turtle Shell` | no Turtle Shell on a light weapon, except The Flippers of Fate and Flareblood Kamas |
-  | `medium(w) ∨ heavy(w) ⇒ Turtle Shell` | always Turtle Shell on a medium or heavy weapon, except Purple Cloud, Wyrmtooth, Railblade, Duskpole, Sancticar and Imperial Staff |
+  | `w ∈ {Purple Cloud, Wyrmtooth, Railblade, Duskpole, Sancticar, Imperial Staff} ⇒ ¬Turtle Shell` | any of these equipped: never Turtle Shell, nor anything that needs it; reviews cannot add it back |
+  | `light(w) ⇒ ¬Turtle Shell` | no Turtle Shell on a light weapon, except The Flippers of Fate, Flareblood Kamas and Frostthorn |
+  | `medium(w) ∨ heavy(w) ⇒ Turtle Shell` | always Turtle Shell on a medium or heavy weapon, unless one of the weapons above is equipped |
 
   Names must match exactly, so Prototype Railblade is not Railblade. When no weapon is recorded, tri asks for it.
 
