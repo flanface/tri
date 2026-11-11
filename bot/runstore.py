@@ -5,12 +5,17 @@
     python -m bot.runstore list
 
 publish uploads a run directory to the bucket TRI_RUN_BUCKET (default
-tri-runs) under <name>/, in parts below the Storage file-size limit (45 MB;
-the free plan caps a file at 50 MB), with a manifest (size and sha256 of
+tri-runs) under <name>/, in parts (TRI_RUN_PART_MB, default 6 MB; the free
+plan caps a file at 50 MB), with a manifest (size and sha256 of
 every file) and an object LATEST naming the run. The stored availability
 table of data.npz is dropped on the way (it is recomputed on load, or read
 from the avail-*.npz cache that is uploaded with the run), so the upload is
-a fraction of the run's size. Game data directories are not uploaded: the
+a fraction of the run's size. Every request is retried on network errors
+and 5xx answers; part names carry the file's checksum, so a publish that
+stopped part-way resumes where it stopped when run again (parts already in
+the bucket are skipped). Uploads are written in 64 KB blocks with the
+timeout (TRI_RUN_TIMEOUT, default 300 s) on each; a part that keeps stalling,
+or that the bucket refuses as too large, is retried at half the size. Game data directories are not uploaded: the
 host fetches pocamind/data itself (/model sync, GAMEDATA_SYNC_HOURS).
 
 fetch downloads a run into <root>/<name>/ and writes <root>/LATEST, so
@@ -24,6 +29,8 @@ The bot fetches on start and on /model reload when TRI_RUN_REMOTE is set
 from __future__ import annotations
 
 import hashlib
+import http.client
+import socket
 import json
 import os
 import shutil
@@ -36,7 +43,12 @@ import urllib.request
 from typing import Callable, Dict, List, Optional
 
 DEFAULT_BUCKET = "tri-runs"
-PART_BYTES = 45 * 1024 * 1024
+PART_BYTES = int(float(os.environ.get("TRI_RUN_PART_MB", "6")) * 1024 * 1024)
+MIN_PART = 512 * 1024              # a stalled part is retried at half the size, down to this
+BLOCK = 64 * 1024                  # upload write size: the timeout applies per block
+RETRIES = 6                        # attempts per request (network errors, 429, 5xx)
+_NET_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError,
+               http.client.HTTPException, OSError)
 SKIP_DIRS = {"gamedata", "gd", "analysis", "plots", "reports", "__pycache__", ".pytest_cache"}
 SKIP_SUFFIX = (".tmp", ".tmp.npz", ".pyc", ".DS_Store")
 KEEP_LOCAL = ("sync/",)            # the host's own game data sync
@@ -46,13 +58,24 @@ class RunStoreError(RuntimeError):
     pass
 
 
+class _Stalled(RunStoreError):
+    """An upload that kept timing out or dropping (not an HTTP error)."""
+
+
+class _HTTPFail(Exception):
+    def __init__(self, code: int, msg: str):
+        super().__init__(msg)
+        self.code = code
+
+
 class RunStore:
-    def __init__(self, url: str, key: str, bucket: Optional[str] = None, timeout: float = 120.0):
+    def __init__(self, url: str, key: str, bucket: Optional[str] = None, timeout: Optional[float] = None):
         from .db import normalize_supabase_url
         self.base = normalize_supabase_url(url)[: -len("/rest/v1")]
         self.key = (key or "").strip().strip("'\"").strip()
         self.bucket = bucket or os.environ.get("TRI_RUN_BUCKET") or DEFAULT_BUCKET
-        self.timeout = timeout
+        self.timeout = timeout or float(os.environ.get("TRI_RUN_TIMEOUT", "300"))
+        self._listed: Dict[str, Dict[str, int]] = {}
 
     @classmethod
     def from_env(cls) -> "RunStore":
@@ -77,12 +100,21 @@ class RunStore:
 
     def _call(self, method: str, path: str, data: Optional[bytes] = None,
               headers: Optional[Dict[str, str]] = None, ok=(200,)):
-        req = urllib.request.Request(self._url(path), data=data, method=method, headers=self._headers(headers))
-        try:
-            return urllib.request.urlopen(req, timeout=self.timeout)
-        except urllib.error.HTTPError as e:
-            body = e.read()[:300].decode("utf-8", "replace")
-            raise RunStoreError(f"{method} {path}: HTTP {e.code} {body}") from None
+        last = None
+        for k in range(RETRIES):
+            if k:
+                time.sleep(min(2 ** k, 30))
+            req = urllib.request.Request(self._url(path), data=data, method=method, headers=self._headers(headers))
+            try:
+                return urllib.request.urlopen(req, timeout=self.timeout)
+            except urllib.error.HTTPError as e:
+                body = e.read()[:300].decode("utf-8", "replace")
+                last = RunStoreError(f"{method} {path}: HTTP {e.code} {body}")
+                if e.code != 429 and e.code < 500:
+                    raise last from None
+            except _NET_ERRORS as e:
+                last = RunStoreError(f"{method} {path}: {type(e).__name__}: {getattr(e, 'reason', e)}")
+        raise last
 
     def _object(self, name: str) -> str:
         return f"object/{self.bucket}/" + urllib.parse.quote(name)
@@ -95,21 +127,106 @@ class RunStore:
             if "already exists" not in str(e) and "409" not in str(e) and "Duplicate" not in str(e):
                 raise
 
-    def put(self, name: str, data: bytes, content_type: str = "application/octet-stream") -> None:
-        self._call("POST", self._object(name), data, {"Content-Type": content_type, "x-upsert": "true"}).close()
+    def _post_stream(self, path: str, data: bytes, headers: Dict[str, str]) -> None:
+        """One upload, written in BLOCK-sized pieces with the timeout on each write
+        (urllib's sendall of the whole body gave one opaque 'write operation timed
+        out'). If the server stops reading, its own answer (413 too large, 4xx
+        bucket or key errors) is read and raised instead of the timeout."""
+        u = urllib.parse.urlsplit(self._url(path))
+        Conn = http.client.HTTPSConnection if u.scheme == "https" else http.client.HTTPConnection
+        conn = Conn(u.netloc, timeout=self.timeout)
+        h = self._headers(headers)
+        h["Content-Length"] = str(len(data))
+        try:
+            conn.putrequest("POST", u.path + (f"?{u.query}" if u.query else ""), skip_accept_encoding=True)
+            for k, v in h.items():
+                conn.putheader(k, v)
+            conn.endheaders()
+            mv = memoryview(data)
+            try:
+                for a in range(0, len(data), BLOCK):
+                    conn.send(mv[a:a + BLOCK])
+            except _NET_ERRORS:
+                early = None
+                try:                                    # did the server answer and stop reading?
+                    if conn.sock is not None:
+                        conn.sock.settimeout(10)
+                    r = conn.getresponse()
+                    early = (r.status, r.read()[:300].decode("utf-8", "replace"))
+                except Exception:
+                    pass
+                if early and early[0] >= 400:
+                    raise _HTTPFail(early[0], f"POST {path}: HTTP {early[0]} {early[1]}") from None
+                raise
+            r = conn.getresponse()
+            body = r.read()
+            if r.status >= 300:
+                raise _HTTPFail(r.status, f"POST {path}: HTTP {r.status} {body[:300].decode('utf-8', 'replace')}")
+        finally:
+            conn.close()
+
+    def put(self, name: str, data: bytes, content_type: str = "application/octet-stream",
+            attempts: int = RETRIES) -> None:
+        """Upload with retries on network errors, 408, 429 and 5xx; other HTTP
+        errors are raised at once (they do not go away on a retry)."""
+        last = None
+        for k in range(attempts):
+            if k:
+                time.sleep(min(2 ** k, 30))
+            try:
+                return self._post_stream(self._object(name), data,
+                                         {"Content-Type": content_type, "x-upsert": "true"})
+            except _HTTPFail as e:
+                last = RunStoreError(str(e)) if e.code != 413 else _Stalled(str(e))
+                if e.code == 413:                       # bucket size limit below the part size
+                    raise last from None
+                if e.code not in (408, 429) and e.code < 500:
+                    raise last from None
+            except _NET_ERRORS as e:
+                last = _Stalled(f"POST {name}: {type(e).__name__}: {e}")
+        raise last
 
     def get_bytes(self, name: str) -> bytes:
         with self._call("GET", self._object(name)) as r:
             return r.read()
 
     def download(self, name: str, fh) -> int:
-        n = 0
-        with self._call("GET", self._object(name)) as r:
+        """Append object `name` to fh; a transfer cut mid-stream is retried from
+        the part's start."""
+        start = fh.tell()
+        for k in range(RETRIES):
+            try:
+                n = 0
+                with self._call("GET", self._object(name)) as r:
+                    while True:
+                        b = r.read(1 << 20)
+                        if not b:
+                            return n
+                        fh.write(b); n += len(b)
+            except _NET_ERRORS as e:
+                if k == RETRIES - 1:
+                    raise RunStoreError(f"GET {name}: {type(e).__name__}: {e}") from None
+                fh.seek(start); fh.truncate()
+                time.sleep(min(2 ** (k + 1), 30))
+        return 0
+
+    def sizes(self, folder: str) -> Dict[str, int]:
+        """{object name: size} of the objects directly in `folder` (cached)."""
+        if folder not in self._listed:
+            out: Dict[str, int] = {}
+            off = 0
             while True:
-                b = r.read(1 << 20)
-                if not b:
-                    return n
-                fh.write(b); n += len(b)
+                body = json.dumps(dict(prefix=folder, limit=1000, offset=off)).encode()
+                with self._call("POST", f"object/list/{self.bucket}", body, {"Content-Type": "application/json"}) as r:
+                    xs = json.loads(r.read() or b"[]")
+                for o in xs:
+                    if o.get("id") is not None:
+                        out[f"{folder}/{o['name']}"] = int((o.get("metadata") or {}).get("size", -1))
+                if len(xs) < 1000:
+                    break
+                off += 1000
+            self._listed[folder] = out
+        return self._listed[folder]
 
     def list(self, prefix: str = "") -> List[dict]:
         body = json.dumps(dict(prefix=prefix, limit=1000, offset=0)).encode()
@@ -163,6 +280,50 @@ def slim_corpus(src: str, dst: str) -> bool:
     return True
 
 
+def _upload_file(store: RunStore, path: str, base: str, size: int, part_bytes: int, rel: str,
+                 log: Callable[[str], None]):
+    """Upload `path` as parts named <base>.<offset>-<length>. Parts already in the
+    bucket (an interrupted publish) are reused from any offset they start at; a
+    part that keeps stalling is retried at half the size, and the smaller size is
+    kept for the rest of the run. Returns (parts, reused, part_bytes)."""
+    folder, stem = base.rsplit("/", 1)
+    have: Dict[int, tuple] = {}
+    for obj, sz in store.sizes(folder).items():
+        tail = obj.rsplit("/", 1)[1]
+        if tail.startswith(stem + "."):
+            try:
+                off, ln = (int(x) for x in tail[len(stem) + 1:].split("-"))
+            except ValueError:
+                continue
+            if sz == ln:
+                have.setdefault(off, (obj, ln))
+    parts, reused, off = [], 0, 0
+    with open(path, "rb") as f:
+        while off < size or not parts:
+            if off in have and (have[off][1] > 0 or size == 0):
+                obj, ln = have[off]
+                parts.append(obj); reused += 1; off += ln
+                continue
+            n = min(part_bytes, size - off)
+            f.seek(off)
+            b = f.read(n)
+            obj = f"{base}.{off}-{n}"
+            try:
+                store.put(obj, b, attempts=3)
+            except _Stalled as e:
+                if part_bytes <= MIN_PART:
+                    raise RunStoreError(f"{e}: the connection keeps stalling even at "
+                                        f"{MIN_PART // 1024} KB parts") from None
+                part_bytes = max(MIN_PART, part_bytes // 2)
+                log(f"    {rel}: upload {'refused as too large' if 'HTTP 413' in str(e) else 'stalled'}, "
+                    f"retrying in {part_bytes / 1048576:.1f} MB parts")
+                continue
+            parts.append(obj); off += n
+            if size > part_bytes:
+                log(f"    {rel}: {off / 1e6:.1f}/{size / 1e6:.1f} MB")
+    return parts, reused, part_bytes
+
+
 def publish(run: str, store: RunStore, name: Optional[str] = None, latest: bool = True,
             part_bytes: int = PART_BYTES, log: Callable[[str], None] = print) -> dict:
     run = os.path.abspath(os.path.expanduser(run))
@@ -181,21 +342,12 @@ def publish(run: str, store: RunStore, name: Optional[str] = None, latest: bool 
                     log(f"data.npz: stored availability table dropped "
                         f"({os.path.getsize(path) / 1e6:.0f} -> {os.path.getsize(slim) / 1e6:.0f} MB)")
                     path = slim
-            size = os.path.getsize(path)
-            parts = []
-            with open(path, "rb") as f:
-                k = 0
-                while True:
-                    b = f.read(part_bytes)
-                    if not b and k:
-                        break
-                    obj = f"{name}/files/{rel}.part{k:03d}"
-                    store.put(obj, b)
-                    parts.append(obj); k += 1
-                    if len(b) < part_bytes:
-                        break
-            files[rel] = dict(size=size, sha256=_sha256(path), parts=parts)
-            log(f"  {rel}  {size / 1e6:.1f} MB  ({len(parts)} part{'s' if len(parts) > 1 else ''})")
+            size, sha = os.path.getsize(path), _sha256(path)
+            parts, skipped, part_bytes = _upload_file(store, path, f"{name}/files/{rel}.{sha[:12]}",
+                                                      size, part_bytes, rel, log)
+            files[rel] = dict(size=size, sha256=sha, parts=parts)
+            log(f"  {rel}  {size / 1e6:.1f} MB  ({len(parts)} part{'s' if len(parts) > 1 else ''}"
+                + (f", {skipped} already uploaded" if skipped else "") + ")")
         man = dict(name=name, created=time.time(), files=files)
         store.put(f"{name}/manifest.json", json.dumps(man, indent=1).encode(), "application/json")
         if latest:
@@ -268,7 +420,8 @@ def main(argv=None) -> None:
                 if o.get("id") is None:                     # folders
                     print(o["name"] + ("  (LATEST)" if o["name"] == cur else ""))
     except RunStoreError as e:
-        sys.exit(str(e))
+        sys.exit(f"{e}\n(run the same command again: finished parts are kept and skipped)"
+                 if a.cmd == "publish" else str(e))
 
 
 if __name__ == "__main__":
