@@ -20,3 +20,15 @@ A run holds no reviews, locators or sidegrades. The caller hands them in after l
 ## 5.1 Memory and the run store (v3.7)
 
 Loading keeps the corpus availability as groups: `BuildMatrix.masks` is one row per distinct pattern and every per-build product goes through `group_dot` / `mat_groups` in chunks of `MASK_CHUNK` groups, so no builds-by-items dense table is formed. `MaskStack` reads two mask tables as one after `append`. `FieldWorth` and `ClassPrior` index the corpus coordinates through `RowStack` instead of copying rows. Coordinates are stored as `float32` unless `TRI_COORDS=float64`. `tri/runtime.py` returns freed memory to the system (`release`) after load and after each memory rebuild. `save` writes a placeholder availability table for a non-empty corpus; `load` recomputes it (cached in `data.avail.npz`).
+
+## 5.2 Speed (v3.8)
+
+A warm answer is one placement, one neighbour search and the rule passes; everything else is a cache.
+
+- Caches shipped with the run. `python -m bot.runstore publish` loads the run once first (`warm`; `--no-warm` skips it), so `model/avail-*.npz`, `data.avail.npz`, `latents.npy`/`latents.json` and `sidegrades.cache.json` exist and are uploaded. A host that has them loads in seconds; one that lacks them solves the latents, recomputes the availability groups and mines the sidegrades on its first start (minutes on one CPU).
+- Neighbour search. `RowStack.d2` screens a float32 base without casting it and recomputes exact distances on the rows that can be among the nearest ([Section 4.8 of the math](../math/04-concept.md)); `worth.smallest` breaks ties by row order.
+- Memos, each tied to the state it reads: the ledger is fixed once built, so active claims, the context-free claims and the items a review leaves out are computed once per ledger; locator readings of a point are kept while the locator and anchor arrays are the same objects; the review sidegrade pairs of a situation are kept until `_merge_extra` changes its memory; the rules of an item are indexed once per rule list; the picks and availability of a reviewed build (`Tri._vec`) are kept per field and catalog, and `name_key` per string, so a review rebuild (`set_memory`, `add_review`) no longer solves availability for the same builds thousands of times.
+- Sidegrade mining takes every rate over the candidate columns only and splits without a $[n,2,k]$ array.
+- Threads. `bot/__main__.py` calls `tri.runtime.cap_threads()` before numpy loads: BLAS and OpenMP pools get as many threads as the cgroup CPU quota allows (`cpu.max`), not one per host core.
+- Commands. `model_call` waits for the model lock at most `TRI_COMMAND_TIMEOUT` $-\,5$ s and then answers that the model is busy; a command that timed out is dropped instead of running late under the lock.
+

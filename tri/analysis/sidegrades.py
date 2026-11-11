@@ -58,7 +58,7 @@ def _two_means(X: np.ndarray, w: np.ndarray, rng, restarts: int, iters: int) -> 
         C = np.stack([X[i], X[j]]).astype(np.float64)
         lab = np.zeros(n, int)
         for _ in range(iters):
-            D = ((X[:, None, :] - C[None]) ** 2).sum(2)
+            D = np.stack([((X - C[0]) ** 2).sum(1), ((X - C[1]) ** 2).sum(1)], 1)   # no [n, 2, k] cube
             new = D.argmin(1)
             for k in (0, 1):
                 m = new == k
@@ -113,22 +113,29 @@ def _score(X, A, ia, ib) -> np.ndarray:
 
 
 def _one(X, A, w, h1, h2, cand, rng, cfg):
-    Xc = X[:, cand][h1].astype(np.float64)
+    """One sidegrade among the candidate columns, or None. v3.8: every rate is
+    taken over the candidate columns only (the sides are drawn from them), not
+    over the whole catalog and then cut; indices are local to cand inside and
+    global in the result."""
+    cand = np.asarray(cand)
+    Xs, As = X[:, cand], A[:, cand]                 # [n, |cand|] bool, one cut per call
+    Xc = Xs[h1].astype(np.float64)
     if len(Xc) < cfg.min_builds // 2:
         return None
     lab = _two_means(Xc, w[h1], rng, cfg.restarts, cfg.iters)
+    del Xc
     if lab is None or lab.min() == lab.max():
         return None
-    X1, A1 = X[h1], A[h1]
-    d = _rate(X1, A1, w[h1], lab == 0)[cand] - _rate(X1, A1, w[h1], lab == 1)[cand]
+    X1, A1 = Xs[h1], As[h1]
+    d = _rate(X1, A1, w[h1], lab == 0) - _rate(X1, A1, w[h1], lab == 1)
     del X1, A1
     order = np.argsort(-np.abs(d))
-    ia = [cand[k] for k in order if d[k] >= cfg.gap][: cfg.max_items]
-    ib = [cand[k] for k in order if d[k] <= -cfg.gap][: cfg.max_items]
+    ia = [int(k) for k in order if d[k] >= cfg.gap][: cfg.max_items]
+    ib = [int(k) for k in order if d[k] <= -cfg.gap][: cfg.max_items]
     if not ia or not ib:
         return None
     # held-out half: separation per item, then commitment and balance
-    X2, A2, w2 = X[h2], A[h2], w[h2]
+    X2, A2, w2 = Xs[h2], As[h2], w[h2]
     for _ in range(2):
         sc = _score(X2, A2, ia, ib)
         ma, mb = sc >= 0.5, sc <= -0.5
@@ -156,9 +163,11 @@ def _one(X, A, w, h1, h2, cand, rng, cfg):
         return None
     ma, mb = sc >= 0.5, sc <= -0.5
     dd = _rate(X2, A2, w2, ma) - _rate(X2, A2, w2, mb)
+    full = np.zeros(X.shape[1])
+    full[cand] = dd
     held = dict(share_a=round(sa, 4), share_b=round(sb, 4), commit=round(sa + sb, 4), builds=int(len(X2)),
                 cross=round(cross, 3))
-    return np.array(ia), np.array(ib), dict(held, gap_a={}, gap_b={}), dd
+    return cand[ia], cand[ib], dict(held, gap_a={}, gap_b={}), full
 
 
 def _pools(data, regions: np.ndarray, cfg: SidegradeConfig) -> List[Tuple[List[int], List[int]]]:

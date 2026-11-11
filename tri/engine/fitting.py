@@ -208,9 +208,19 @@ class _Fitting:
                 self.locset.note(u, b)
 
     def _vec(self, b: Build) -> Tuple[np.ndarray, np.ndarray]:
-        """(picks x [N], availability a [N]) of a build, as the corpus matrix sees it."""
-        bm = self.space._bm(b)
-        return bm.X[0].toarray()[0].astype(np.float64), bm.masks[bm.gid[0]].astype(np.float64)
+        """(picks x [N], availability a [N]) of a build, as the corpus matrix sees it.
+        Memoised per catalog and field (v3.8: each review rebuild asked for the
+        same reviewed builds about 2000 times, one availability solve each)."""
+        memo = self.__dict__.setdefault("_vec_memo", {})
+        key = (id(self.space), id(self.catalog), _build_key(b))
+        hit = memo.get(key)
+        if hit is None or hit[0] is not self.space or hit[1] is not self.catalog:
+            bm = self.space._bm(b)
+            if len(memo) > 20000:
+                memo.clear()
+            hit = memo[key] = (self.space, self.catalog, bm.X[0].toarray()[0].astype(np.float64),
+                               bm.masks[bm.gid[0]].astype(np.float64))
+        return hit[2].copy(), hit[3].copy()
 
     def _embed(self, b: Build) -> np.ndarray:
         return self._placed(b)[0].copy()

@@ -42,6 +42,7 @@ import io
 import json
 import logging
 import random
+import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
@@ -98,6 +99,14 @@ from .embeds import (COMPACT_GROUPS,  # noqa: F401  (re-exported: tests and call
 LOADING_MSG = "tri is still loading its model. Try again in a minute."
 
 
+class ModelBusy(RuntimeError):
+    """The model stayed busy (a reload, a review rebuild, a game data sync) for
+    the whole command timeout."""
+
+    def __init__(self):
+        super().__init__("tri is busy updating its model (reviews, game data or a reload); try again in a minute.")
+
+
 class TriTree(app_commands.CommandTree):
     """Command tree that answers 'still loading' until the model is in memory."""
 
@@ -106,7 +115,9 @@ class TriTree(app_commands.CommandTree):
         # Log it and still answer, so the user never waits on
         # "thinking..." forever (a deferred interaction needs a followup).
         log.error("command %s failed", getattr(inter.command, "qualified_name", "?"), exc_info=orig)
-        if isinstance(orig, (asyncio.TimeoutError, TimeoutError)):
+        if isinstance(orig, ModelBusy):
+            msg = str(orig)
+        elif isinstance(orig, (asyncio.TimeoutError, TimeoutError)):
             msg = "tri took too long to answer; try again in a minute."
         else:
             msg = clip(f"Something went wrong: {type(orig).__name__}: {orig}", 1900)
@@ -773,9 +784,33 @@ class TriBot(discord.Client):
     # ------------------------------------------------------------ builds
     async def model_call(self, fn, *a, **kw):
         """Run a model call off the event loop, giving up after
-        TRI_COMMAND_TIMEOUT seconds (the command then says it timed out)."""
-        return await asyncio.wait_for(asyncio.to_thread(fn, *a, **kw),
-                                      getattr(self.settings, "command_timeout", 90.0))
+        TRI_COMMAND_TIMEOUT seconds (the command then says it timed out).
+        v3.8: the call waits for the model lock at most that long and is dropped,
+        not run late, once the command has given up; before, every timed-out
+        command still ran afterwards, one after another under the lock, so one
+        slow step (a reload, a review rebuild) made every later command time out
+        too."""
+        limit = float(getattr(self.settings, "command_timeout", 90.0))
+        svc = self.svc
+        lock = getattr(svc, "lock", None)
+        gave_up = threading.Event()
+
+        def run():
+            if lock is None:
+                return fn(*a, **kw)
+            if not lock.acquire(timeout=max(1.0, limit - 5.0)):    # answers "busy" before the timeout
+                raise ModelBusy()
+            try:
+                if gave_up.is_set():
+                    return None
+                return fn(*a, **kw)
+            finally:
+                lock.release()
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(run), limit)
+        except asyncio.TimeoutError:
+            gave_up.set()
+            raise
 
     async def load_build(self, link_or_id: str) -> tuple:
         """-> (build_id, ParsedBuild)."""

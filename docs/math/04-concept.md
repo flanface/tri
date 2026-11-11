@@ -155,7 +155,13 @@ $$
 
 The ring is still a convex combination, so $q\in[0,1]$. On the rich synthetic world, expert agreement ([Section 11](11-experiments.md)) is 0.9842 with the ring and 0.9835 without; an unscaled ring ($\lambda_t=1$) gave 0.9789, which is why the ring is gated by $\lambda_t$. Each ring build counts at most $\lambda_\times=0.15$ of a near neighbour, and a reviewed build's 40-fold weight never enters it, so review weight stays local ([Section 5](05-locality.md)).
 
-Code: `worth.FieldWorth`, `FieldWorth._cross`, `WorthConfig.k_cross`, `cross_bandwidth`, `cross_weight`. The default completion capacity is the weighted median slot count of the neighbours.
+**Ties and screening (v3.8).** Neighbours at equal distance are taken in corpus row order, so the neighbour sets are functions of $b$ alone. With float32 coordinates the distances are screened in single precision: for $\tilde d_n^2$ the screened value and $\tilde d^2_{(k)}$ its $k$-th smallest ($k=150+k_\times$),
+$$
+|\tilde d_n^2-d_n^2|\le\varepsilon=8\,(D'+2)\,2^{-22}\max_m\lVert u_m\rVert\,\lVert u\rVert,
+$$
+so a row with $\tilde d_n^2>\tilde d^2_{(k)}+2\varepsilon$ is never among the $k$ nearest, and $d_n^2$ is recomputed in double precision on the remaining rows only. The rings and their weights are those of the exact distances.
+
+Code: `worth.FieldWorth`, `FieldWorth._cross`, `WorthConfig.k_cross`, `cross_bandwidth`, `cross_weight`, `worth.smallest`, `RowStack.d2`. The default completion capacity is the weighted median slot count of the neighbours.
 
 ## 4.9 Sidegrades
 

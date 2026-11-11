@@ -324,11 +324,34 @@ def _upload_file(store: RunStore, path: str, base: str, size: int, part_bytes: i
     return parts, reused, part_bytes
 
 
+CACHE_FILES = ("avail-", "data.avail.npz", "latents.npy", "latents.json", "sidegrades.cache.json")
+
+
+def warm(run: str, log: Callable[[str], None] = print) -> List[str]:
+    """Load the run once so its derived caches exist before upload (v3.8): the
+    availability table (model/avail-*.npz), the corpus latents and the mined
+    sidegrades. A host that downloads them starts in seconds; without them it
+    rebuilds them on its first load (minutes on one CPU), and commands answer
+    "still loading" meanwhile. Returns the cache files present afterwards."""
+    from tri.runtime import release
+    t0 = time.time()
+    log(f"warming caches of {os.path.basename(run.rstrip('/'))} (one model load) ...")
+    from .service import ModelService
+    svc = ModelService(run)
+    del svc
+    release()
+    have = [r for r in run_files(run) if os.path.basename(r).startswith(CACHE_FILES)]
+    log(f"  caches ready in {time.time() - t0:.0f}s: {', '.join(have) or 'none'}")
+    return have
+
+
 def publish(run: str, store: RunStore, name: Optional[str] = None, latest: bool = True,
-            part_bytes: int = PART_BYTES, log: Callable[[str], None] = print) -> dict:
+            part_bytes: int = PART_BYTES, log: Callable[[str], None] = print, warm_first: bool = False) -> dict:
     run = os.path.abspath(os.path.expanduser(run))
     if not os.path.isfile(os.path.join(run, "catalog.json")):
         raise RunStoreError(f"{run} is not a tri run (no catalog.json)")
+    if warm_first:
+        warm(run, log)
     name = name or os.path.basename(run.rstrip("/"))
     store.ensure_bucket()
     tmp = tempfile.mkdtemp(prefix="tri-publish-")
@@ -401,6 +424,8 @@ def main(argv=None) -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("publish", help="upload a run")
     p.add_argument("run"); p.add_argument("--name"); p.add_argument("--no-latest", action="store_true")
+    p.add_argument("--no-warm", action="store_true",
+                   help="upload as is, without loading the run first to build its caches")
     f = sub.add_parser("fetch", help="download a run into ROOT/<name> and set ROOT/LATEST")
     f.add_argument("root"); f.add_argument("--name", default="latest")
     sub.add_parser("list", help="runs in the bucket")
@@ -411,7 +436,7 @@ def main(argv=None) -> None:
         st.bucket = a.bucket
     try:
         if a.cmd == "publish":
-            publish(a.run, st, a.name, latest=not a.no_latest)
+            publish(a.run, st, a.name, latest=not a.no_latest, warm_first=not a.no_warm)
         elif a.cmd == "fetch":
             fetch(a.root, st, a.name)
         else:

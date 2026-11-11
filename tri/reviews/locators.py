@@ -392,7 +392,6 @@ class LocatorSet:
                 self._fine.pop(k, None)
             else:
                 self._fine[k] = old
-        self.__dict__.pop("_vmemo", None)
 
     def fine_rows(self, U: np.ndarray) -> np.ndarray:
         """Posterior of each row of U: the remembered fine reading, else the kernel reading."""
@@ -503,6 +502,22 @@ class LocatorSet:
         d = np.minimum(np.sqrt(D2[np.arange(len(U)), j]), dA)    # a positive anchor locates like a locator
         return self._posterior(lg), d, j
 
+    def _read_one(self, u: np.ndarray):
+        """read_many(u[None]) memoised on u (v3.8): the barrier asks about the same
+        query point thousands of times per answer. The memo holds the locator and
+        anchor arrays it was computed with and is dropped when any is replaced."""
+        u = np.asarray(u, float)
+        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h)
+        m = self.__dict__.get("_rmemo")
+        if m is None or len(m[0]) != len(state) or any(a is not b for a, b in zip(m[0], state)):
+            m = self._rmemo = (state, {})
+        hit = m[1].get(u.tobytes())
+        if hit is None:
+            if len(m[1]) > 256:
+                m[1].clear()
+            hit = m[1][u.tobytes()] = self.read_many(u[None])
+        return hit[0].copy(), hit[1].copy(), hit[2].copy()
+
     def read(self, u: np.ndarray, b=None, xa=None, force: Optional[str] = None) -> ArchetypeReading:
         """The archetype at u. With the build b (or its picks and availability xa), the
         fine reading; force: an archetype key the caller chose (always located)."""
@@ -533,7 +548,7 @@ class LocatorSet:
         if not self.locators or self.cfg.barrier <= 0 or len(self.keys) < 2:
             return np.ones(len(V))
         u = np.asarray(u, float)
-        Pq, dq, _ = self.read_many(u[None])
+        Pq, dq, _ = self._read_one(u)
         Pv, dv = self._read_cached(V)
         if self._fine:
             f = self._fine.get(u.tobytes())
@@ -569,7 +584,7 @@ class LocatorSet:
         M = np.zeros((len(self.keys), len(fam)))
         for i, k in enumerate(self.keys):
             M[i, fam.index(family_key(k))] = 1.0
-        Pq, dq, _ = self.read_many(np.asarray(u, float)[None])
+        Pq, dq, _ = self._read_one(u)
         Pv, dv = self._read_cached(V)
         Fq, Fv = Pq @ M, Pv @ M
         mc = float(self.cfg.min_confidence)
@@ -597,6 +612,11 @@ class LocatorSet:
     def _read_cached(self, V: np.ndarray):
         """read_many(V) memoised on V's content (the reviewed builds repeat; v3.1)."""
         key = (V.shape, hash(V.tobytes()))
+        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h)
+        st = self.__dict__.get("_vstate")
+        if st is None or any(a is not b for a, b in zip(st, state)):
+            self.__dict__.pop("_vmemo", None)      # v3.8: kept across queries while the locators hold
+            self._vstate = state
         memo = self.__dict__.setdefault("_vmemo", {})
         hit = memo.get(key)
         if hit is None:

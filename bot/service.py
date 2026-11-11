@@ -95,7 +95,7 @@ class ModelService(CatalogHelpers):
         ic = self._read_json("item_counts.json", {})
         self.item_counts: Dict[str, dict] = ic.get("items", {})
         self.min_item_count = ic.get("min_item_count")
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()            # v3.8: re-entrant, so the bot can hold it around a call
         self._index_names()
         self.memory_skipped: List[str] = []
         self.locators_skipped: List[str] = []

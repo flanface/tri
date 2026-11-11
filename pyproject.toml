@@ -1,6 +1,6 @@
 [project]
 name = "tri"
-version = "3.7.0"
+version = "3.8.0"
 description = "Backend learning engine for contextual Deepwoken talent/mantra selection"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10", "scikit-learn>=1.3"]

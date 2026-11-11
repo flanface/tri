@@ -330,7 +330,28 @@ class ReviewLedger:
         return k
 
     def active_claims(self, review_id: str) -> List[Claim]:
-        return [c for c in self.claims.get(review_id, []) if c.weight > 0]
+        """Claims of the review with weight > 0. The ledger is fixed once built,
+        so the list is computed once per review (v3.8; read-only)."""
+        memo = self.__dict__.setdefault("_active", {})
+        hit = memo.get(review_id)
+        if hit is None:
+            hit = memo[review_id] = [c for c in self.claims.get(review_id, []) if c.weight > 0]
+        return hit
+
+    def _global_claims(self) -> List[Tuple[str, Claim]]:
+        """(review id, claim) of every active context-free claim, newest review first (v3.8)."""
+        g = self.__dict__.get("_globals")
+        if g is None:
+            g = self._globals = [(r.review_id, c) for r in reversed(self.reviews)
+                                 for c in self.active_claims(r.review_id) if c.global_scope]
+        return g
+
+    def _unreturned(self, r: Review) -> frozenset:
+        """Candidates a full review r leaves out of its returned build (v3.8 memo)."""
+        memo = self.__dict__.setdefault("_unret", {})
+        if r.review_id not in memo:
+            memo[r.review_id] = self._candidates() - self._returned(r)
+        return memo[r.review_id]
 
     def neighbours(self, build: Build, min_sim: Optional[float] = None, vec=None) -> List[Tuple[Review, float]]:
         """Reviewed builds similar to `build` (sim >= min_sim, default cfg.sim_min), newest first.
@@ -368,15 +389,14 @@ class ReviewLedger:
                 out[it] = v
         for it, v in echo.items():
             out.setdefault(it, v)
-        for r in reversed(self.reviews):                   # context-free claims
-            for c in self.active_claims(r.review_id):
-                if c.global_scope and (c.item not in out or out[c.item][6] == "family"):
-                    # local claims (above) take precedence; a generally-good add from
-                    # another archetype is marked origin "general" (binding(): strong only)
-                    if not c.holds_in(items):
-                        continue
-                    out[c.item] = (c.label, c.weight, r.review_id, 1.0, c.reason, c.strength,
-                                   "general" if c.general else c.origin, tuple(c.related))
+        for rid, c in self._global_claims():               # context-free claims, newest first
+            if c.item not in out or out[c.item][6] == "family":
+                # local claims (above) take precedence; a generally-good add from
+                # another archetype is marked origin "general" (binding(): strong only)
+                if not c.holds_in(items):
+                    continue
+                out[c.item] = (c.label, c.weight, rid, 1.0, c.reason, c.strength,
+                               "general" if c.general else c.origin, tuple(c.related))
         return out
 
     def _returned(self, r: Review) -> frozenset:
@@ -442,7 +462,7 @@ class ReviewLedger:
                 strong = c.label in ("add", "remove") and c.strength == "strong" and c.reason not in _RELATIVE
                 votes[c.item][bk] = (POLARITY[c.label], w, strong, c, r.review_id, float(S[i]))
             if cfg.pool_absent:      # left out of the returned build: absence endorsed
-                for it in self._candidates() - self._returned(r) - have - claimed:
+                for it in self._unreturned(r) - have - claimed:
                     if bk not in absent[it]:
                         absent[it][bk] = (float(O[i]) * cfg.fam_keep, r.review_id, float(S[i]))
         out: Dict[str, tuple] = {}

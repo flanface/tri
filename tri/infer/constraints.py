@@ -153,13 +153,19 @@ class _Constraints:
 
     def _review_sides(self, s: _Sit) -> Dict[str, Set[str]]:
         """{x: {y, ...}} from binding "x is a sidegrade to y" claims, both ways
-        (weak: under this archetype, through ledger reach; strong: anywhere)."""
+        (weak: under this archetype, through ledger reach; strong: anywhere).
+        Kept on s until its memory changes (_merge_extra is the only writer)."""
+        key = (id(s.memory), len(s.memory), getattr(self, "_mver", 0))
+        hit = s.__dict__.get("_rsides")
+        if hit is not None and hit[0] == key:
+            return hit[1]
         out: Dict[str, Set[str]] = {}
         for it, v in s.memory.items():
             if v[0] == "iffy" and v[4] == Reason.SIDEGRADE.value and len(v) > 7 and self._binds(v):
                 for y in v[7]:
                     out.setdefault(it, set()).add(y)
                     out.setdefault(y, set()).add(it)
+        s.__dict__["_rsides"] = (key, out)
         return out
 
     def _note(self, rid) -> str:

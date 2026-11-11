@@ -15,12 +15,12 @@ A mixin holds only methods; the class keeps its constructor and state, and inher
 ```
 tri/                              repository root
 ├── README.md                     overview, quick start, wiki entry
-├── pyproject.toml                packages "tri", "bot" 3.7.0; numpy, scipy, scikit-learn; extras: render, bot, accel
+├── pyproject.toml                packages "tri", "bot" 3.8.0; numpy, scipy, scikit-learn; extras: render, bot, accel
 │
 ├── tri/                          the library (no I/O beyond explicit save / load)
 │   ├── __init__.py               lazy public API (PEP 562); __version__
 │   ├── version.py                VERSION
-│   ├── runtime.py                v3.7: release() returns freed memory to the system; rss_mb, peak_mb
+│   ├── runtime.py                v3.7: release() returns freed memory to the system; rss_mb, peak_mb; v3.8: cap_threads()
 │   ├── data/                     bundled JSON tables; data.path(name)
 │   │   ├── voi_only.json         talents and mantras only obtainable in Vow of Iron (math §2.2)
 │   │   ├── mantra_slots.json     mantra slot types and slot grants (math §2.6)

@@ -182,6 +182,7 @@ class _Completion:
             old = memory.get(k)
             if old is None or not self._binds(old) or self._general(old) or float(v[3]) > float(old[3]):
                 memory[k] = v
+                self._mver = getattr(self, "_mver", 0) + 1      # invalidates _review_sides
 
     # ------------------------------------------------------------ addition order (v3.2)
     @property

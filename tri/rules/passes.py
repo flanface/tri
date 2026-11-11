@@ -991,10 +991,15 @@ class Rulebook:
         stat or context condition on which they differ: a review of one does
         not transfer to the other for that item."""
         from tri.rules.groups import group_counts, rule_tokens
-        ta, tb = rule_tokens(a), rule_tokens(b)
-        ga = gb = None
-        for r in self.rules:
-            if r.item != item or r.status != "active":
+        ix = self.__dict__.get("_by_item")
+        if ix is None or ix[0] is not self.rules or ix[2] != len(self.rules):            # v3.8: rules per item, not a scan per call
+            d: Dict[str, list] = {}
+            for r in self.rules:
+                d.setdefault(r.item, []).append(r)
+            ix = self._by_item = (self.rules, d, len(self.rules))
+        ta = tb = ga = gb = None
+        for r in ix[1].get(item, ()):
+            if r.status != "active":
                 continue
             for c in r.conds:
                 if c.kind in ("stat", "agg"):
@@ -1004,8 +1009,11 @@ class Rulebook:
                         va, vb = aggregate_value(c.key, a.highest_stats), aggregate_value(c.key, b.highest_stats)
                     if (va >= c.value) != (vb >= c.value):
                         return True
-                elif c.kind == "context" and not c.key.startswith("archetype:") and ((c.key in ta) != (c.key in tb)):
-                    return True
+                elif c.kind == "context" and not c.key.startswith("archetype:"):
+                    if ta is None:
+                        ta, tb = rule_tokens(a), rule_tokens(b)
+                    if (c.key in ta) != (c.key in tb):
+                        return True
                 elif c.kind == "group":
                     if ga is None:
                         ga, gb = group_counts(a.items(), self.groups), group_counts(b.items(), self.groups)

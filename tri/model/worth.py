@@ -73,6 +73,42 @@ class RowStack:
         b = self.base @ u if self.base.dtype == np.float64 else self._chunks(lambda U: U @ u)
         return np.concatenate([self._of_base(b), self.extra @ u])
 
+    def d2(self, u: np.ndarray, U2: np.ndarray, kmax: int, exclude=()) -> np.ndarray:
+        """Squared distances to u, exact (float64) on every row that can be
+        among the kmax nearest and +inf elsewhere (v3.8). A float32 base is
+        screened in float32 with no cast or copy; rows whose screened distance
+        exceeds the kmax-th smallest by more than twice the rounding bound
+        (n+2) 2^-22 |b||u| per side cannot be among the kmax nearest, so only
+        the survivors are recomputed in float64. A float64 base is exact
+        throughout."""
+        u = np.asarray(u, np.float64)
+        uu = float(u @ u)
+        n = len(self)
+        if self.base.dtype == np.float64 or kmax >= n or self.nb == 0:
+            d = np.maximum(U2 - 2 * self.dot(u) + uu, 0)
+            if len(exclude):
+                d[np.asarray(exclude)] = np.inf
+            return d
+        a = self.base @ u.astype(np.float32)                     # float32 screen, no copy
+        a = np.concatenate([self._of_base(a).astype(np.float64), self.extra @ u])
+        approx = U2 - 2 * a + uu
+        if len(exclude):
+            approx[np.asarray(exclude)] = np.inf
+        fin = np.isfinite(approx)
+        if fin.sum() <= kmax:
+            d = np.maximum(U2 - 2 * self.dot(u) + uu, 0)
+            d[~fin] = np.inf
+            return d
+        if getattr(self, "_bmax", None) is None:
+            self._bmax = float(np.sqrt(U2.max())) if len(U2) else 0.0
+        D = self.base.shape[1]
+        err = 2 * 4 * (D + 2) * 2.0 ** -22 * self._bmax * np.sqrt(uu)      # 2 x |dot error|, 4x margin
+        T = np.partition(approx, kmax - 1)[kmax - 1]
+        cand = np.flatnonzero(approx <= T + 2 * err)
+        d = np.full(n, np.inf)
+        d[cand] = np.maximum(U2[cand] - 2 * (self[cand] @ u) + uu, 0)
+        return d
+
     def __getitem__(self, rows) -> np.ndarray:
         rows = np.asarray(rows, np.int64)
         out = np.empty((len(rows), self.base.shape[1]))
@@ -81,6 +117,19 @@ class RowStack:
         out[inb] = self.base[r if self.idx is None else self.idx[r]]
         out[~inb] = self.extra[rows[~inb] - self.nb]
         return out
+
+
+def smallest(d: np.ndarray, k: int) -> np.ndarray:
+    """Indices of the k smallest entries of d in row order; rows at the same
+    distance as the k-th are taken in row order too (v3.8), so the neighbour
+    set and its order never depend on how the partition breaks ties."""
+    nb = np.argpartition(d, k - 1)[:k]
+    t = d[nb].max()
+    eq = np.flatnonzero(d == t)
+    if len(eq) == int((d[nb] == t).sum()):
+        return np.sort(nb)                              # no tie straddles the boundary
+    lo = np.flatnonzero(d < t)
+    return np.sort(np.concatenate([lo, eq[: k - len(lo)]]))
 
 
 class FieldWorth:
@@ -136,11 +185,10 @@ class FieldWorth:
         if len(self.U) == 0:
             return LocalRates(base.copy(), base, np.zeros(N), np.zeros(0, int), np.zeros(0), 0.0, 0.0)
         u = pt.u
-        d2 = np.maximum(self.U2 - 2 * self.U.dot(u) + u @ u, 0)
-        if len(exclude):
-            d2[np.asarray(exclude)] = np.inf
+        kmax = f.k + (int(f.k_cross) if f.cross_weight > 0 else 0)
+        d2 = self.U.d2(u, self.U2, kmax, exclude)
         k = min(f.k, len(d2))
-        nb = np.argpartition(d2, k - 1)[:k]
+        nb = smallest(d2, k)
         kw = self.ref.w[nb] * np.exp(-d2[nb] / (2 * f.bandwidth ** 2))
         X = self.ref.X[nb].toarray()
         A = self.ref.masks[self.ref.gid[nb]].astype(np.float64)
@@ -189,7 +237,7 @@ class FieldWorth:
         """Add the cross-archetype ring to the kernel sums (docs/math eq. 5.4)."""
         f = self.cfg
         k2 = min(int(f.k_cross) + len(nb), len(d2))
-        ring = np.argpartition(d2, k2 - 1)[:k2]
+        ring = smallest(d2, k2)
         keep = ~np.isin(ring, nb) & ~self.is_review[ring] & np.isfinite(d2[ring])
         ring = ring[keep]
         if not len(ring):

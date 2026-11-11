@@ -45,11 +45,13 @@ Requirement strings (the grammar of the pocamind `deepwoken` crate):
   against total points invested (the sum of final stats)."""
 from __future__ import annotations
 
+import functools
 import io
 import json
 import os
 import re
 import time
+import unicodedata
 import urllib.request
 import zipfile
 from dataclasses import dataclass, field
@@ -82,8 +84,13 @@ STAT_CODES: Dict[str, str] = {
 
 def name_key(name: str) -> str:
     """Loose matching key: case-folded letters and digits only."""
-    import unicodedata
-    return "".join(ch for ch in unicodedata.normalize("NFKC", str(name)).casefold() if ch.isalnum())
+    return _name_key(name if isinstance(name, str) else str(name))
+
+
+@functools.lru_cache(maxsize=65536)
+def _name_key(name: str) -> str:
+    """name_key of a str, memoised (v3.8: hundreds of thousands of calls per review rebuild)."""
+    return "".join(ch for ch in unicodedata.normalize("NFKC", name).casefold() if ch.isalnum())
 
 
 # ------------------------------------------------------------------ requirement parser
