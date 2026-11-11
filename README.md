@@ -11,7 +11,7 @@ This is part of a larger project to mathematically understand the practice of De
 
 There is some valid dogma behind this. Automatic talent selection is a problem that is identical to automatically upkeeping a build library, which no builder has managed to do over an extended period of time. A library needs maintainence because every patch, new talent and shift in the meta has to be carried into every build by hand, which is a chore.
 
-tri hypothesizes, from experience, that talent selection is actually a highly structured procedure that rigorously follows a set of rules that builders will have internalized after some time building. the problem is that there are 700+ talents to take, and each talent naturally has many builds leading into it. it is difficult for builders to conjure this ruleset intuitively much less to articulate it.
+tri (the human one) hypothesizes, from experience, that talent selection is actually a highly structured procedure that rigorously follows a set of rules that builders will have internalized after some time building. the problem is that there are 700+ talents to take, and each talent naturally has many builds leading into it. it is difficult for builders to conjure this ruleset intuitively much less to articulate it.
 
 while a builder might memorize a rule like "overworld ganking builds always take replenishing knockout", the quantification of the archetype of the build, in this case being overworld ganking, is very difficult to automatically determine. common approaches to this solution discretizes the archetype, which we feel is enforcing too much structure onto conceptual building. the main point of interest tri raises is the concept space, which is used as additional context in ruleset reconstruction.
 
