@@ -1,0 +1,6 @@
+.env
+bot_state.json
+runs/
+__pycache__/
+.pytest_cache/
+.DS_Store

@@ -1,0 +1,2545 @@
+{
+ "note": "Weapons from github.com/pocamind/data and api.deepwoken.co (bleed = deepwoken.co bleedDamage or the Bleed damage type; weapons missing from pocamind added from deepwoken.co, weight class from their requirements or scaling, heaviest first) (type, reqs weight class, damage_types, can_offhand) and deepwoken.co (requirements.weaponType). hands = 2 for heavy weapons and the types Greatsword, Greataxe, Greathammer, Spear, Twinblade, Staff, Bow, Rifle, Greatcannon. 'clauses' are forced weapon context: an item is available only if, for every clause, some equipped weapon shows one of its tokens (math.md 2.8). 'scale' items are worth the share of equipped weapons that leave them useful.",
+ "weapons": {
+  "Acheron's Warspear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Adretian Aegis": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Adretian Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyblood Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyblood Daggers": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyblood Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Adretian Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Canorian Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Cavalry Saber": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Crescent Cleaver": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Dawnshot": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Alloyed Falchion": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Forge Greathammer": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Halberd": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Inheritor": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Katana": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Longspear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Messer": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Officer Saber": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Scalesplitter": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Shotel": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Steel Maul": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Tanto": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Trident Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Vigil Longsword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Whaling Knife": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Alloyed Zweihander": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Anklets of Alsin": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Apprentice Rapier": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Avenger": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Battleaxe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Bellmarrow Reave": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Big Brother": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Black Death": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Bloodbane": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Bloodfouler": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Bloodtide Trident": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Boltcrusher": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Bronze Aspis": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Broodalloy Cestus": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Calamity Cinnabar": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Canor Fang": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Canorian Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Cavalry Saber": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Central Dirk": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Cerulean Thread": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Champion's Dagger": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Champion's Sword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Chorus of Agonies": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Coldpoint": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Coral Cestus": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Corvidirge Severants": {
+   "type": "Twinblade",
+   "weight": "Light",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Crescendo": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Crescent Cleaver": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Crucible Rapier": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Crypt Blade": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Cursed Flames": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Curved Blade of Winds": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Darkalloy Greatsword": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Darksteel Cleaver": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Darksteel Greatsword": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Dawnshot": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Death's Reverie": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Deconstruction of Shrine": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Deepspindle": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Depthsplitter": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Dissonant Chimecaller": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Dormant Splinter": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Dragoon": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Drakemaw Gauntlets": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Duskguard Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Duskpole": {
+   "type": "Staff",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Duskshot": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ebonshard Lexicon": {
+   "type": "Exclusive",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Edenbrand Hellcoil": {
+   "type": "Greatcannon",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Enforcer's Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Enforcer's Blade": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Enforcer's Hammer": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ethiron Curseshield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Evanspear Greataxe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Eye of Malice": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Eyes of Ethiron": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Falchion": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Fang and Coil": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ferractine": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "First Light": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Flamekeeper Cestus": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Flareblood Kamas": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Flintlock": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Fondant Splitter": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Fool's Tankard": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Forge Greathammer": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Forgotten Gladius": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Formless Shard": {
+   "type": "Dagger",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Fractine": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Frost Gauntlets": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Frostthorn": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Gale Pale": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Gaunts of Enmity": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Gilded Knife": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Golden Swordfish": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Gourdguard": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Gran Sudaruska": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Great Maul": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Gremorian Longspear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Guiding Star": {
+   "type": "Bow",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hailbreaker": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Halberd": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hallowscleave": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Handcuffs": {
+   "type": "Fist",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hero's Blade of Flame": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hero's Blade of Frost": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hero's Blade of Lightning": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hero's Blade of Shadow": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hero's Blade of Wind": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hivelord's Hubris": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Hunting Bow": {
+   "type": "Bow",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Icarus Sun Shield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Icepick": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ignition Deepcrusher": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Imperator's Edge": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Imperial Staff": {
+   "type": "Staff",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Imperium Kata": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Infected": {
+   "type": "Fist",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Inquisitor's Greatsword": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Inquisitor's Thorn": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Birch": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Blunderbuss": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Cestus": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Requiem": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Iron Twinblade": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ironcry": {
+   "type": "Bow",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Irontusk": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Jus Karita": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kanabo": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Karita Plating": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Katana": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Keyblade": {
+   "type": "Exclusive",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Khan Shield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Kindred Edict": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kite Shield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Krulian Knife": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrsblade": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrscleave": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrsedge": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrsglaive": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrsieger": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrstear": {
+   "type": "Parrying Dagger",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Kyrstreza": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Kyrswynter": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Legion Cestus": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Legion Kata": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Light's Final Toll": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Lumensplitter": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Mace": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Markor's Inheritor": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Master Hawk's Handaxe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Messer": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Metal Greatsword": {
+   "type": "Greatsword",
+   "weight": null,
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Moon Blades": {
+   "type": "Exclusive",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Moonseye Scalpel": {
+   "type": "Exclusive",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Moppet": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Morning Star": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Needle's Eye": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Nemit's Sickle": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Night Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Night Star": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Nocturne": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Officer Saber": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Old World Greatshield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Palace Tachi": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Pale Briar": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Pale Morning": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Par's Glaive": {
+   "type": "Greataxe",
+   "weight": null,
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Parrying Dagger": {
+   "type": "Parrying Dagger",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Pernach": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Petra's Anchor": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Phantomcleave": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Pleeksty's Inferno": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Prototype Railblade": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Purple Cloud": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Putrid Edenstaff": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Quartztone Pickaxe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Quickfang": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Railblade": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rangescraper": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Razor Cutlass": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Red Death": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Relic Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Repeater": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Rifle Spear": {
+   "type": "Spear / Rifle",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rimebreakers": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rite of Authority": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ritual Sacrifice": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ritual Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rockmaller": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rosen's Hellflame": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rosen's Peacemaker": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Rosen's Roscoe": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Sacred Hammer": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Saint Jay's Hammer": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Saintsblade": {
+   "type": "Sword",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Sancticar": {
+   "type": "Staff",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Sanguine Transfuser": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Scalesplitter": {
+   "type": "Twinblade",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Scimitar": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Scoundrel's Saber": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Serpent's Edge": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Serrated Warspear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Shadebolt": {
+   "type": "Bow",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Shattered Katana": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Shotel": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Silas's Cenotaph": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Silver Dagger": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Silversix": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Skull Piercer": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Skullpiercer": {
+   "type": "Rapier",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Skyreap Blade": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Smouldering Hallow": {
+   "type": "Greatcannon",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulshot": {
+   "type": "Exclusive",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Soulthorn": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulwrought Axe": {
+   "type": "Greataxe",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulwrought Dagger": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulwrought Greatsword": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulwrought Gun": {
+   "type": "Pistol",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": false
+  },
+  "Soulwrought Longsword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Soulwrought Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Sovereign Bangle": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Sovereign's Punishment": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Spectral Grasp": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Steel Maul": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Steelscale Dusters": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Stiletto": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Stoneheart": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Stormseye": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Summer Hullwrecker": {
+   "type": "Greatcannon",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Summer Rifle": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Sword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Tanto": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Targe": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Tenacity": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "The Barrel": {
+   "type": "Greatcannon",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Death Knell": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Flippers of Fate": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Golden Fool": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Long Tong of The Law": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Long Tong of the Law": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Pastry Paster": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Path's Defender": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "The Rock": {
+   "type": "Exclusive",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "The Weaving Web": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Toothed Club": {
+   "type": "Club",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Trident Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "True Seraph Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "True Seraph's Spear": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Umbrite Witherblade": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": true,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Unsung Scythern": {
+   "type": "Exclusive",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Untrained Fist": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Vapormaw Carbine": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Vigil Longsword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Vortex Echo": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Warden Ceremonial Sword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Warmonger": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Way of Navae": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Weal and Woe": {
+   "type": "Spear",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Whaling Knife": {
+   "type": "Dagger",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Winter Rifle": {
+   "type": "Rifle",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Withered Death's Knell": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Withered Gale Pale": {
+   "type": "Greathammer",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Withered Phantomcleave": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Wooden Staff": {
+   "type": "Staff",
+   "weight": "Medium",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Worldpainter Brush": {
+   "type": "Exclusive",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Worldpiercer Gauntlets": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Worshipper Longsword": {
+   "type": "Sword",
+   "weight": "Medium",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Worshipper's Shield": {
+   "type": "Shield",
+   "weight": null,
+   "hands": 1,
+   "bleed": false,
+   "offhand": true,
+   "only_offhand": true
+  },
+  "Wraithclaw": {
+   "type": "Fist",
+   "weight": "Light",
+   "hands": 1,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Wretched Mawblades": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Wyrmtooth": {
+   "type": "Sword / Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Ysley's Pyre Keeper": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  },
+  "Zweihander": {
+   "type": "Greatsword",
+   "weight": "Heavy",
+   "hands": 2,
+   "bleed": false,
+   "offhand": false,
+   "only_offhand": false
+  }
+ },
+ "clauses": {
+  "Blade's Edge": [
+   [
+    "wield:Spear"
+   ]
+  ],
+  "Bodkin Arrow": [
+   [
+    "wield:Bow"
+   ]
+  ],
+  "Both Ends": [
+   [
+    "wield:Staff"
+   ]
+  ],
+  "Brain Rattler": [
+   [
+    "wield:Club"
+   ]
+  ],
+  "Brazen Blow": [
+   [
+    "wield:Greataxe"
+   ]
+  ],
+  "Bruiser's Mixup": [
+   [
+    "wield:Fists"
+   ]
+  ],
+  "Brutal Momentum": [
+   [
+    "wield:Heavy Weapon"
+   ]
+  ],
+  "Captain Etrea": [
+   [
+    "wield:Fist"
+   ]
+  ],
+  "Counter Spin": [
+   [
+    "wield:Staff"
+   ]
+  ],
+  "Defensive Stance": [
+   [
+    "wield:Rapier"
+   ]
+  ],
+  "Defensive Sweep": [
+   [
+    "wield:Spear"
+   ]
+  ],
+  "Destructive Recovery": [
+   [
+    "wield:Greatsword"
+   ]
+  ],
+  "Dirty Boxing": [
+   [
+    "wield:Fists"
+   ]
+  ],
+  "Dispatch": [
+   [
+    "wield:Club"
+   ]
+  ],
+  "Driving Impact": [
+   [
+    "wield:Spear"
+   ]
+  ],
+  "Duelist's Lunge": [
+   [
+    "wield:Rapier"
+   ]
+  ],
+  "Execution": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Face Cutter": [
+   [
+    "wield:Twinblade"
+   ]
+  ],
+  "Finishing Touch": [
+   [
+    "wield:Dagger"
+   ]
+  ],
+  "Fists of Fortitude": [
+   [
+    "wield:Fists"
+   ]
+  ],
+  "Frenzied Dance": [
+   [
+    "wield:Rapier"
+   ]
+  ],
+  "Gathering Electricity": [
+   [
+    "wield:Medium Weapon"
+   ]
+  ],
+  "Gunpowder Blast": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Hammerfall": [
+   [
+    "wield:Club"
+   ]
+  ],
+  "Hard Stop": [
+   [
+    "wield:Bow"
+   ]
+  ],
+  "Heavy Cannonball": [
+   [
+    "wield:Greatcannon"
+   ]
+  ],
+  "Heavy Fatigue": [
+   [
+    "wield:Greataxe"
+   ]
+  ],
+  "Hip Shooter": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Hoplite": [
+   [
+    "wield:Spear"
+   ]
+  ],
+  "Impairing Blow": [
+   [
+    "wield:Greataxe"
+   ]
+  ],
+  "Knight's Rally": [
+   [
+    "wield:Shield"
+   ]
+  ],
+  "Lancer's Impale": [
+   [
+    "wield:Spear"
+   ]
+  ],
+  "Leg Shot": [
+   [
+    "wield:Rifle"
+   ]
+  ],
+  "Lock n Load": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Parting Gift": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Precision Crusher": [
+   [
+    "wield:Bow"
+   ]
+  ],
+  "Pressure Skewer": [
+   [
+    "wield:Rapier"
+   ]
+  ],
+  "Pressure Strike": [
+   [
+    "wield:Staff"
+   ]
+  ],
+  "Prime Ether Bullets": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Quick Swap": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Quickdraw": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Rally": [
+   [
+    "wield:Shield"
+   ]
+  ],
+  "Rapid Fire": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Rapid Reload": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Rending Impact": [
+   [
+    "wield:Greataxe"
+   ]
+  ],
+  "Sleight of Hands": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Speed Demon": [
+   [
+    "wield:no bleed"
+   ]
+  ],
+  "Static Blade": [
+   [
+    "wield:Medium Weapon"
+   ]
+  ],
+  "Sticky Flames": [
+   [
+    "wield:Greatcannon"
+   ]
+  ],
+  "Stock Bash": [
+   [
+    "wield:Rifle"
+   ]
+  ],
+  "Tactical Reload": [
+   [
+    "wield:Rifle"
+   ]
+  ],
+  "Taste The Rainbow": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "True Ether Bullets": [
+   [
+    "wield:Pistol",
+    "wield:Rifle",
+    "wield:Greatcannon"
+   ]
+  ],
+  "Turning of the Wheel": [
+   [
+    "wield:Twinblade"
+   ]
+  ],
+  "Turtle Shell": [
+   [
+    "wield:two-handed"
+   ]
+  ],
+  "Ultrakill": [
+   [
+    "wield:Pistol"
+   ]
+  ],
+  "Unstoppable Force": [
+   [
+    "wield:Greathammer"
+   ]
+  ]
+ },
+ "scale": {
+  "Speed Demon": "no bleed"
+ }
+}

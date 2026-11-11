@@ -1,0 +1,67 @@
+{
+ "note": "Stat benchmarks: past 'at' the item's worth rises steeply (a fixed prior on the logit, math.md 2.9; not fitted). Guardbreaking mantras: deepwoken.co damage levels with a GB entry that deals damage; the benchmark 77 is the reviewers' (Pom).",
+ "gain": 2.5,
+ "width": 2.0,
+ "benchmarks": [
+  {
+   "item": "Fire Blade",
+   "stat": "Flamecharm",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Lightning Impact",
+   "stat": "Thundercall",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Thunder Kick",
+   "stat": "Thundercall",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Ice Smash",
+   "stat": "Frostdraw",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Champion's Whirlthrow",
+   "stat": "Galebreathe",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Shadow Gun",
+   "stat": "Shadowcast",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Shade Devour",
+   "stat": "Shadowcast",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Iron Slam",
+   "stat": "Ironsing",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Veinbreaker",
+   "stat": "Bloodrend",
+   "at": 77,
+   "why": "guardbreaks"
+  },
+  {
+   "item": "Onslaught",
+   "stat": "HeavyWeapon",
+   "at": 77,
+   "why": "guardbreaks"
+  }
+ ]
+}

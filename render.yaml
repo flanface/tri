@@ -1,0 +1,49 @@
+# Render Blueprint: the Discord bot with the model in-process, as one background
+# worker. New > Blueprint in the Render dashboard, pick this repo; Render asks
+# for the sync: false values once. Docs: https://render.com/docs/blueprint-spec
+#
+# The persistent disk holds the fitted run (TRI_RUN: a run dir, or a runs folder
+# with LATEST), drafts, claims and local server settings. Publish a run to the
+# Supabase Storage bucket from your machine (python -m bot.runstore publish
+# runs/<id>); with TRI_RUN_REMOTE=latest the worker downloads it into TRI_RUN at
+# start and on /model reload. Background workers and disks are paid instances.
+services:
+  - type: worker
+    name: tri-bot
+    runtime: python
+    region: oregon
+    plan: 1c-2g                 # a full 300k-build run peaks near 1.4 GB; 0.5c-512mb is enough only for small runs
+    buildCommand: pip install -r requirements-bot.txt
+    startCommand: python -m bot
+    autoDeployTrigger: commit
+    disk:
+      name: tri-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: TRI_RUN
+        value: /var/data/runs
+      - key: TRI_RUN_REMOTE      # fetch the published run from Storage (latest | <run name> | empty = disk only)
+        value: latest
+      - key: TRI_COORDS          # float32 halves the coordinate tables; float64 for exact parity
+        value: float32
+      - key: MALLOC_ARENA_MAX    # fewer glibc arenas: less fragmentation under the 2 GB limit
+        value: "2"
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GITHUB_TOKEN        # optional: raises the GitHub API limit for game data syncs
+        sync: false
+      - key: STATE_PATH
+        value: /var/data/bot_state.json
+      - key: GUILD_CONFIG_PATH
+        value: /var/data/guild_config.json
+      - key: SYNC_MODE
+        value: guild
+      - key: GAMEDATA_SYNC_HOURS
+        value: "12"

@@ -1,0 +1,248 @@
+{
+"locks": {
+"Alsin's Aid": [
+[
+"origin:Justicar"
+]
+],
+"Arc Beam": [
+[
+"oath:Arcwarder"
+]
+],
+"Arc Suit": [
+[
+"oath:Arcwarder"
+]
+],
+"Arc Wave": [
+[
+"oath:Arcwarder"
+]
+],
+"Ardour Scream": [
+[
+"murmur:Ardour"
+]
+],
+"Ardour Slicer": [
+[
+"oath:Soulbreaker"
+]
+],
+"Ascension": [
+[
+"oath:Starkindred"
+]
+],
+"Blade of Saints": [
+[
+"oath:Saintsworn"
+]
+],
+"Blinding Dawn": [
+[
+"oath:Dawnwalker"
+]
+],
+"Celestial Assault": [
+[
+"oath:Starkindred"
+]
+],
+"Chorus of Souls": [
+[
+"oath:Oathless"
+]
+],
+"Close Shave": [
+[
+"oath:Fadetrimmer"
+]
+],
+"Decimate": [
+[
+"oath:Bladeharper"
+]
+],
+"Equalizer": [
+[
+"oath:Contractor"
+]
+],
+"Fake Strike": [
+[
+"oath:Jetstriker"
+]
+],
+"Glorious Charge": [
+[
+"origin:Authority Ensign"
+]
+],
+"Grand Warden's Axe": [
+[
+"origin:Authority Ensign"
+]
+],
+"Hidden Blade": [
+[
+"origin:Authority Ensign"
+]
+],
+"Illusory Counter": [
+[
+"oath:Visionshaper"
+]
+],
+"Illusory Servants": [
+[
+"oath:Visionshaper"
+]
+],
+"Impel": [
+[
+"oath:Chainwarden"
+]
+],
+"Jet Kick": [
+[
+"oath:Jetstriker"
+]
+],
+"Judgement": [
+[
+"oath:Contractor"
+]
+],
+"Karita Swap": [
+[
+"origin:Justicar"
+]
+],
+"Lethal Injection": [
+[
+"oath:Saltchemist"
+]
+],
+"Lord's Slice": [
+[
+"oath:Contractor"
+]
+],
+"Mindsoothe": [
+[
+"oath:Blindseer"
+]
+],
+"Mirror Illusion": [
+[
+"oath:Visionshaper"
+]
+],
+"Palm Strike": [
+[
+"oath:Bladeharper"
+]
+],
+"Parasitic Leech": [
+[
+"oath:Linkstrider"
+]
+],
+"Precision Cuts": [
+[
+"oath:Fadetrimmer"
+]
+],
+"Radiant Dawn": [
+[
+"oath:Dawnwalker"
+]
+],
+"Radiant Kick": [
+[
+"oath:Dawnwalker"
+]
+],
+"Restrain": [
+[
+"oath:Chainwarden"
+]
+],
+"Rhythm Advance": [
+[
+"oath:Soulbreaker"
+]
+],
+"Rupture": [
+[
+"oath:Chainwarden"
+]
+],
+"Sightless Beam": [
+[
+"oath:Blindseer"
+]
+],
+"Sinister Halo": [
+[
+"oath:Starkindred"
+]
+],
+"Skycrash": [
+[
+"oath:Blightsurger"
+]
+],
+"Soul Beam": [
+[
+"oath:Oathless"
+]
+],
+"Sovereign Drive": [
+[
+"oath:Blightsurger"
+]
+],
+"Spotter": [
+[
+"murmur:Rhythm"
+],
+[
+"oath:Soulbreaker"
+]
+],
+"Symbiotic Sustain": [
+[
+"oath:Linkstrider"
+]
+],
+"Tacet Drop Kick": [
+[
+"murmur:Tacet"
+]
+],
+"Tacet Kick": [
+[
+"oath:Soulbreaker"
+]
+],
+"Tranquil Circle": [
+[
+"oath:Blindseer"
+]
+],
+"Warp Kick": [
+[
+"oath:Blightsurger"
+]
+],
+"Wisp Convergence": [
+[
+"oath:Oathless"
+]
+]
+},
+"source": "pocamind/data main + deepwoken.co, 2026-10-28"
+}

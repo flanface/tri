@@ -1,0 +1,9 @@
+# the Discord bot with the model in-process (python -m bot)
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+discord.py>=2.4
+aiohttp>=3.9
+matplotlib>=3.7          # /plot views
+seaborn>=0.12
+pillow                   # spinning GIFs
