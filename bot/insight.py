@@ -3,7 +3,7 @@
 
 One entry point, ModelService.insight(kind, **kw) -> dict(files, text, data):
 
-  atlas                 B1 archetype atlas (two planes)
+  atlas                 B1 archetype atlas (the /plot atlas figure, bot.plotting)
   tree                  B2 archetype dendrogram
   card      archetype   B3 archetype card (+ its top facts)
   item      item        B5 worth landscape of an item
@@ -117,7 +117,7 @@ def _draw(theme: str, fn, *a, **kw) -> bytes:
     """Draw under the theme (the caller holds the plot lock)."""
     from tri.views import plots as render
 
-    from .service import _png
+    from .plotting import png_bytes as _png
     with render.theme(theme):
         return _png(fn(*a, **kw))
 
@@ -175,7 +175,7 @@ def _fact_rows(facts, archetype: Optional[str] = None, status: str = "certified"
 
 def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None, item: Optional[str] = None,
             stat: Optional[str] = None, build=None, limit: int = 10, since: Optional[float] = None,
-            status: str = "certified", interactive: bool = False) -> dict:
+            status: str = "certified") -> dict:
     """See the module docstring. Returns dict(files=[(name, png)], text, data)."""
     from tri.analysis import categorize as C, stream as S
     from tri.infer import active
@@ -200,23 +200,22 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
         book = fact_book(svc)
         d = book.digest(float(since if since is not None else time.time() - 7 * 86400))
         return dict(files=[], text=f"{len(d['new'])} new · {len(d['retired'])} retired", data=d)
-    from .service import _PLOT_LOCK
-    with _PLOT_LOCK, svc.lock:                  # same order as the /plot views
-        c = _atlas(svc)
-        at, av = c.atlas, c.view
-        if kind == "atlas":
-            if interactive:                     # v2.21: the interactive atlas page
-                from tri.views import plots as render
-                with render.theme(theme):
-                    files.append(("atlas.html", render.html_scatter(V.atlas_scatter(at, av, fields=True)).encode()))
-            else:                               # v2.25: 3-D, always fields
-                files.append(("atlas.png", _draw(theme, V.plot_atlas3d, tri, av, at)))
+    if kind == "atlas":                         # the /plot atlas figure
+        from .plotting import plot_atlas
+        files, _ = plot_atlas(svc)
+        with svc.lock:
+            c = _atlas(svc)
+            at = c.atlas
             data = dict(names=at.names, shares=[round(float(s), 4) for s in at.share],
                         located=round(float(at.w[at.placed].sum() / max(at.w.sum(), 1e-12)), 4),
                         readings={k: int((at.kind == k).sum()) for k in C.READINGS}, candidates=len(c.cands),
                         source=at.source)
-            text = f"{len(at.names)} archetypes · {100 * data['located']:.0f}% located"
-        elif kind == "card":
+        return dict(files=files, text=f"{len(at.names)} archetypes · {100 * data['located']:.0f}% located", data=data)
+    from .plotting import PLOT_LOCK
+    with PLOT_LOCK, svc.lock:                  # same order as the /plot views
+        c = _atlas(svc)
+        at, av = c.atlas, c.view
+        if kind == "card":
             a = _arch_index(at, archetype)
             cf = _facts(svc)
             nm = at.names[a]

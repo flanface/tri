@@ -20,7 +20,7 @@ with $\bar y$ the average description vector.
 
 *Reason.* The weighted logit difference is $\Omega^{1/2}A(y_b-y_{b'})=QR(y_b-y_{b'})$. Multiplying by $Q$ does not change length, because its columns are orthonormal. So the length is $\lVert R(y_b-y_{b'})\rVert$, and dividing by $\sqrt N$ gives $\lVert u_b-u_{b'}\rVert$. $\square$
 
-**Interpretation.** Distance in the concept space **is** a difference in worth, item by item, not a proxy for it. Two builds at distance 0 receive identical logits for every item. The check in `plots.distance_check` and `evaluate.mapping_benchmark` finds errors of about $10^{-15}$, which is rounding.
+**Interpretation.** Distance in the concept space **is** a difference in worth, item by item, not a proxy for it. Two builds at distance 0 receive identical logits for every item. The check in `evaluate.mapping_benchmark` finds errors of about $10^{-15}$, which is rounding.
 
 **Fitted items.** Here $N$ is the number of fitted items $N_{\text{fit}}$. Items added after the fit ([Section 8.10](08-convergence.md)) have zero rows in $A$, so they add nothing to any distance, and the theorem holds unchanged after any number of extensions.
 
@@ -91,9 +91,25 @@ The weights depend only on the field's probabilities and the picks, so `ConceptS
 
 The worth matrix can also be read by columns. Each item becomes a list of worths over a sample of builds (unavailable entries set to 0). Two items are close when the same builds value them. A **relative** version subtracts each item's mean first, so that items group by which builds value them more than usual rather than by overall popularity. Principal components of these columns are an exact classical multidimensional scaling of the item distances.
 
-**Views.** A picture of either space projects it onto $k$ orthonormal axes (6 by default) and shows three at a time as a volume: axes 1 to 3, then 4 to 6. Each view reports how much of the true distance it keeps. An axis of the concept space is read through the item loadings $g_t$ projected on it: moving one unit along the axis changes item $t$'s logit by that loading. The items at the two ends, and the regions whose centres sit there, label the axis. These readings describe the linear map exactly; they say what an axis measures, not that it is an archetype.
+**Views.** A picture of either space projects it onto $k$ orthonormal principal axes $e_1,\dots,e_k$ and shows three as a volume. The concept and atlas pictures use $(e_1,e_2,e_3)$; the worth picture uses $(e_4,e_5,e_6)$. Each view reports how much of the true distance it keeps. An axis of the concept space is read through the item loadings $g_t$ projected on it: moving one unit along the axis changes item $t$'s logit by that loading. These readings describe the linear map exactly; they say what an axis measures, not that it is an archetype.
 
-Code: `plots.worth_space`, `plots.concept_axes`, `plots.worth_axes`, `plots.view_kept`.
+**Why axes 4 to 6 for worth.** Let $z_t=(\langle x_t,e_4\rangle,\langle x_t,e_5\rangle,\langle x_t,e_6\rangle)$ for item column $x_t$. The first three components carry overall popularity and the coarse split between archetypes; once they are removed, the remaining variance is the finer difference in which builds value an item, which is where luxury picks differ.
+
+**Origin and cosines.** Let $\rho_k(t)$ be the distance from $z_t$ to its $k$-th nearest neighbour ($k=12$), and $t^\ast=\arg\min_t\rho_k(t)$. The origin is the mean of the dense cluster
+
+$$
+o=\frac1{k+1}\sum_{s\in N_k(t^\ast)\cup\{t^\ast\}} z_s. \tag{4.5a}
+$$
+
+A requested item is drawn as the vector $v_t=z_t-o$, and two requested items are compared by
+
+$$
+\cos(t,t')=\frac{\langle v_t,v_{t'}\rangle}{\lVert v_t\rVert\,\lVert v_{t'}\rVert}. \tag{4.5b}
+$$
+
+$\cos=1$: valued along the same direction; $\cos=0$: unrelated; $\cos=-1$: opposite. The origin is a property of the item cloud, not of any requested item, so the cosine of a pair does not depend on which other items are requested.
+
+Code: `plots.worth_space`, `plots.view_kept`, `figure.dense_origin`, `figure.cosines`.
 
 ## 4.6 Regions
 

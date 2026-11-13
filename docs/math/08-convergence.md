@@ -71,7 +71,7 @@ $$
 q_t\leftarrow\operatorname{clip}\bigl(q_t+\operatorname{sgn}(\nu)\,\eta_c\,c\,p(\pi\mid u)\,a(u)\bigr),\qquad\eta_c=0.35, \tag{8.1b}
 $$
 
-and a take tell held by $u$ lifts the log odds of $\pi$ by $\lambda_c\sum c$ ($\lambda_c=2$ nats, total capped at the indicator lift 6) where $p(\pi\mid u)\ge0.2$. A take tell with $c\,p\,a\ge0.3$ also confirms the pick as central ([Section 7.10](07-strictness.md)). The tells are listed on the archetype card.
+and a take tell held by $u$ lifts the log odds of $\pi$ by $\lambda_c\sum c\,\omega_\pi(t)$, with $\omega$ the tell weight (6.8c) ($\lambda_c=2$ nats, total capped at the indicator lift 6) where $p(\pi\mid u)\ge0.2$. A take tell with $c\,p\,a\ge0.3$ also confirms the pick as central ([Section 7.10](07-strictness.md)). The tells are listed on the archetype card.
 
 **Proposition 8.2 (monotone convergence).** With $k$ agreeing reviewers and no dissent, $c=k/(k+\kappa)$ is increasing in $k$, so $c\to1$: two reviewers give $0.57$, four $0.73$, ten $0.87$. A reviewer repeating a note leaves $c$ unchanged, and one dissenting reviewer subtracts at most $1$ from $\nu$.
 

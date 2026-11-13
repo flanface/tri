@@ -125,7 +125,7 @@ Rules themselves are local in a different sense: their conditions are written on
 
 - **Reach within and across archetypes.** The share of same-archetype pairs and of other-archetype pairs at full review strength. Good locality is high within and low across.
 - **Different-label pairs inside the full-strength band.** In the playstyle world this fell from 2.0% with equal weights to 0.9% with the weighted metric.
-- **Bound check.** `plots.distance_check` plots worth distance against concept distance with the line $d/4$; every point lies under it.
+- **Bound check.** `evaluate.mapping_benchmark` (`bound_holds`) compares worth distance with concept distance against the line $d/4$; every pair lies under it.
 - **Meta shift.** After one review on one archetype, how many unreviewed builds of that archetype change, and how many of other archetypes do ([Section 11](11-experiments.md)).
 
 ## 5.7 Worked example

@@ -49,7 +49,10 @@
 | $\kappa$, $\theta$ | tell shrinkage, tell threshold | `refine_prior` (4.0), `refine_min_logodds` (1.5, about $\log4.5$) |
 | $\tau$, $\mu$, $c$, $g$ | twin overlap, pair mass, likelihood clip, held-out gain | `twin_overlap` (0.2), `twin_mass` (0.5), `twin_clip` (4.0), `twin_min_gain` (1) |
 | $\lambda$, $\varphi$ | indicator lift, indicator floor (6.7) | `indicator_lift` (6.0), `indicator_floor` (0.05) |
-| $w_a$, $v$ | anchor weight, anchor veto (6.8a) | `anchor_weight` (4.0), `anchor_veto` (0.9) |
+| $w$, $v$ | anchor mass, anchor veto (6.8a) | `anchor_mass` (1.0), `anchor_veto` (0.9) |
+| $h_r$, $G$, $\epsilon$ | reading bandwidth, grid, tie (6.8b) | `read_bandwidth` (None: chosen), `read_grid` (0.08, ..., 0.6), `read_tie` (0.01) |
+| $z$ | Wilson $z$ of the tell weight $\omega$ (6.8c) | `tell_z` (1.64) |
+| $k$ | worth origin neighbours (4.5a) | `figure.dense_origin` ($k=12$) |
 | $k_\times$, $h_\times$, $\lambda_\times$ | cross-archetype ring (4.5b) | `WorthConfig.k_cross` (600), `cross_bandwidth` (1.5), `cross_weight` (0.15) |
 | $\eta$ | note worth, floor, flat value cap (4.6), (4.7) | `InferConfig.note_worth` (0.35), `note_floor` (0.02), `value_cap` (0.5) |
 | | split on, locators per twin | `refine` (True), `refine_min_locators` (2) |

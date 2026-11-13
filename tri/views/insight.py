@@ -2,7 +2,6 @@
 Same themes and conventions as tri.views.plots: draw inside
 `with render.theme(name):`; every function returns a matplotlib figure.
 
-  plot_atlas3d     B1  archetype atlas as the concept plot draws it, always fields (3-D or planes)
   plot_atlas       B1  archetype atlas: planes with every build (used by /locator suggest)
   plot_card        B3  one archetype: core, contested, holes, stat envelope, neighbours
   plot_placement   B4  one build: inset atlas, nearest locators and reviews, pi bar
@@ -13,7 +12,7 @@ Same themes and conventions as tri.views.plots: draw inside
 from __future__ import annotations
 
 import zlib
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
@@ -172,41 +171,6 @@ def _place_labels(ax, pts: np.ndarray, order: Sequence[int], gap=(0.13, 0.075), 
         placed.append(q)
         off[j] = (float((q[0] - f[j][0]) * W), float((q[1] - f[j][1]) * H))
     return off
-
-
-def atlas_map(av: dict, at: Atlas) -> dict:
-    """The atlas in the form of plots.concept_map(): archetypes take the place of
-    regions, over the placed builds (for plots.plot_concept_map and its fields)."""
-    pl = np.asarray(at.placed, bool)
-    return dict(xy=av["xy"][pl], region=np.asarray(at.top)[pl], region_names=list(at.names),
-                region_share=np.asarray(at.share, float), centre_xy=av["centre_xy"], projection=av["projection"],
-                U=at.U[pl])
-
-
-def plot_atlas3d(tri, av: dict, at: Atlas, dims: Sequence[int] = (0, 1, 2), axes: str = "explain",
-                 view: Tuple[float, float] = (22, -58), axis_info: Optional[List[dict]] = None,
-                 candidates: bool = True, title: Optional[str] = None):
-    """B1 (v2.25): the archetype atlas drawn like the concept plot, always as fields.
-    Three dims give a 3-D volume seen from view = (elevation, azimuth), two a
-    plane. Each archetype is a translucent polytope with a rigid border (the hull
-    of the core of its placed builds), numbered at its centre and named in the
-    legend with its share; locators are labelled diamonds and candidate
-    archetypes stars, with drop lines to the floor."""
-    dims = tuple(d for d in dims if d < av["xy"].shape[1])
-    cm = atlas_map(av, at)
-    loc = None
-    if len(av["loc_xy"]):
-        loc = dict(xy=av["loc_xy"], labels=[])        # the field and legend already name the archetype
-    hl = None
-    if candidates and av.get("candidates"):
-        hl = dict(xy=np.array([c["xy"] for c in av["candidates"]]), ids=[c["id"] for c in av["candidates"]])
-    info = axis_info if axis_info is not None else R.concept_axes(tri, cm)
-    kept = R.view_kept(cm["U"], cm["xy"], dims)
-    located = float(at.w[at.placed].sum() / max(at.w.sum(), 1e-12))
-    head = title or (f"archetype atlas · axes {'-'.join(str(d + 1) for d in dims)} · {len(at.names)} archetypes, "
-                     f"{100 * located:.0f}% located · distance kept {kept:.2f}")
-    return R.plot_concept_map(cm, dims=dims, axes=axes, axis_info=info, locators=loc, highlight=hl, view=view,
-                              fields=True, title=head)
 
 
 def plot_atlas(av: dict, at: Atlas, panels: Sequence[tuple] = ((0, 1), (2, 3)), points: int = 1500,
@@ -731,39 +695,6 @@ def plot_replay(pq: dict, vg: dict, cov: dict, lr: dict, title: Optional[str] = 
     _title(fig, title or f"Review stream · replay {acc}{lt}")
     fig.tight_layout(rect=(0, 0, 1, 0.93))
     return fig
-
-
-def atlas_scatter(at: Atlas, av: dict, dims: Sequence[int] = (0, 1, 2), fields: bool = True) -> dict:
-    """The atlas as page data for render.html_scatter (v2.21): placed builds
-    coloured by archetype, unplaced ones muted, archetype centres labelled,
-    locators as diamonds, archetype polytopes with rigid borders."""
-    k = av["xy"].shape[1]
-    dims = tuple(d for d in dims if d < k)[:3]
-    xy = av["xy"][:, dims]
-    cols = [R._hex(c) for c in _colours(len(at.names))]
-    mut = R._hex(_T()["muted"])
-    pts = []
-    for i in range(len(xy)):
-        a = int(at.top[i])
-        placed = bool(at.placed[i])
-        nm = at.names[a] if placed else UNPLACED
-        pts.append(dict(p=[round(float(v), 4) for v in xy[i]], c=cols[a] if placed else mut, s=2.2,
-                        n=f"{at.ids[i] or 'build'} · {nm} · pi {float(at.pi1[i]):.2f} · {at.kind[i]}",
-                        g="build", r=a if placed else None))
-    for a, p in enumerate(av["centre_xy"][:, dims]):
-        sig = ", ".join(av["signatures"][a]) if av.get("signatures") else ""
-        pts.append(dict(p=[float(v) for v in p], c=cols[a], s=7, n=f"{at.names[a]} · {100 * float(at.share[a]):.0f}%"
-                        + (f" · {sig}" if sig else ""), g="centre", t=R._short(at.names[a], 24), r=a))
-    for p, lab in zip(av["loc_xy"][:, dims] if len(av["loc_xy"]) else [], av["loc_lab"]):
-        pts.append(dict(p=[float(v) for v in p], c=_T()["fg"], s=4.5, n=f"locator · {at.names[int(lab)]}",
-                        g="locator", r=int(lab)))
-    cm = dict(xy=av["xy"][at.placed], region=at.top[at.placed], region_names=at.names)
-    hulls = R.html_hulls(cm, dims, cols)
-    P = av["projection"]
-    return dict(title=f"archetype atlas · axes {'-'.join(str(d + 1) for d in dims)}", points=pts,
-                axes=[R._axis_label(P, d) for d in dims],
-                legend=[(f"{R._short(n, 34)} {100 * float(at.share[a]):.0f}%", cols[a]) for a, n in enumerate(at.names)],
-                hulls=hulls, fields=bool(fields))
 
 
 # ------------------------------------------------------------------ lookup (v2.21)

@@ -9,7 +9,7 @@ import numpy as np
 
 from tri.core.catalog import Catalog
 from tri.engine.defs import TriConfig
-from tri.version import VERSION
+from tri.version import FORMAT, VERSION
 from tri.game.patch import PatchLog
 from tri.model.matrix import BuildMatrix
 from tri.model.space import ConceptSpace
@@ -22,6 +22,17 @@ if TYPE_CHECKING:
 
 
 COMPATIBLE_MAJOR = ("2", "3")                  # model formats this tri loads
+
+
+def saved_major(meta: dict) -> str:
+    """The major model format of a saved run: `format` when written (v3.9), else the
+    first number in `version` (older runs wrote "3.8.0"; "poca 3 build" reads as 3)."""
+    import re
+    f = meta.get("format")
+    if f:
+        return str(f).split(".")[0]
+    m = re.search(r"\d+", str(meta.get("version", "0")))
+    return m.group(0) if m else "0"
 
 
 class _Persist:
@@ -40,7 +51,7 @@ class _Persist:
         with open(os.path.join(path, "rulebook.json"), "w") as f:
             json.dump(self.rulebook.to_json(), f)
         with open(os.path.join(path, "tri.json"), "w") as f:
-            json.dump(dict(version=VERSION, cfg=self.cfg.to_dict(), ids=list(self.catalog.ids),
+            json.dump(dict(version=VERSION, format=FORMAT, cfg=self.cfg.to_dict(), ids=list(self.catalog.ids),
                            tokens=self.data.tokens, data_ids=self.data.ids, patches=self.patches.to_json(),
                            fitted_at=self.fitted_at, metric_selection=self.metric_selection,
                            held_out_ids=self.held_out_ids, categories=self.manual,
@@ -81,7 +92,7 @@ class _Persist:
             meta = json.load(f)
         # v3.0 kept the v2 model format (space, corpus, rulebook); a v2 run loads and
         # its rules can be re-mined with Tri.mine_rules() (python -m tri.cli.fit --rules-only)
-        if str(meta.get("version", "0")).split(".")[0] not in COMPATIBLE_MAJOR:
+        if saved_major(meta) not in COMPATIBLE_MAJOR:
             raise ValueError(f"saved by tri {meta.get('version')}; tri {VERSION} has a different model format: "
                              "fit again from your builds (reviews come back from the database through the bot)")
         if meta["ids"] != list(catalog.ids):

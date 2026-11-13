@@ -224,12 +224,28 @@ Since v2.18 the lift has its own cap, 6 nats (odds $\times e^6\approx400$), no l
 **Anchors.** An `is` note ("this build is $\pi$") makes the reviewed build an anchor $(\pi,u_r,\pm)$; a `not` note a negative one. With $K$ as in (4.6) and $n_a$ the anchors of $\pi$, the kernel mass of $\pi$ at $u$ becomes
 
 $$
-k_\pi(u)\ \leftarrow\ k_\pi(u)+\frac{w_a}{n_a}\sum_{a^+}K(u,u_a),\qquad k_\pi(u)\ \leftarrow\ k_\pi(u)\prod_{a^-}\big(1-v\,K(u,u_a)\big), \tag{6.8a}
+k_\pi(u)\ \leftarrow\ \frac{\sum_{\ell\in\pi}K_r(u,u_\ell)+w\sum_{a^+}K_r(u,u_a)}{n_\pi+w\,m_\pi},\qquad k_\pi(u)\ \leftarrow\ k_\pi(u)\prod_{a^-}\big(1-v\,K_r(u,u_a)\big), \tag{6.8a}
 $$
 
-with $w_a=4$ (`anchor_weight`) and $v=0.9$ (`anchor_veto`). A positive anchor also counts in $d_{\min}$, so an `is` note can place a build near it. Both terms vanish beyond $R$, so anchors are local in the sense of Proposition 6.1.
+with $m_\pi$ the positive anchors of $\pi$, $w=1$ (`anchor_mass`) and $v=0.9$ (`anchor_veto`). A positive anchor is a pseudo-locator: it joins the mean, so an archetype with many reviewed builds gains reach where they sit, never density by their count. A positive anchor also counts in $d_{\min}$. Both terms vanish beyond $R$, so anchors are local in the sense of Proposition 6.1.
 
-Code: `LocatorSet.set_indicators`, `_indicate`, `indicated`, `set_anchors`, `_anchor_logk`; `Tri._sync_indicators`.
+**Reading bandwidth.** $K_r(u,u')=\exp(-\lVert u-u'\rVert^2/2h_r^2)$. Let $L$ be the labelled builds (locators and positive anchors), $L_a\subseteq L$ those of $a$, $S=\{a:|L_a|\ge2\}$, and $p_{-j}(a\mid u_j)$ the reading at $u_j$ with $j$ left out. Then
+
+$$
+\mathrm{bLL}(h)=\frac1{|S|}\sum_{a\in S}\frac1{|L_a|}\sum_{j\in L_a}\log p_{-j}(a\mid u_j),\qquad h_r=\arg\max_{h\in G,\,h\le h_0}\mathrm{bLL}(h), \tag{6.8b}
+$$
+
+over the grid $G$ (`read_grid`), scanned from wide to narrow; a narrower $h$ replaces the current best only if $\mathrm{bLL}$ rises by more than $\epsilon=0.01$ (`read_tie`). Each archetype counts once in (6.8b), so an archetype with many locators cannot set the bandwidth for the others. `read_bandwidth` fixes $h_r$ instead.
+
+**Tell weight.** For a tell $C$ (items and tokens) noted for $a$, let $n_b$ be the locators of $b$ and $h_b$ those holding all of $C$. With $r_b=(h_b+\tfrac12)/(n_b+1)$, $H=\sum_b h_b$ and $A$ archetypes,
+
+$$
+\pi_a=\frac{r_a}{\sum_b r_b},\qquad \omega_a(C)=\max\!\Big(0,\ \frac{\mathrm{WLB}_z(\pi_a,H)-1/A}{1-1/A}\Big)\in[0,1], \tag{6.8c}
+$$
+
+with $\mathrm{WLB}_z$ the Wilson lower bound and $z=1.64$ (`tell_z`). $\pi_a$ is the balanced precision: the share of holders that would be $a$ if every archetype had equally many locators. The indicator lift (6.8) becomes $\omega_a(C)\,\lambda$. A tell held across archetypes gives $\omega\approx0$; a tell held only by $a$, by many of its locators, gives $\omega\to1$. Proposition 6.1 is unchanged, since $0\le\omega\lambda\le\lambda$.
+
+Code: `LocatorSet.set_indicators`, `_indicate`, `indicated`, `set_anchors`, `_anchor_logk`, `select_read_bandwidth`, `tell_weight`; `Tri._sync_indicators`; `tri.core.stats.wilson_lower`.
 
 ## 6.8 Accuracy against reviews
 

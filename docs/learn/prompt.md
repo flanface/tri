@@ -73,7 +73,7 @@ Teach these first; every later module relies on them.
 - Items as directions, $\ell_{bt}=\text{const}_t+g_t\cdot u_b$ (eq. 4.3), and the worth bound (Theorem 4.2): worth distance at most $d/4$, per item at most $\tfrac14\lVert g_t\rVert d$.
 - Metric weights $\omega_t\propto(\text{availability share}\times\text{worth variance})^{\gamma}$ with $\gamma=0.5$ (eq. 4.4), and duplicate damping (eq. 4.4a). Why the weights let coordinates encode archetype without overfitting: the weights are read off the fitted field, not tuned to labels, and locators never train the field (§4.7, §6.5).
 - Regions ($k$-means on $u$), readings and memberships (§4.6).
-- Code: `tri/model/space.py` (`coords`, `distance`, `metric_weights`, `bounds`, `_fit_regions`), `tri/views/plots.py` (`distance_check`).
+- Code: `tri/model/space.py` (`coords`, `distance`, `metric_weights`, `bounds`, `_fit_regions`), `tri/analysis/evaluate.py` (`mapping_benchmark`).
 
 ### Module 5. Blended worth, sidegrades and notes
 

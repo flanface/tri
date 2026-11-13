@@ -76,7 +76,6 @@ class Settings:
     user_app: str = "anyone"
     pool_pop: bool = True
     plot_theme: str = "dark"
-    plot_buttons: bool = True
     placement_inset: bool = True         # PLACEMENT_INSET: archetype placement image under /analyze and /complete
     min_place_talents: int = 15          # MIN_PLACE_TALENTS: below this many talents no archetype placement is shown
     run_remote: str = ""                 # TRI_RUN_REMOTE: latest | run name (Supabase Storage, v3.7)
@@ -122,7 +121,6 @@ class Settings:
                    user_app=_user_app(e.get("USER_APP", "anyone")),
                    pool_pop=(e.get("POOL_POP", "1") or "1").strip().lower() not in ("0", "false", "no", "off"),
                    plot_theme="light" if (e.get("PLOT_THEME") or "").strip().lower() == "light" else "dark",
-                   plot_buttons=(e.get("PLOT_BUTTONS") or "1").strip().lower() not in ("0", "false", "no", "off"),
                    placement_inset=(e.get("PLACEMENT_INSET") or "1").strip().lower() not in ("0", "false", "no", "off"),
                    facts_digest_days=float(e.get("FACTS_DIGEST_DAYS") or 0),
                    min_place_talents=int(e.get("MIN_PLACE_TALENTS") or 15),

@@ -34,6 +34,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from tri.analysis.categorize import separating
+from tri.core.stats import wilson as _wilson
 from tri.analysis.defs import Atlas, Fact
 
 Q_FDR = 0.05
@@ -44,13 +45,7 @@ ALWAYS = 2 / 3                     # "always" for holes and gems: at least 2 in 
 
 def wilson(k: float, n: float, z: float = 1.96) -> Tuple[float, float]:
     """Wilson score interval of k successes in n."""
-    if n <= 0:
-        return 0.0, 1.0
-    p = k / n
-    d = 1 + z * z / n
-    c = (p + z * z / (2 * n)) / d
-    r = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return max(0.0, c - r), min(1.0, c + r)
+    return _wilson(k / n, n, z) if n > 0 else (0.0, 1.0)
 
 
 def _upper(z: float) -> float:

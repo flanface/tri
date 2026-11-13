@@ -57,6 +57,7 @@ class LocatorSet:
         self.locators: List[Locator] = list(locators)
         self.h = float(self.cfg.bandwidth if self.cfg.bandwidth is not None else space.cfg.bandwidth)
         self.reach = float(self.cfg.reach if self.cfg.reach is not None else reach)
+        self.h_read = self.h                     # v3.9: bandwidth of the archetype reading (select_read_bandwidth)
         names: Dict[str, str] = {}
         for l in self.locators:                         # display name: the newest spelling of each family
             names[l.key] = l.family
@@ -80,6 +81,7 @@ class LocatorSet:
         self.anchors: List[dict] = []            # v2.18 review anchors: {key, u, sign, review_id}
         self._UA = np.zeros((0, 0)); self._labA = np.zeros(0, int); self._sgnA = np.zeros(0)
         self.set_background(background)
+        self.select_read_bandwidth()
 
     def __len__(self) -> int:
         return len(self.locators)
@@ -88,6 +90,7 @@ class LocatorSet:
         """Recompute coordinates after the metric changed (latents are unchanged)."""
         if self.locators:
             self.U = self.space.u_of(self.Y)
+            self.select_read_bandwidth()
             if self.K is not None:
                 self._fine.clear(); self.pairs = []; self._find_pairs()
 
@@ -193,6 +196,7 @@ class LocatorSet:
         Take tells (sign +1) lift the family's odds on builds holding them; every
         tell moves worth on builds read as the family (FieldWorth is not touched)."""
         self.tells = [dict(t) for t in tells if t.get("key") in self.kix and t.get("t") is not None]
+        self._weights()
         self._fine.clear()
 
     def consensus_of(self, key: str) -> List[dict]:
@@ -205,12 +209,13 @@ class LocatorSet:
         reviewed build sits), review_id. Unknown archetypes are ignored."""
         self.indicators = [dict(i) for i in indicators if i.get("key") in self.kix
                            and (i.get("items") or i.get("tokens"))]
+        self._weights()
         self._fine.clear()
 
     def set_anchors(self, anchors: Sequence[dict]) -> None:
         """Reviewed builds whose reviewer said "this build is a" (sign +1) or "is not
-        a" (sign -1): dicts with key, u, sign, review_id. A positive anchor adds
-        anchor_weight / n_a kernel mass to archetype a around the noted build, a
+        a" (sign -1): dicts with key, u, sign, review_id. A positive anchor joins
+        a's locator mean as a pseudo-locator of weight anchor_mass (v3.9), a
         negative one scales k_a by 1 - anchor_veto * K there (math §6.7). Far from
         the noted build K -> 0 and the reading is unchanged."""
         rows = [dict(a) for a in anchors if a.get("key") in self.kix and a.get("u") is not None]
@@ -222,26 +227,37 @@ class LocatorSet:
         else:
             self._UA = np.zeros((0, self.U.shape[1] if self.U.size else 0))
             self._labA, self._sgnA = np.zeros(0, int), np.zeros(0)
+        self.select_read_bandwidth()
         self._fine.clear()
 
     def _anchor_logk(self, U: np.ndarray, lg: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """(log k with review anchors, distance to the nearest positive anchor)."""
+        """(log k with review anchors, distance to the nearest positive anchor).
+
+        v3.9: a positive anchor of a joins the mean of a's locators as a
+        pseudo-locator of weight w (anchor_mass):
+            k_a(u) = (sum_loc K + w sum_anc K) / (n_a + w m_a),
+        so an archetype with many reviewed builds gains reach where they sit,
+        never density by their count. A negative anchor scales k_a by
+        1 - veto K at the noted build."""
         q = len(U)
         if not len(self._labA):
             return lg, np.full(q, np.inf)
         DA = sqdist(U, self._UA)
-        K = np.exp(-DA / (2 * self.h ** 2))
+        K = np.exp(-DA / (2 * self.h_read ** 2))
         out = lg.copy()
         n = np.bincount(self.lab, minlength=len(self.keys)).astype(float)
+        w = float(self.cfg.anchor_mass)
         for p in np.unique(self._labA):
             if n[p] <= 0:
                 continue
             pos = (self._labA == p) & (self._sgnA > 0)
             neg = (self._labA == p) & (self._sgnA < 0)
-            if pos.any():
-                add = (float(self.cfg.anchor_weight) / n[p]) * K[:, pos].sum(1)
+            if pos.any() and w > 0:
+                m = float(pos.sum())
                 with np.errstate(divide="ignore"):
-                    out[:, p] = np.logaddexp(out[:, p], np.log(np.maximum(add, 1e-300)))
+                    s_loc = out[:, p] + np.log(n[p])                    # log sum over the locators
+                    s_anc = np.log(np.maximum(w * K[:, pos].sum(1), 1e-300))
+                    out[:, p] = np.logaddexp(s_loc, s_anc) - np.log(n[p] + w * m)
             if neg.any():
                 veto = np.prod(1.0 - float(self.cfg.anchor_veto) * K[:, neg], axis=1)
                 with np.errstate(divide="ignore"):
@@ -249,6 +265,106 @@ class LocatorSet:
         posm = self._sgnA > 0
         dA = np.sqrt(DA[:, posm].min(1)) if posm.any() else np.full(q, np.inf)
         return out, dA
+
+    # ------------------------------------------------------------ reading bandwidth (v3.9)
+    def select_read_bandwidth(self) -> float:
+        """h_read: the bandwidth of the archetype reading, chosen from
+        cfg.read_grid (up to h) by the balanced leave-one-out log-likelihood
+        of every labelled build (locators and positive anchors),
+            bLL(h) = (1/A) sum_a mean_{j in a} log p_{-j}(a | u_j),
+        so each archetype counts once whatever its number of locators and the
+        bandwidth is the one whose readings are calibrated, not merely right.
+        A narrower bandwidth must gain read_tie nats over a wider one. A fixed
+        cfg.read_bandwidth, or fewer than two archetypes with two labelled
+        builds, skip the search."""
+        if self.cfg.read_bandwidth is not None:
+            self.h_read = float(self.cfg.read_bandwidth)
+            return self.h_read
+        self.h_read = self.h
+        if not self.locators:
+            return self.h_read
+        pts, lab = [self.U], [self.lab]
+        if len(self._labA):
+            pos = self._sgnA > 0
+            pts.append(self._UA[pos]); lab.append(self._labA[pos])
+        P, lab = np.vstack(pts), np.concatenate(lab)
+        A = len(self.keys)
+        cnt = np.bincount(lab, minlength=A)
+        if (cnt >= 2).sum() < 2:
+            return self.h_read
+        D2 = sqdist(P, P)
+        np.fill_diagonal(D2, np.inf)
+        scored = [a for a in range(A) if cnt[a] >= 2]
+        best, best_h, best_acc = -np.inf, self.h, None
+        for h in sorted({float(x) for x in self.cfg.read_grid if x <= self.h} | {self.h}, reverse=True):
+            lg = np.full((len(P), A), -np.inf)
+            Lk = -D2 / (2 * h * h)
+            for a in range(A):
+                m = lab == a
+                if not m.any():
+                    continue
+                n = m.sum() - m                                  # leave the build itself out
+                Lm = Lk[:, m]
+                mx = Lm.max(1)
+                ok = np.isfinite(mx) & (n > 0)
+                lg[ok, a] = mx[ok] + np.log(np.exp(Lm[ok] - mx[ok, None]).sum(1)) - np.log(n[ok])
+            Pp = self._posterior(lg)
+            ll = float(np.mean([np.log(np.maximum(Pp[lab == a, a], 1e-6)).mean() for a in scored]))
+            if ll > best + float(self.cfg.read_tie):
+                pr = Pp.argmax(1)
+                best, best_h = ll, h
+                best_acc = float(np.mean([(pr[lab == a] == a).mean() for a in scored]))
+        self.h_read = best_h
+        self.read_fit = dict(h=best_h, balanced_loglik=round(best, 4),
+                             balanced_accuracy=None if best_acc is None else round(best_acc, 3))
+        return self.h_read
+
+    # ------------------------------------------------------------ evidence of a tell (v3.9)
+    def _loc_ctx(self) -> List[set]:
+        c = self.__dict__.get("_lctx")
+        if c is None or len(c) != len(self.locators):
+            from tri.core.context import build_context
+            c = self._lctx = [set(build_context(l.build)[0]) for l in self.locators]
+        return c
+
+    def tell_weight(self, key: str, items: Sequence[int] = (), tokens: Sequence[str] = ()) -> float:
+        """How far holding every item (and context token) singles out archetype key
+        among the locators, in [0, 1].
+
+        For each archetype b, its locators' rate of holding the tell is
+        r_b = (h_b + 1/2) / (n_b + 1). The balanced precision
+            pi_a = r_a / sum_b r_b
+        is the share of holders that would be a if every archetype had as many
+        locators, so a large archetype does not win by count. Its Wilson lower
+        bound over the h = sum_b h_b holders, rescaled so chance (1/A) is 0:
+            omega = max(0, (LB(pi_a, h) - 1/A) / (1 - 1/A)).
+        A talent every archetype takes gives omega near 0; one only a's
+        locators take, held by many of them, gives omega near 1."""
+        from tri.core.stats import wilson_lower
+        A = len(self.keys)
+        if key not in self.kix or A < 2 or not self.locators:
+            return 1.0
+        have = np.ones(len(self.locators), bool)
+        if len(items):
+            if self.Xl is None:
+                return 1.0
+            have &= (self.Xl[:, list(items)] > 0).all(1)
+        if len(tokens):
+            ctx = self._loc_ctx()
+            have &= np.array([all(t in c for t in tokens) for c in ctx])
+        n_b = np.bincount(self.lab, minlength=A).astype(float)
+        h_b = np.bincount(self.lab[have], minlength=A).astype(float)
+        r = (h_b + 0.5) / (n_b + 1.0)
+        pi = float(r[self.kix[key]] / r.sum())
+        lb = wilson_lower(pi, float(h_b.sum()), float(self.cfg.tell_z))
+        return float(max(0.0, (lb - 1.0 / A) / (1.0 - 1.0 / A)))
+
+    def _weights(self) -> None:
+        """Cache omega on every indicator and tell."""
+        for ind in self.indicators:
+            ind["omega"] = self.tell_weight(ind["key"], ind.get("items") or (), ind.get("tokens") or ())
+        for t in getattr(self, "tells", None) or []:
+            t["omega"] = self.tell_weight(t["key"], [t["t"]])
 
     def _indicate(self, P: np.ndarray, X, U: Optional[np.ndarray], dmin: Optional[np.ndarray],
                   ctx: Optional[Sequence[set]] = None) -> np.ndarray:
@@ -276,7 +392,7 @@ class LocatorSet:
                 have = have & np.array([ctx is not None and all(t in ctx[i] for t in toks) for i in range(n)])
             close = np.sqrt(((U - np.asarray(ind["u"], float)[None]) ** 2).sum(1)) <= self.reach
             ok = have & close & near & (P[:, k] >= self.cfg.indicator_floor)
-            lift[ok, k] = L
+            lift[ok, k] = np.maximum(lift[ok, k], L * float(ind.get("omega", 1.0)))
         lift = self._consensus_lift(P, X, near, lift)
         if not lift.any():
             return P
@@ -297,7 +413,7 @@ class LocatorSet:
             col = X[:, t["t"]]
             col = col.toarray().ravel() if hasattr(col, "toarray") else np.asarray(col).ravel()
             ok = (col > 0) & near & (P[:, k] >= fl)
-            add[ok, k] += lam * float(t["confidence"])
+            add[ok, k] += lam * float(t["confidence"]) * float(t.get("omega", 1.0))
         return np.minimum(np.maximum(lift, add), L)
 
     def indicated(self, u: np.ndarray, b=None) -> List[dict]:
@@ -466,7 +582,7 @@ class LocatorSet:
         """[q, P] log k_pi: log of the mean kernel over each archetype's locators. Infinite
         entries of D2 (a locator left out of its own reading) are not counted."""
         out = np.full((D2.shape[0], len(self.keys)), -np.inf)
-        L = -D2 / (2 * self.h ** 2)
+        L = -D2 / (2 * self.h_read ** 2)
         for p in range(len(self.keys)):
             m = lab == p
             if not m.any():
@@ -507,7 +623,7 @@ class LocatorSet:
         query point thousands of times per answer. The memo holds the locator and
         anchor arrays it was computed with and is dropped when any is replaced."""
         u = np.asarray(u, float)
-        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h)
+        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h, self.h_read)
         m = self.__dict__.get("_rmemo")
         if m is None or len(m[0]) != len(state) or any(a is not b for a, b in zip(m[0], state)):
             m = self._rmemo = (state, {})
@@ -612,7 +728,7 @@ class LocatorSet:
     def _read_cached(self, V: np.ndarray):
         """read_many(V) memoised on V's content (the reviewed builds repeat; v3.1)."""
         key = (V.shape, hash(V.tobytes()))
-        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h)
+        state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h, self.h_read)
         st = self.__dict__.get("_vstate")
         if st is None or any(a is not b for a, b in zip(st, state)):
             self.__dict__.pop("_vmemo", None)      # v3.8: kept across queries while the locators hold

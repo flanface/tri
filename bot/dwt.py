@@ -73,18 +73,59 @@ class DwtClient:
                 return r.status, txt
 
     # ------------------------------------------------------------ reading
-    async def get_build(self, build_id: str) -> dict:
-        """GET /builds/{id} ("dwt.<id>", "<id>" or a dwt.sh link)."""
+    async def get_build(self, build_id: str, retries: Tuple[float, ...] = (0.8, 2.0)) -> dict:
+        """GET /builds/{id} ("dwt.<id>", "<id>" or a dwt.sh link). A transient
+        failure (network error, HTTP 429 or 5xx) is retried after each delay in
+        `retries`; if the API still fails, the build is read from the site's
+        page data (https://dwt.sh/builds/<id>/__data.json). A 404 is final."""
         rid = D.raw_id(D.parse_link(build_id) or build_id) if "/" in str(build_id) else D.raw_id(build_id)
-        try:
-            st, body = await self._req("GET", f"/builds/{rid}")
-        except Exception as e:
-            raise DwtError(f"could not load dwt.sh build {rid}: {type(e).__name__}: {e}")
-        if st == 404:
-            raise DwtError(f"dwt.sh build {rid} not found (private, deleted, or wrong id)", 404)
-        if st != 200 or not isinstance(body, dict):
-            raise DwtError(f"could not load dwt.sh build {rid}: HTTP {st}", st)
+        err: DwtError = DwtError(f"could not load dwt.sh build {rid}")
+        for wait in (0.0,) + tuple(retries):
+            if wait:
+                await asyncio.sleep(wait)
+            try:
+                st, body = await self._req("GET", f"/builds/{rid}")
+            except Exception as e:
+                err = DwtError(f"could not load dwt.sh build {rid}: {type(e).__name__}: {e}")
+                continue
+            if st == 404:
+                raise DwtError(f"dwt.sh build {rid} not found (private, deleted, or wrong id)", 404)
+            if st == 200 and isinstance(body, dict):
+                return body
+            err = DwtError(f"could not load dwt.sh build {rid}: HTTP {st}", st)
+            if st != 429 and st < 500:
+                break
+        body = await self._page_build(rid)
+        if body is None:
+            raise err
         return body
+
+    async def _page_build(self, rid: str) -> Optional[dict]:
+        """The build object from the site's SvelteKit page data, or None. Each
+        data node is a devalue array; the build is the object holding both
+        'id' and 'game' (the same shape as the API body)."""
+        from .links import _Devalue
+        try:
+            s = await self._sess()
+            async with s.get(f"{D.SITE}/builds/{rid}/__data.json",
+                             headers={"User-Agent": self.ua, "Accept": "application/json"}) as r:
+                if r.status != 200:
+                    return None
+                doc = json.loads(await r.text())
+        except Exception:
+            return None
+        for node in (doc or {}).get("nodes") or []:
+            arr = node.get("data") if isinstance(node, dict) else None
+            if not isinstance(arr, list) or not arr:
+                continue
+            try:
+                root = _Devalue(arr).value(0)
+            except Exception:
+                continue
+            found = _find_build(root)
+            if found is not None:
+                return found
+        return None
 
     async def list_folder(self, folder: str, depth: int = 4, limit: int = 500) -> list:
         """Every build in a dwt.sh drive folder (a drive link or id), subfolders
@@ -167,3 +208,23 @@ class DwtClient:
         sp = await self.spellings()
         _, _, game = D.proposal(getattr(parsed, "record", None) or {}, parsed.build, drops, takes, catalog, sp)
         return await self.create_build(game, name, description, notes)
+
+
+def _find_build(x: Any, depth: int = 0) -> Optional[dict]:
+    """First dict (breadth-first through 'build' keys and values) with 'id' and 'game'."""
+    if depth > 4:
+        return None
+    if isinstance(x, dict):
+        if "id" in x and isinstance(x.get("game"), dict):
+            return x
+        vals = ([x["build"]] if "build" in x else []) + [v for k, v in x.items() if k != "build"]
+        for v in vals:
+            got = _find_build(v, depth + 1)
+            if got is not None:
+                return got
+    elif isinstance(x, list):
+        for v in x[:20]:
+            got = _find_build(v, depth + 1)
+            if got is not None:
+                return got
+    return None

@@ -15,7 +15,7 @@ A mixin holds only methods; the class keeps its constructor and state, and inher
 ```
 tri/                              repository root
 ├── README.md                     overview, quick start, wiki entry
-├── pyproject.toml                packages "tri", "bot" 3.8.0; numpy, scipy, scikit-learn; extras: render, bot, accel
+├── pyproject.toml                packages "tri", "bot" 3.9.0; numpy, scipy, scikit-learn; extras: render, bot, accel
 │
 ├── tri/                          the library (no I/O beyond explicit save / load)
 │   ├── __init__.py               lazy public API (PEP 562); __version__
@@ -39,7 +39,8 @@ tri/                              repository root
 │   │   ├── picks.py                exclusions, prerequisites, prerequisite-first order
 │   │   ├── slots.py                mantra slots, talent cap
 │   │   ├── codec.py              validate_review, JSON forms, text helpers
-│   │   └── fast.py               sqdist: squared distances by BLAS expansion
+│   │   ├── fast.py               sqdist: squared distances by BLAS expansion
+│   │   └── stats.py              wilson, wilson_lower: score intervals of a proportion
 │   │
 │   ├── game/                     game knowledge
 │   │   ├── defs.py               defs: GameItem, ReqParseError, Patch
@@ -106,8 +107,9 @@ tri/                              repository root
 │   │   └── evaluate.py           benchmarks
 │   │
 │   ├── views/                    graphics (matplotlib; optional extra)
-│   │   ├── plots.py              builds on the concept space, items on the worth space, themes, GIFs, HTML
-│   │   └── insight.py            atlas, archetype card, placement, item landscape, stat curves, replay
+│   │   ├── plots.py              data views: concept map, placement, worth matrix, worth space, projections, themes
+│   │   ├── figure.py             one transparent 3-D figure: fields, locators, centres, vectors from an origin (math §4.5)
+│   │   └── insight.py            archetype card, placement, item landscape, stat curves, replay
 │   │
 │   ├── engine/                   the facade
 │   │   ├── defs.py               defs: CATEGORIES, TriConfig
@@ -123,6 +125,13 @@ tri/                              repository root
 │       └── examine.py            python -m tri.cli.examine: inspect a run; apply it to a build
 │
 ├── bot/                          front end (not covered here)
+│   ├── discord_bot.py            TriTree, TriBot, main
+│   ├── commands/                 one module per slash-command group; context.py: shared checks and autocompletes
+│   ├── ui/                       views: setup, fact graphics, submit confirmation
+│   ├── interact.py               replies (say, say_long: long text as a .txt file)
+│   ├── texts.py                  fixed strings and choices
+│   ├── plotting.py               /plot concept, atlas, worth
+│   └── links.py, dwt.py          build links: dwt.sh and deepwoken.co, with fallbacks
 │
 └── docs/                         this wiki (start at Home.md)
 ```

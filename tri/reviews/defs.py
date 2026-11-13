@@ -197,7 +197,10 @@ class Tell:
 @dataclass
 class LocatorConfig:
     """Locator knobs."""
-    bandwidth: Optional[float] = None       # h of the archetype reading (None = the space's bandwidth)
+    bandwidth: Optional[float] = None       # h of the review barrier and reach decay (None = the space's bandwidth)
+    read_bandwidth: Optional[float] = None  # v3.9: h of the archetype reading (None = chosen from read_grid)
+    read_grid: tuple = (0.08, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6)
+    read_tie: float = 0.01                  # nats a narrower bandwidth must gain over a wider one
     reach: Optional[float] = None           # located only within this distance of a locator (None = ledger reach)
     min_confidence: float = 0.5             # ...and with top archetype probability at least this
     barrier: float = 1.0                    # 0 = reviews ignore archetypes; 1 = no review influence across archetypes
@@ -219,7 +222,8 @@ class LocatorConfig:
     # indicator notes ("# a: x, y, z" in a review, math §6.7): local, bounded lifts
     indicator_lift: float = 6.0               # nats added to the odds of the noted archetype (v2.18: own cap)
     indicator_floor: float = 0.05             # ...only where the kernel already gives it this much
-    anchor_weight: float = 4.0                # a reviewed build noted "is a" counts as this many locators of a
+    anchor_mass: float = 1.0                  # v3.9: a reviewed build noted "is a" joins a's locator mean with this weight
+    tell_z: float = 1.64                      # v3.9: Wilson z of a tell's balanced precision among the locators
     anchor_veto: float = 0.9                  # "not a": k_a is scaled by 1 - veto * K at the noted build
     # v2.19 chasm (math §5.4): borders between archetype families are chasms
     chasm_power: float = 6.0                  # gamma: chi = 1 - barrier a(u) a(v) (1 - (1 - TV)^gamma)

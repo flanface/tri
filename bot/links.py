@@ -9,6 +9,7 @@ The public page is the only source: no API key, no proxy.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import time
@@ -18,7 +19,11 @@ from urllib.parse import parse_qs, urlparse
 from tri.sources import dwt as _dwt
 
 BUILDER_HOSTS = ("deepwoken.co", "www.deepwoken.co")
-PAGE_URL = "https://deepwoken.co/builder?id={id}"
+SITE = "https://deepwoken.co"
+PAGE_URL = SITE + "/builder?id={id}"
+API_URL = SITE + "/api/proxy/builds/{id}"
+BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 _ID = re.compile(r"^[A-Za-z0-9_-]{4,64}$")
 _NUXT = re.compile(r'<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)</script>', re.S)
 _WRAP = {"Reactive", "ShallowReactive", "Ref", "ShallowRef"}
@@ -236,16 +241,53 @@ class BuildFetcher:
                 raise BuildLinkError(str(e))
             self._cache[bid] = (time.time(), rec)
             return bid, rec
-        try:
-            status, text = await self._get(PAGE_URL.format(id=bid), {})
-        except BuildLinkError:
-            raise
-        except Exception as e:
-            raise BuildLinkError(f"could not load build {bid}: {type(e).__name__}: {e}")
-        if status == 404:
-            raise BuildLinkError(f"build {bid} not found (private, deleted, or wrong id)")
-        if status != 200:
-            raise BuildLinkError(f"could not load build {bid}: builder page HTTP {status}")
-        rec = record_from_page(text, bid)
+        rec = await self._fetch_planner(bid)
         self._cache[bid] = (time.time(), rec)
         return bid, rec
+
+    async def _fetch_planner(self, bid: str, delays: Tuple[float, ...] = (1.5, 3.0)) -> dict:
+        """A deepwoken.co build, tried in order: the server-rendered page; the
+        site's own build API (the endpoint the page loads the build from when
+        its first render comes back empty); the page again after each delay.
+        A 404 from the page is final. Every result must be a non-blank record."""
+        err: Optional[BuildLinkError] = None
+        for i, wait in enumerate((0.0,) + tuple(delays)):
+            if wait:
+                await asyncio.sleep(wait)
+            try:
+                status, text = await self._get(PAGE_URL.format(id=bid), {})
+            except Exception as e:
+                status, text = 0, ""
+                err = BuildLinkError(f"could not load build {bid}: {type(e).__name__}: {e}")
+            if status == 404:
+                raise BuildLinkError(f"build {bid} not found (private, deleted, or wrong id)")
+            if status == 200:
+                try:
+                    return record_from_page(text, bid)
+                except BuildLinkError as e:
+                    err = e
+            elif status:
+                err = BuildLinkError(f"could not load build {bid}: builder page HTTP {status}")
+            if i == 0:
+                rec = await self._api_record(bid)
+                if rec is not None:
+                    return rec
+        raise err or BuildLinkError(f"could not load build {bid}")
+
+    async def _api_record(self, bid: str) -> Optional[dict]:
+        """The planner record from GET API_URL (None on any failure). The
+        endpoint answers only requests that look like they come from the page."""
+        try:
+            status, text = await self._get(API_URL.format(id=bid), {
+                "Accept": "application/json", "User-Agent": BROWSER_UA,
+                "Referer": PAGE_URL.format(id=bid), "Origin": SITE})
+            if status != 200:
+                return None
+            rec = json.loads(text)
+        except Exception:
+            return None
+        if isinstance(rec, dict) and isinstance(rec.get("build"), dict):
+            rec = rec["build"]
+        if not isinstance(rec, dict) or not rec.get("attributes") or is_blank(rec):
+            return None
+        return rec

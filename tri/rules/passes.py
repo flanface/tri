@@ -49,6 +49,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 import scipy.sparse as sp
 
+from tri.core.stats import wilson
 from tri.model.matrix import BuildMatrix, group_dot, mat_groups
 from tri.rules.defs import Condition, Ctx, PassConfig
 
@@ -227,16 +228,6 @@ def _implied(general: Sequence[Condition], specific: Sequence[Condition]) -> boo
             return c.value <= g.value
         return c.value == g.value
     return all(any(covers(g, c) for c in specific) for g in general)
-
-
-def wilson(p: float, n: float, z: float) -> Tuple[float, float]:
-    """Wilson score interval for a rate p from n (effective) observations."""
-    if n <= 0:
-        return 0.0, 1.0
-    z2 = z * z
-    c = (p + z2 / (2 * n)) / (1 + z2 / n)
-    h = z * math.sqrt(max(p * (1 - p) / n + z2 / (4 * n * n), 0)) / (1 + z2 / n)
-    return max(0.0, c - h), min(1.0, c + h)
 
 
 def _picked_available(bm: BuildMatrix) -> sp.csr_matrix:

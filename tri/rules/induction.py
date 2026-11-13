@@ -43,6 +43,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from tri.core.catalog import Catalog
+from tri.core.stats import wilson_lower
 from tri.core.types import Action, Build, Reason, Review, Strength, off_archetype, strength_weight
 from tri.rules.defs import Case
 from tri.reviews.authority import made_by_tri
@@ -139,15 +140,9 @@ class Rule:
 
 
 def _beta_lb(s: float, c: float, z: float = 1.64) -> float:
-    """Wilson-style lower bound on support / (support + counter)."""
+    """Wilson lower bound on support / (support + counter)."""
     n = s + c
-    if n <= 0:
-        return 0.0
-    p = s / n
-    den = 1 + z * z / n
-    centre = p + z * z / (2 * n)
-    adj = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
-    return max(0.0, (centre - adj) / den)
+    return wilson_lower(s / n, n, z) if n > 0 else 0.0
 
 
 class RuleInducer:

@@ -5,7 +5,7 @@
 | 2 builds, availability, cap, exclusions, reviews | `tri/core/catalog.py` (`Catalog`), `tri/core/types.py` (`Review`, `Operation`), `tri/core/codec.py` (`validate_review`), `tri/model/matrix.py`, `tri/game/gamedata.py` |
 | 3 worth field | `tri/model/space.py` (`ConceptSpace.fit`, `solve_latent`, `_mm`, `_loo`) |
 | 4.1 to 4.4 concept map, weights, bound | `tri/model/space.py` (`u_of`, `coords`, `distance`, `item_coords`, `metric_weights`, `set_metric`, `bounds`) |
-| 4.5 item worth space and views | `tri/views/plots.py` (`worth_space`, `concept_axes`, `worth_axes`, `view_kept`, `distance_check`) |
+| 4.5 item worth space and views | `tri/views/plots.py` (`worth_space`, `view_kept`); `tri/views/figure.py` (`dense_origin`, `cosines`, `draw`) |
 | 4.6 regions | `tri/model/space.py` (`_fit_regions`, `reading`) |
 | 6.6 twin split, forced archetype, tells | `tri/reviews/locators.py` (`_find_pairs`, `_split`, `refine`, `note`, `adjust`, `distinct`), `tri/engine/archetypes.py` (`force`, `archetypes`), `tri/infer/situations.py` (`situations`) |
 | 4.7, 5.4, 6.5 locators, chasm, power selection | `tri/reviews/locators.py` (`barrier_factor`), `tri/engine/archetypes.py` (`set_locators`, `archetype`, `select_metric`, `_chasm`), `tri/engine/answering.py` (`_rule_homes`), `tri/infer/constraints.py` (`_firing`) |
