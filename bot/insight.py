@@ -308,3 +308,53 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
             data = cat
             text = cat["text"]
     return dict(files=files, text=text, data=data)
+
+
+# ------------------------------------------------------------------ intersections (inline [A ^ B ^ C])
+def intersect(svc, names: List[str], k: int = 3, exclude=(), picks: int = 8) -> dict:
+    """k representative builds where the named archetypes meet
+    (tri.analysis.categorize.intersection); each with its archetype shares
+    and its picks with the highest field worth."""
+    from tri.analysis import categorize as C
+
+    from .links import canonical_link, parse_build_link
+    from .plotting import PLOT_LOCK
+    with PLOT_LOCK, svc.lock:
+        at = _atlas(svc).atlas
+        S = [_arch_index(at, n) for n in names]
+        res = C.intersection(at, S, k=k, exclude=set(exclude))
+        cat = at.bm.catalog
+        for r in res["rows"]:
+            i = r["i"]
+            have = np.flatnonzero(at.X[i])
+            order = have[np.argsort(-np.asarray(at.Q[i], float)[have])]
+            r["talents"] = [cat.ids[t] for t in order if cat.items[cat.ids[t]].kind == "talent"][:picks]
+            r["mantras"] = [cat.ids[t] for t in order if cat.items[cat.ids[t]].kind == "mantra"][:picks // 2]
+            link = None
+            if r["id"]:
+                try:
+                    parse_build_link(str(r["id"]))
+                    link = canonical_link(str(r["id"]))
+                except Exception:
+                    link = None
+            r["link"] = link
+    arch = res["archetypes"]
+    if len(set(arch)) < 2:
+        raise ValueError("name at least two different archetypes")
+    lines = [" ^ ".join(arch)]
+    if not res["rows"]:
+        lines.append("no builds to show")
+    best = max((r["strength"] for r in res["rows"]), default=0.0)
+    if res["rows"] and best < 0.5:
+        lines.append(f"weak intersection: the best build keeps {100 * best:.0f}% of an even split; nearest builds:")
+    if not res["near_locators"]:
+        lines.append("few builds near a locator here; reading the whole sample")
+    for n, r in enumerate(res["rows"], 1):
+        name = f"[{r['id']}](<{r['link']}>)" if r["link"] else str(r["id"] or f"build {r['i']}")
+        sh = " · ".join(f"{a} {100 * p:.0f}%" for a, p in r["shares"].items())
+        lines.append(f"{n}. {name} · strength {r['strength']:.2f} · {sh}")
+        if r["talents"]:
+            lines.append("   talents: " + ", ".join(r["talents"]))
+        if r["mantras"]:
+            lines.append("   mantras: " + ", ".join(r["mantras"]))
+    return dict(text="\n".join(lines), data=res)

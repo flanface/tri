@@ -98,18 +98,48 @@ The worth matrix can also be read by columns. Each item becomes a list of worths
 **Origin and cosines.** Let $\rho_k(t)$ be the distance from $z_t$ to its $k$-th nearest neighbour ($k=12$), and $t^\ast=\arg\min_t\rho_k(t)$. The origin is the mean of the dense cluster
 
 $$
-o=\frac1{k+1}\sum_{s\in N_k(t^\ast)\cup\{t^\ast\}} z_s. \tag{4.5a}
+o=\frac1{k+1}\sum_{s\in N_k(t^\ast)\cup\{t^\ast\}} z_s. \tag{4.5.1}
 $$
 
 A requested item is drawn as the vector $v_t=z_t-o$, and two requested items are compared by
 
 $$
-\cos(t,t')=\frac{\langle v_t,v_{t'}\rangle}{\lVert v_t\rVert\,\lVert v_{t'}\rVert}. \tag{4.5b}
+\cos(t,t')=\frac{\langle v_t,v_{t'}\rangle}{\lVert v_t\rVert\,\lVert v_{t'}\rVert}. \tag{4.5.2}
 $$
 
 $\cos=1$: valued along the same direction; $\cos=0$: unrelated; $\cos=-1$: opposite. The origin is a property of the item cloud, not of any requested item, so the cosine of a pair does not depend on which other items are requested.
 
-Code: `plots.worth_space`, `plots.view_kept`, `figure.dense_origin`, `figure.cosines`.
+**Angle and orthogonality.** With $c=\cos(t,t')$,
+
+$$
+\theta(t,t')=\arccos c\in[0^\circ,180^\circ],\qquad \perp(t,t')=\lvert\sin\theta\rvert=\sqrt{1-c^2}\in[0,1]. \tag{4.5.3}
+$$
+
+$\perp(t,t')=\lVert v_t-\mathrm{proj}_{v_{t'}}v_t\rVert/\lVert v_t\rVert$: the share of $v_t$'s length orthogonal to $v_{t'}$. It is symmetric, $\perp=0$ iff $v_t\parallel v_{t'}$ (same or opposite direction), $\perp=1$ iff $c=0$, and $c^2+\perp^2=1$. Orthogonality does not separate opposite from aligned; the sign of $c$ does.
+
+**Atlas fields.** Let $\pi_1(b)\ge\pi_2(b)$ be the two largest archetype probabilities of build $b$ and $a(b)$ its top archetype. A build shapes and shows in its archetype's field iff it is placed and
+
+$$
+\pi_1(b)-\pi_2(b)\ge\mu,\qquad \mu=0.25. \tag{4.5.4}
+$$
+
+Of those builds $B_a$ with $a(b)=a$, the field of $a$ is the convex hull of the $\lceil\chi\lvert B_a\rvert\rceil$ nearest the coordinatewise median of $B_a$, $\chi=0.8$ ($\chi=0.9$ for concept regions, where every build counts). A field needs $\lvert B_a\rvert\ge5$. Soft readings ($\pi_1\approx\pi_2$) are the hybrids; leaving them out of the hulls keeps the fields from all intersecting, and the inline intersection (4.5.5) reads them directly.
+
+**Intersections.** For archetypes $S$ ($\lvert S\rvert\ge2$) and build $b$ with archetype probabilities $P_{ba}$,
+
+$$
+g_S(b)=\Big(\prod_{a\in S}P_{ba}\Big)^{1/\lvert S\rvert},\qquad s_S(b)=\lvert S\rvert\,g_S(b)\in[0,1]. \tag{4.5.5}
+$$
+
+By the AM-GM inequality $g_S(b)\le\frac1{\lvert S\rvert}\sum_{a\in S}P_{ba}\le\frac1{\lvert S\rvert}$, with $s_S(b)=1$ iff $b$'s whole mass lies in $S$, split evenly. Candidates are builds within reach of a locator ($d_{\min}(b)\le r$) when there are at least $k$, else all; held-back builds never appear. From the $40$ best by $g_S$, $k=3$ are picked greedily by
+
+$$
+b_{j+1}=\arg\max_b\ g_S(b)\,\min\!\Big(1,\frac{\min_{i\le j}\lVert u_b-u_{b_i}\rVert}{\delta}\Big),
+$$
+
+$\delta$ the median pairwise concept distance of the 40, so the picks are strong and differ. $\max_b s_S(b)<\tfrac12$ is reported as a weak intersection.
+
+Code: `plots.worth_space`, `plots.view_kept`, `figure.dense_origin`, `figure.cosines`, `figure.angle`, `figure.orthogonality`, `figure.field_hulls`, `categorize.intersection`; atlas constants `plotting.FIELD_MARGIN` ($\mu$), `FIELD_CORE` ($\chi$).
 
 ## 4.6 Regions
 

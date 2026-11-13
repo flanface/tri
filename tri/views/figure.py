@@ -41,7 +41,10 @@ class Scene:
     vectors: List[Tuple[str, np.ndarray, str]] = field(default_factory=list)   # (label, tip, colour)
     point_colour: Optional[Sequence[str]] = None   # per point, overrides the group colour
     point_size: float = 7.0
-    core: float = 0.9
+    core: float = 0.9                           # share of a group's points (nearest its median) its field spans
+    field_mask: Optional[np.ndarray] = None     # (n,) points that may shape a field (all when None)
+    labels: Optional[Sequence[str]] = None      # per point hover name (interactive page)
+    locator_labels: Optional[Sequence[str]] = None
 
 
 def _hull_edges(h, crease: float = 0.82):
@@ -56,11 +59,15 @@ def _hull_edges(h, crease: float = 0.82):
     return sorted(E)
 
 
-def _fields(ax, sc: Scene, cols: List[str], alpha: float = 0.2) -> None:
-    from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
+def field_hulls(sc: Scene) -> List[dict]:
+    """Per group with at least 5 field points: the hull of the `core` share of
+    them nearest the group median. dict(g, V vertices, F triangles, E crease edges)."""
     from scipy.spatial import ConvexHull, QhullError
+    P0 = np.asarray(sc.P, float)
+    ok = np.ones(len(P0), bool) if sc.field_mask is None else np.asarray(sc.field_mask, bool)
+    out = []
     for g in range(len(sc.names)):
-        P = sc.P[sc.group == g]
+        P = P0[(np.asarray(sc.group) == g) & ok]
         if len(P) < 5:
             continue
         d = np.linalg.norm(P - np.median(P, 0), axis=1)
@@ -69,10 +76,16 @@ def _fields(ax, sc: Scene, cols: List[str], alpha: float = 0.2) -> None:
             h = ConvexHull(P)
         except (QhullError, ValueError):
             continue
-        ax.add_collection3d(Poly3DCollection([P[s] for s in h.simplices], facecolors=cols[g],
-                                             alpha=alpha, edgecolors="none"))
-        segs = [P[[a, b]] for a, b in _hull_edges(h)]
-        ax.add_collection3d(Line3DCollection(segs, colors=[cols[g]], linewidths=0.9, alpha=0.9))
+        out.append(dict(g=g, V=P, F=[list(map(int, s)) for s in h.simplices], E=_hull_edges(h)))
+    return out
+
+
+def _fields(ax, sc: Scene, cols: List[str], alpha: float = 0.2) -> None:
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
+    for h in field_hulls(sc):
+        P, c = h["V"], cols[h["g"]]
+        ax.add_collection3d(Poly3DCollection([P[s] for s in h["F"]], facecolors=c, alpha=alpha, edgecolors="none"))
+        ax.add_collection3d(Line3DCollection([P[[a, b]] for a, b in h["E"]], colors=[c], linewidths=0.9, alpha=0.9))
 
 
 def _axes(ax, lo: np.ndarray, hi: np.ndarray, at: np.ndarray) -> None:
@@ -157,6 +170,18 @@ def dense_origin(X: np.ndarray, k: int = 12) -> np.ndarray:
     i = int(np.argmin(rk))
     nb = np.argsort(D[i])[: k + 1]
     return X[nb].mean(0)
+
+
+def orthogonality(c) -> np.ndarray:
+    """|sin(theta)| = sqrt(1 - cos^2): the share of one vector's length that is
+    orthogonal to the other (0 parallel or antiparallel, 1 orthogonal)."""
+    c = np.clip(np.asarray(c, float), -1.0, 1.0)
+    return np.sqrt(np.maximum(0.0, 1.0 - c * c))
+
+
+def angle(c) -> np.ndarray:
+    """The angle in degrees for cosine c."""
+    return np.degrees(np.arccos(np.clip(np.asarray(c, float), -1.0, 1.0)))
 
 
 def cosines(V: np.ndarray) -> np.ndarray:
