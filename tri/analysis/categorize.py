@@ -402,3 +402,45 @@ def quality(tri, at: Atlas) -> dict:
     out["per_locator_stability"] = [round(s, 4) for s in stab]
     out["names"] = [ls.names[k] for k in ls.keys]
     return out
+
+
+# ------------------------------------------------------------------ intersections
+def intersection(at: Atlas, S: Sequence[int], k: int = 3, pool: int = 40, exclude=()) -> dict:
+    """k representative builds where the archetypes S meet.
+
+    Score of build i: the geometric mean g_i = (prod_{a in S} P_ia)^(1/|S|),
+    largest when its archetype mass is split evenly inside S; strength
+    s_i = |S| g_i lies in [0, 1] (1: all mass in S, evenly). Builds near a
+    locator (dmin <= reach) are preferred. From the `pool` best, picks are
+    greedy on g_i min(1, d_i / delta), d_i the concept distance to the builds
+    already picked and delta the median pairwise distance of the pool, so
+    the k builds differ. Rows whose id is in `exclude` never appear. Returns rows [dict(i, id, score, strength, shares)]
+    and `near` (the share of rows near a locator)."""
+    S = [int(a) for a in dict.fromkeys(S)]
+    if len(S) < 2:
+        raise ValueError("an intersection needs at least two archetypes")
+    P = np.asarray(at.P, float)
+    g = np.exp(np.log(np.maximum(P[:, S], 1e-12)).mean(1))
+    near = np.asarray(at.dmin, float) <= float(at.reach)
+    ok = np.array([i not in set(exclude) for i in at.ids], bool) if exclude else np.ones(len(P), bool)
+    near &= ok
+    cand = np.flatnonzero(near) if near.sum() >= k else np.flatnonzero(ok)
+    cand = cand[np.argsort(-g[cand])][:max(pool, k)]
+    U = np.asarray(at.U, float)[cand]
+    D = np.sqrt(np.maximum(sqdist(U, U), 0.0)) if len(cand) > 1 else np.zeros((1, 1))
+    delta = float(np.median(D[np.triu_indices(len(cand), 1)])) if len(cand) > 1 else 1.0
+    delta = max(delta, 1e-9)
+    chosen: List[int] = []
+    dmin = np.full(len(cand), np.inf)
+    for _ in range(min(k, len(cand))):
+        val = g[cand] * np.minimum(1.0, dmin / delta)
+        val[chosen] = -1.0
+        j = int(np.argmax(val))
+        chosen.append(j)
+        dmin = np.minimum(dmin, D[j])
+    rows = []
+    for j in chosen:
+        i = int(cand[j])
+        rows.append(dict(i=i, id=at.ids[i], score=float(g[i]), strength=float(len(S) * g[i]),
+                         near=bool(near[i]), shares={at.names[a]: float(P[i, a]) for a in S}))
+    return dict(archetypes=[at.names[a] for a in S], rows=rows, near_locators=bool(near.sum() >= k))

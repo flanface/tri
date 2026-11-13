@@ -52,7 +52,10 @@
 | $w$, $v$ | anchor mass, anchor veto (6.8a) | `anchor_mass` (1.0), `anchor_veto` (0.9) |
 | $h_r$, $G$, $\epsilon$ | reading bandwidth, grid, tie (6.8b) | `read_bandwidth` (None: chosen), `read_grid` (0.08, ..., 0.6), `read_tie` (0.01) |
 | $z$ | Wilson $z$ of the tell weight $\omega$ (6.8c) | `tell_z` (1.64) |
-| $k$ | worth origin neighbours (4.5a) | `figure.dense_origin` ($k=12$) |
+| $k$ | worth origin neighbours (4.5.1) | `figure.dense_origin` ($k=12$) |
+| $\theta$, $\perp$ | angle and orthogonality $\lvert\sin\theta\rvert$ of two worth vectors (4.5.3) | `figure.angle`, `figure.orthogonality` |
+| $\mu$, $\chi$ | atlas field margin $\pi_1-\pi_2$, field core share (4.5.4) | `plotting.FIELD_MARGIN` (0.25), `FIELD_CORE` (0.8); `Scene.core` (0.9) |
+| $g_S$, $s_S$, $\delta$ | intersection score, strength, diversity scale (4.5.5) | `categorize.intersection` (`k` 3, `pool` 40) |
 | $k_\times$, $h_\times$, $\lambda_\times$ | cross-archetype ring (4.5b) | `WorthConfig.k_cross` (600), `cross_bandwidth` (1.5), `cross_weight` (0.15) |
 | $\eta$ | note worth, floor, flat value cap (4.6), (4.7) | `InferConfig.note_worth` (0.35), `note_floor` (0.02), `value_cap` (0.5) |
 | | split on, locators per twin | `refine` (True), `refine_min_locators` (2) |

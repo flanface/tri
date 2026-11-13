@@ -592,19 +592,24 @@ class TriBot(discord.Client):
         return m
 
     async def on_message(self, message: discord.Message):
-        """A reply to a review sheet (or to the bot's answer to one) edits the draft."""
+        """A reply to a review sheet (or to the bot's answer to one) edits the
+        draft; otherwise square-bracket calls are answered (bot.inline)."""
         if message.author.bot or message.guild is None:
             return
         ref = message.reference
-        if ref is None or not ref.message_id:
-            return
-        qs = self.questions.get(ref.message_id)
-        if qs is not None:
-            return await self.handle_answers(message, qs)
-        d = self.desk.draft_for_message(ref.message_id)
-        if d is None:
-            return
-        await self.handle_reply(message, d)
+        if ref is not None and ref.message_id:
+            qs = self.questions.get(ref.message_id)
+            if qs is not None:
+                return await self.handle_answers(message, qs)
+            d = self.desk.draft_for_message(ref.message_id)
+            if d is not None:
+                return await self.handle_reply(message, d)
+        if "[" in (message.content or ""):
+            from . import inline
+            try:
+                await inline.handle(self, message)
+            except Exception:
+                log.exception("inline call failed")
 
     # ------------------------------------------------------------ question sheets (v3.1.1)
     async def post_questions(self, inter: discord.Interaction, questions: List[dict], title: str,
