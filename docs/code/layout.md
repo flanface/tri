@@ -109,6 +109,7 @@ tri/                              repository root
 │   ├── views/                    graphics (matplotlib; optional extra)
 │   │   ├── plots.py              data views: concept map, placement, worth matrix, worth space, projections, themes
 │   │   ├── figure.py             one transparent 3-D figure: fields, locators, centres, vectors from an origin (math §4.5)
+│   │   ├── interactive.py        the same scene as one self-contained HTML page (drag, zoom, hover, legend)
 │   │   └── insight.py            archetype card, placement, item landscape, stat curves, replay
 │   │
 │   ├── engine/                   the facade
@@ -130,7 +131,8 @@ tri/                              repository root
 │   ├── ui/                       views: setup, fact graphics, submit confirmation
 │   ├── interact.py               replies (say, say_long: long text as a .txt file)
 │   ├── texts.py                  fixed strings and choices
-│   ├── plotting.py               /plot concept, atlas, worth
+│   ├── plotting.py               /plot concept, atlas, worth (PNG or interactive HTML)
+│   ├── inline.py                 square-bracket calls in messages: [A ^ B], [worth of a, b > build], [a ⟂ b], ...
 │   └── links.py, dwt.py          build links: dwt.sh and deepwoken.co, with fallbacks
 │
 └── docs/                         this wiki (start at Home.md)

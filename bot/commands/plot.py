@@ -31,6 +31,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                               allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True,
                                                                                private_channel=True))
 
+    INTERACTIVE = "send an HTML page instead of the PNG: drag to turn, wheel to zoom, hover for names"
     STYLE_CHOICES = [app_commands.Choice(name="dots: one per build", value="dots"),
                      app_commands.Choice(name="fields: translucent polytopes", value="fields")]
 
@@ -39,11 +40,12 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                            locators="draw the locator builds",
                            style="dots (one per build) or fields (translucent region polytopes)",
                            elevation="camera height in degrees (default 22)",
-                           azimuth="camera turn in degrees (default -58)")
+                           azimuth="camera turn in degrees (default -58)",
+                           interactive=INTERACTIVE)
     @app_commands.choices(style=STYLE_CHOICES)
     async def plot_concept_cmd(inter: discord.Interaction, builds: Optional[str] = None, locators: bool = True,
                                style: str = "dots", elevation: app_commands.Range[int, -90, 90] = 22,
-                               azimuth: app_commands.Range[int, -180, 180] = -58):
+                               azimuth: app_commands.Range[int, -180, 180] = -58, interactive: bool = False):
         g = await analyst(inter)
         if not g:
             return
@@ -51,7 +53,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         try:
             marks = await plot_builds(inter, g, builds)
             files, text = await asyncio.to_thread(bot.svc.plot_concept, marks, locators, 3000, style,
-                                                  (elevation, azimuth))
+                                                  (elevation, azimuth), interactive)
         except Exception as e:
             return await plot_fail(inter, e, "concept")
         await say(inter, clip(text, 1990), files=plot_files(files), ephemeral=False)
@@ -61,10 +63,11 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                            build="builder link or id: draw that build's talents and mantras",
                            relative="compare items by which builds value them more than usual, not by pick rate",
                            elevation="camera height in degrees (default 22)",
-                           azimuth="camera turn in degrees (default -58)")
+                           azimuth="camera turn in degrees (default -58)",
+                           interactive=INTERACTIVE)
     async def plot_worth_cmd(inter: discord.Interaction, items: Optional[str] = None, build: Optional[str] = None,
                              relative: bool = False, elevation: app_commands.Range[int, -90, 90] = 22,
-                             azimuth: app_commands.Range[int, -180, 180] = -58):
+                             azimuth: app_commands.Range[int, -180, 180] = -58, interactive: bool = False):
         g = await analyst(inter)
         if not g:
             return
@@ -79,7 +82,8 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
             if build:
                 marks = await plot_builds(inter, g, build.split()[0])
                 hi += [x for x in marks[0][1].items() if x not in hi]
-            files, text = await asyncio.to_thread(bot.svc.plot_worth, hi, relative, 2000, (elevation, azimuth))
+            files, text = await asyncio.to_thread(bot.svc.plot_worth, hi, relative, 2000, (elevation, azimuth),
+                                                  interactive)
         except Exception as e:
             return await plot_fail(inter, e, "worth")
         if unknown:
@@ -99,12 +103,13 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                            candidates="draw candidate archetypes as stars",
                            locators="draw the locator builds",
                            elevation="camera height in degrees (default 22)",
-                           azimuth="camera turn in degrees (default -58)")
+                           azimuth="camera turn in degrees (default -58)",
+                           interactive=INTERACTIVE)
     @app_commands.choices(style=STYLE_CHOICES)
     async def plot_atlas_cmd(inter: discord.Interaction, builds: Optional[str] = None, style: str = "fields",
                              candidates: bool = True, locators: bool = True,
                              elevation: app_commands.Range[int, -90, 90] = 22,
-                             azimuth: app_commands.Range[int, -180, 180] = -58):
+                             azimuth: app_commands.Range[int, -180, 180] = -58, interactive: bool = False):
         g = await analyst(inter)
         if not g:
             return
@@ -112,7 +117,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         try:
             marks = await plot_builds(inter, g, builds)
             files, text = await asyncio.to_thread(bot.svc.plot_atlas, style, candidates, locators, marks,
-                                                  (elevation, azimuth))
+                                                  (elevation, azimuth), interactive)
         except Exception as e:
             return await plot_fail(inter, e, "atlas")
         await say(inter, clip(text, 1990), files=plot_files(files), ephemeral=False)
