@@ -228,7 +228,11 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
             text += pair_lines(known, wv["cos"])
         for i in known:
             text.append(f"{i} points like: " + ", ".join(f"{n} ({c:+.2f})" for n, c in wv["nearest"][i]))
-        return [_out(sc, "worth_4-5-6", view, interactive, "worth space", ["PC4", "PC5", "PC6"])], "\n".join(text)
+        files = [_out(sc, "worth_4-5-6", view, interactive, "worth space", ["PC4", "PC5", "PC6"])]
+        if known:                               # vector analysis: the vectors alone, magnitudes and angles
+            V = wv["X"][wv["idx"]] - wv["origin"]
+            files.append(("worth_vectors.png", F.png(F.draw_vectors(known, V, cols[:len(known)], view))))
+        return files, "\n".join(text)
 
 
 def worth_pair(svc: "ModelService", a: str, b: str, relative: bool = False, sample: int = 2000) -> dict:
