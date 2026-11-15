@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import replace
-from typing import TYPE_CHECKING, List, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -43,29 +43,29 @@ def _out(sc, name: str, view, interactive: bool, title: str, axes) -> tuple:
     return f"{name}.png", F.png(F.draw(sc, view))
 
 
-def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ") -> List[str]:
-    """Per pair: cosine, angle and orthogonality |sin theta|."""
+def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ",
+               norms: Optional[Sequence[float]] = None) -> List[str]:
+    """Per pair: cosine, angle, orthogonality |sin theta| and, given the norms,
+    each vector's projection length on the other (|a| cos theta on b, |b| cos theta on a)."""
     from tri.views import figure as F
     C = np.asarray(C, float)
     out = []
     for a in range(len(names)):
         for b in range(a + 1, len(names)):
             c = float(C[a, b])
-            out.append(f"{indent}{names[a]} · {names[b]}: cos {c:+.2f} · angle {float(F.angle(c)):.0f}° · "
-                       f"orthogonality {float(F.orthogonality(c)):.2f}")
+            s = (f"{indent}{names[a]} · {names[b]}: cos {c:+.2f} · angle {float(F.angle(c)):.0f}° · "
+                 f"orthogonality {float(F.orthogonality(c)):.2f}")
+            if norms is not None:
+                s += f" · proj on {names[b]} {float(norms[a]) * c:+.3g} · proj on {names[a]} {float(norms[b]) * c:+.3g}"
+            out.append(s)
     return out
 
 
 def png_bytes(fig, dpi: int = 110) -> bytes:
-    """PNG of a matplotlib figure with trimmed margins (for the /archetype,
-    /facts and graphic views); closes the figure."""
-    import io
-
-    import matplotlib.pyplot as plt
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", pad_inches=0.06)
-    plt.close(fig)
-    return buf.getvalue()
+    """Transparent PNG of a matplotlib figure with depth cues and trimmed
+    margins (for the /archetype, /facts and graphic views); closes the figure."""
+    from tri.views.depth import export
+    return export(fig, dpi, 0.06)
 
 
 def _style(style: str) -> str:
@@ -197,7 +197,8 @@ def worth_vectors(ws: dict, items: Sequence[str], dims: Sequence[int] = WORTH_DI
     for i, j in zip(items, idx):
         order = [t for t in np.argsort(-C[j]) if t != j][:3]
         nearest[i] = [(ws["items"][t], float(C[j, t])) for t in order]
-    return dict(origin=o, X=X, idx=idx, cos=C[np.ix_(idx, idx)], nearest=nearest)
+    return dict(origin=o, X=X, idx=idx, cos=C[np.ix_(idx, idx)], nearest=nearest,
+                norms=[float(np.linalg.norm(V[j])) for j in idx])
 
 
 def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = False, sample: int = 2000,
@@ -225,7 +226,7 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
                      labels=list(ws["items"]))
         if len(known) > 1:
             text.append("from the origin:")
-            text += pair_lines(known, wv["cos"])
+            text += pair_lines(known, wv["cos"], norms=wv["norms"])
         for i in known:
             text.append(f"{i} points like: " + ", ".join(f"{n} ({c:+.2f})" for n, c in wv["nearest"][i]))
         files = [_out(sc, "worth_4-5-6", view, interactive, "worth space", ["PC4", "PC5", "PC6"])]
@@ -243,5 +244,7 @@ def worth_pair(svc: "ModelService", a: str, b: str, relative: bool = False, samp
     miss = [i for i in (a, b) if i not in ws["items"]]
     if miss:
         raise ValueError(", ".join(miss) + ": rarely taken (mean worth under 0.5%), no worth vector")
-    c = float(worth_vectors(ws, [a, b])["cos"][0, 1])
-    return dict(a=a, b=b, cos=c, angle=float(F.angle(c)), orthogonality=float(F.orthogonality(c)))
+    wv = worth_vectors(ws, [a, b])
+    c, (na, nb) = float(wv["cos"][0, 1]), wv["norms"]
+    return dict(a=a, b=b, cos=c, angle=float(F.angle(c)), orthogonality=float(F.orthogonality(c)),
+                norm_a=na, norm_b=nb, a_on_b=na * c, b_on_a=nb * c)

@@ -10,7 +10,13 @@ locators, centres, stars, origin and vectors, axes) and adds tools:
     point    a marker (snaps to nearby points)
     vector   tail to head; |v| shown
     plane    through three clicked points
-    measure  two vectors: |u|, |w|, cos, angle, orthogonality; two points: distance
+    measure  two vectors: |u|, |w|, cos, angle, orthogonality and the projection
+             length of each on the other; two points: distance
+
+Depth: points are shaded spheres that shrink and fade with distance, field
+faces are lit (Lambert, light over the viewer's shoulder), vectors cast a
+shadow on the floor of the scene with a drop line from the head. PNG export
+is transparent.
 
 The command box takes a name (a build, item, locator or centre; in a scene
 with an origin it adds that point's vector from the origin), x,y,z (a point),
@@ -115,14 +121,18 @@ for(let k=0;k<3;k++){let a=Infinity,b=-Infinity;for(const p of all){a=Math.min(a
 const nq=p=>p.map((x,k)=>(x-m[k])/r),dq=q=>q.map((x,k)=>x*r+m[k]);
 lo=nq(lo).map(x=>x-0.08);hi=nq(hi).map(x=>x+0.08);
 const P=D.points.map(o=>Object.assign({q:nq(o.p)},o));
-const H=D.hulls.map(h=>({r:h.r,c:h.c,v:h.v.map(nq),f:h.f,e:h.e}));const V=D.vectors.map(v=>({a:v.a,b:v.b,c:v.c,t:v.t}));
+const H=D.hulls.map(h=>{const v=h.v.map(nq);return{r:h.r,c:h.c,v,f:h.f,e:h.e,n:h.f.map(f=>fnorm(v[f[0]],v[f[1]],v[f[2]]))}});
+function fnorm(a,b,c){const u=[0,1,2].map(k=>b[k]-a[k]),w=[0,1,2].map(k=>c[k]-a[k]);return[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]]}const V=D.vectors.map(v=>({a:v.a,b:v.b,c:v.c,t:v.t}));
 const AT=nq(D.at),O0=D.origin||[0,0,0];const EL0=D.el,AZ0=D.az+Math.PI/2;
-let az=AZ0,el=EL0,zoom=1,pan=[0,0],drag=null,hover=-1,mode='view',picks=[],pen=null,bg=false;
+let az=AZ0,el=EL0,zoom=1,pan=[0,0],drag=null,hover=-1,mode='view',picks=[],pen=null;
 const PAL=['#ffd23f','#5ec8ff','#ff6b8b','#8ce99a','#c3a6ff','#ffa94d','#63e6be','#f783ac'];
 let U=[],undo=[],nid=1;const KEY='tri:'+D.title+':'+D.points.length;
 const sub=(a,b)=>a.map((x,k)=>x-b[k]),dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],nrm=a=>Math.sqrt(dot(a,a));
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const f3=a=>a.map(x=>(+x).toFixed(3)).join(', ');
+const RGB={};const hx=c=>RGB[c]||(RGB[c]=(()=>{let h=String(c).replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h.slice(0,6),16)||0;return[n>>16&255,n>>8&255,n&255]})());
+const mix=(c,t)=>{const f=x=>Math.round(t>=0?x+(255-x)*t:x*(1+t));return 'rgb('+hx(c).map(f).join(',')+')'};
+const dz=z=>Math.max(0,Math.min(1,(z+1.7)/3.4)),LT=(()=>{const l=[-0.35,0.55,-0.75],n=Math.hypot(...l);return l.map(x=>x/n)})();
 function size(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}addEventListener('resize',()=>{size();draw()});size();
 function rot(){return[Math.cos(az),Math.sin(az),Math.cos(el),Math.sin(el)]}
 function scale(){return Math.min(cv.width,cv.height)*0.42*zoom}
@@ -131,6 +141,12 @@ function proj(q){const[ca,sa,ce,se]=rot();const x=ca*q[0]-sa*q[1],y0=sa*q[0]+ca*
 function unproj(X,Y,z){const[ca,sa,ce,se]=rot(),s=scale(),dp=devicePixelRatio;const x=(X*dp-cv.width/2-pan[0]*dp)/s,y=-(Y*dp-cv.height/2-pan[1]*dp)/s;
  const q2=ce*y+se*z,y0=-se*y+ce*z;return[ca*x+sa*y0,-sa*x+ca*y0,q2]}
 const pd=p=>proj(nq(p));
+function rv(q){const[ca,sa,ce,se]=rot();const x=ca*q[0]-sa*q[1],y0=sa*q[0]+ca*q[1];return[x,ce*q[2]-se*y0,se*q[2]+ce*y0]}
+const FL=(()=>{if(!D.vectors.length)return null;const E=D.vectors.flatMap(v=>[nq(v.a),nq(v.b)]);let a=Infinity,s=0;
+ for(const p of E){a=Math.min(a,p[2]);for(const q of E)s=Math.max(s,Math.abs(p[0]-q[0]),Math.abs(p[1]-q[1]),Math.abs(p[2]-q[2]))}return Math.max(lo[2],a-0.25*s)})();
+function shadow(a,b,c){const dp=devicePixelRatio,qa=nq(a),qb=nq(b);const fz=FL!=null?Math.min(FL,qa[2],qb[2]):lo[2],fa=[qa[0],qa[1],fz],fb=[qb[0],qb[1],fz];
+ const A=proj(fa),B=proj(fb),T=proj(qb);g.save();g.globalAlpha=0.22;g.strokeStyle='#000';g.lineWidth=3*dp;g.lineCap='round';line(A,B);
+ g.globalAlpha=0.45;g.strokeStyle=c;g.lineWidth=dp;g.setLineDash([2*dp,3*dp]);line(T,B);g.restore()}
 const vis=o=>layer[o.g]&&!(o.r!=null&&hidden.has(o.r));
 function line(a,b){g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()}
 function arrow(A,B,c,w){const dp=devicePixelRatio;g.strokeStyle=c;g.fillStyle=c;g.lineWidth=w*dp;line(A,B);
@@ -142,26 +158,28 @@ function planePoly(n,d){const Q=nq,N=[n[0]*r,n[1]*r,n[2]*r],dd=d-dot(n,m),pts=[]
  if(pts.length<3)return[];const C=[0,1,2].map(k=>pts.reduce((s,p)=>s+p[k],0)/pts.length);let u=sub(pts[0],C);if(nrm(u)<1e-12)u=sub(pts[1],C);
  const w=cross(N,u);return pts.map(p=>[p,Math.atan2(dot(sub(p,C),w)/nrm(w),dot(sub(p,C),u)/nrm(u))]).sort((a,b)=>a[1]-b[1]).map(x=>x[0])}
 function tipOf(o){return o.k==='vector'?o.b:o.p}
-function draw(){const dp=devicePixelRatio;g.clearRect(0,0,cv.width,cv.height);if(bg){g.fillStyle='__BG__';g.fillRect(0,0,cv.width,cv.height)}
+function draw(){const dp=devicePixelRatio;g.clearRect(0,0,cv.width,cv.height);
  g.lineWidth=dp;g.font=`${11*dp}px system-ui`;
  for(let k=0;k<3;k++){const a=AT.slice(),b=AT.slice();a[k]=-1.05;b[k]=1.05;const A=proj(a),B=proj(b);g.globalAlpha=0.55;g.strokeStyle=D.axc[k];line(A,B);g.globalAlpha=0.8;g.fillStyle=D.axc[k];g.fillText(D.axes[k],B[0]+3*dp,B[1])}
  g.globalAlpha=1;
  for(const o of U)if(o.on&&o.k==='plane'){const W=planePoly(o.n,o.d).map(proj);if(W.length<3)continue;g.globalAlpha=0.16;g.fillStyle=o.c;g.beginPath();W.forEach((w,i)=>i?g.lineTo(w[0],w[1]):g.moveTo(w[0],w[1]));g.closePath();g.fill();
   g.globalAlpha=0.8;g.strokeStyle=o.c;g.lineWidth=1.2*dp;g.stroke();label(W[0][0],W[0][1],o.t,o.c)}
  const fields=D.fields&&layer.field;
- if(fields){const T=[];for(const h of H){if(hidden.has(h.r))continue;const W=h.v.map(proj);for(const f of h.f)T.push([(W[f[0]][2]+W[f[1]][2]+W[f[2]][2])/3,W,f,h.c])}
-  T.sort((a,b)=>b[0]-a[0]);for(const[,W,f,c]of T){g.globalAlpha=0.16;g.fillStyle=c;g.beginPath();g.moveTo(W[f[0]][0],W[f[0]][1]);g.lineTo(W[f[1]][0],W[f[1]][1]);g.lineTo(W[f[2]][0],W[f[2]][1]);g.closePath();g.fill()}
+ if(fields){const T=[];for(const h of H){if(hidden.has(h.r))continue;const W=h.v.map(proj);h.f.forEach((f,j)=>{const n=rv(h.n[j]),l=Math.abs(dot(n,LT))/(nrm(n)||1);T.push([(W[f[0]][2]+W[f[1]][2]+W[f[2]][2])/3,W,f,h.c,l])})}
+  T.sort((a,b)=>b[0]-a[0]);for(const[z,W,f,c,l]of T){g.globalAlpha=(0.1+0.16*l)*(1-0.35*dz(z));g.fillStyle=mix(c,0.45*l-0.25);g.beginPath();g.moveTo(W[f[0]][0],W[f[0]][1]);g.lineTo(W[f[1]][0],W[f[1]][1]);g.lineTo(W[f[2]][0],W[f[2]][1]);g.closePath();g.fill()}
   g.globalAlpha=0.9;g.lineWidth=1.2*dp;for(const h of H){if(hidden.has(h.r))continue;const W=h.v.map(proj);g.strokeStyle=h.c;for(const[a,b]of h.e)line(W[a],W[b])}}
  const S=[];P.forEach((o,i)=>{if(vis(o)&&!(fields&&o.g==='build'&&i!==hover&&!o.hl))S.push([proj(o.q),i])});S.sort((a,b)=>b[0][2]-a[0][2]);
- for(const[[x,y],i]of S){const o=P[i];const big=o.g!=='build';const rad=o.s*dp;g.globalAlpha=big?0.95:0.6;g.fillStyle=o.c;g.beginPath();
+ for(const[[x,y,z],i]of S){const o=P[i];const big=o.g!=='build',t=dz(z);const rad=o.s*dp*(1.15-0.35*t);g.globalAlpha=(big?0.95:0.7)*(1-0.45*t);
+  const gr=g.createRadialGradient(x-rad*0.35,y-rad*0.35,rad*0.1,x,y,rad*1.1);gr.addColorStop(0,mix(o.c,0.55));gr.addColorStop(0.55,o.c);gr.addColorStop(1,mix(o.c,-0.45));g.fillStyle=gr;g.beginPath();
   if(o.g==='locator'){g.moveTo(x,y-rad);g.lineTo(x+rad,y);g.lineTo(x,y+rad);g.lineTo(x-rad,y);g.closePath()}
   else if(o.g==='star'){for(let k=0;k<10;k++){const t=-Math.PI/2+k*Math.PI/5,q=k%2?rad*0.45:rad*1.2;k?g.lineTo(x+q*Math.cos(t),y+q*Math.sin(t)):g.moveTo(x+q*Math.cos(t),y+q*Math.sin(t))}g.closePath()}
   else g.arc(x,y,rad,0,7);g.fill();
   if(big||i===hover){g.globalAlpha=1;g.strokeStyle=i===hover?'#ffffff':'#202020';g.lineWidth=dp;g.stroke()}
   if(o.t){g.globalAlpha=0.85;g.fillStyle='#9a9a9a';g.fillText(o.t,x+rad+3*dp,y+4*dp)}}
- g.globalAlpha=0.95;if(layer.vector)for(const v of V){const A=pd(v.a),B=pd(v.b);arrow(A,B,v.c,1.6);label(B[0],B[1],v.t,v.c)}
+ if(layer.vector)for(const v of V)shadow(v.a,v.b,v.c);
+ g.globalAlpha=0.95;if(layer.vector)for(const v of V){const A=pd(v.a),B=pd(v.b);arrow(A,B,v.c,1.6*(1.2-0.4*dz(B[2])));label(B[0],B[1],v.t,v.c)}
  for(const o of U){if(!o.on)continue;g.globalAlpha=1;
-  if(o.k==='vector'){const A=pd(o.a),B=pd(o.b);arrow(A,B,o.c,1.8);label(B[0],B[1],(o.t?o.t+' ':'')+'|v| '+nrm(sub(o.b,o.a)).toFixed(3),o.c)}
+  if(o.k==='vector'){shadow(o.a,o.b,o.c);g.globalAlpha=1;const A=pd(o.a),B=pd(o.b);arrow(A,B,o.c,1.8);label(B[0],B[1],(o.t?o.t+' ':'')+'|v| '+nrm(sub(o.b,o.a)).toFixed(3),o.c)}
   else if(o.k==='point'){const[x,y]=pd(o.p);g.fillStyle=o.c;g.beginPath();g.arc(x,y,5*dp,0,7);g.fill();g.strokeStyle='#000';g.lineWidth=dp;g.stroke();label(x,y,o.t,o.c)}
   else if(o.k==='note'){const[x,y]=pd(o.p);g.fillStyle=o.c;g.beginPath();g.arc(x,y,2.5*dp,0,7);g.fill();g.font=`${12.5*dp}px system-ui`;
    const w=g.measureText(o.t).width;g.globalAlpha=0.82;g.fillStyle='#15181f';g.fillRect(x+6*dp,y-20*dp,w+8*dp,17*dp);g.globalAlpha=1;g.fillStyle=o.c;g.fillText(o.t,x+10*dp,y-7*dp);g.font=`${11*dp}px system-ui`}
@@ -188,12 +206,12 @@ function desc(o){if(o.k==='vector'){const v=sub(o.b,o.a);return `vector ${o.t||'
  if(o.k==='pen')return `stroke, ${o.s.length} points`;return `${o.k} ${o.t||''}\n (${f3(o.p)})`}
 function show(t){const e=$('out');e.textContent=t;e.style.display=t?'block':'none'}
 function measure(a,b){if(a.v&&b.v){const u=sub(a.v[1],a.v[0]),w=sub(b.v[1],b.v[0]),c=dot(u,w)/(nrm(u)*nrm(w)||1e-12);
-  return `${a.t||'u'} · ${b.t||'w'}\n |u| ${nrm(u).toFixed(3)}   |w| ${nrm(w).toFixed(3)}\n cos ${c.toFixed(3)}   angle ${(Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI).toFixed(1)}°   orthogonality ${Math.sqrt(Math.max(0,1-c*c)).toFixed(3)}`}
+  return `${a.t||'u'} · ${b.t||'w'}\n |u| ${nrm(u).toFixed(3)}   |w| ${nrm(w).toFixed(3)}\n cos ${c.toFixed(3)}   angle ${(Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI).toFixed(1)}°   orthogonality ${Math.sqrt(Math.max(0,1-c*c)).toFixed(3)}\n proj ${a.t||'u'} on ${b.t||'w'} ${(dot(u,w)/(nrm(w)||1e-12)).toFixed(3)}   proj ${b.t||'w'} on ${a.t||'u'} ${(dot(u,w)/(nrm(u)||1e-12)).toFixed(3)}`}
  return `${a.t||'a'} to ${b.t||'b'}\n distance ${nrm(sub(a.p,b.p)).toFixed(3)}\n difference (${f3(sub(b.p,a.p))})`}
 const HINT={view:'drag: turn · right/shift-drag: pan · wheel: zoom · double-click: reset',note:'click a point or empty space, then type the note',
  pen:'drag to draw; strokes lie in the screen plane through the centre and turn with the plot',point:'click to place a point (snaps to nearby points)',
  vector:'click the tail, then the head (snaps to points; click the origin for an origin vector)',plane:'click three points to put a plane through them',
- measure:'click two vectors (their heads) for angle and orthogonality, or two points for distance'};
+ measure:'click two vectors (their heads) for angle, orthogonality and projection lengths, or two points for distance'};
 function setMode(k){mode=k;picks=[];pen=null;for(const b of $('bar').querySelectorAll('button[data-m]'))b.classList.toggle('on',b.dataset.m===k);$('hint').textContent=HINT[k];cv.style.cursor=k==='view'?'grab':'crosshair';draw()}
 function click(e){const h=at(e.clientX,e.clientY);
  if(mode==='note'){const t=prompt('note');if(t)push({k:'note',p:h.p,t})}
@@ -217,7 +235,7 @@ const BTN=[['view','View','v'],['note','Note','n'],['pen','Pen','p'],['point','P
 const ACT=[['Undo',()=>{if(undo.length){U=JSON.parse(undo.pop());save();list();draw()}}],['Clear',()=>{if(U.length)edit(()=>U=[])}],null,
  ['Iso',()=>setView(AZ0,EL0)],['Top',()=>setView(Math.PI/2,Math.PI/2)],['Front',()=>setView(Math.PI/2,0)],['Side',()=>setView(0,0)],null,
  ['Save',()=>dl(new Blob([JSON.stringify({title:D.title,axes:D.axes,objects:U},null,1)],{type:'application/json'}),'annotations.json')],
- ['Load',()=>$('file').click()],['PNG',()=>{bg=true;draw();cv.toBlob(b=>dl(b,'plot.png'));bg=false;draw()}]];
+ ['Load',()=>$('file').click()],['PNG',()=>{draw();cv.toBlob(b=>dl(b,'plot.png'))}]];
 function setView(a,e){az=a;el=e;pan=[0,0];zoom=1;draw()}
 function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 $('bar').innerHTML=BTN.map(([k,t,s])=>`<button data-m="${k}" title="${s}">${t}</button>`).join('')+'<span class="sep"></span>'+
