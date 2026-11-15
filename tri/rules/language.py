@@ -98,6 +98,8 @@ _EQ = re.compile(r"^(.*?)\s*(≠|!=|=)\s*(.+?)\s*$")
 
 def _lit(s: str, V: Vocabulary) -> Condition:
     s = s.strip()
+    while s.startswith("(") and s.endswith(")"):
+        s = s[1:-1].strip()
     m = _CMP.match(s)
     if m:
         name, op, n = m.group(1).strip().strip("|").strip(), m.group(2), int(m.group(3))
@@ -127,10 +129,12 @@ def _lit(s: str, V: Vocabulary) -> Condition:
                 raise RuleSyntaxError(f"unknown archetype: {v!r} (known: {known})")
             v = V.arch[_key(v)]
         elif f == "weapon":
+            from tri.game.weapons import weapon_token
             hit = [w for w in WEAPONS if _key(w) == _key(v)]
-            if not hit:
-                raise RuleSyntaxError(f"weapon is Heavy, Medium or Light, not {v!r}")
-            v = hit[0]
+            named = weapon_token(v)
+            if not hit and not named:
+                raise RuleSyntaxError(f"weapon is Heavy, Medium, Light or a weapon name, not {v!r}")
+            v = hit[0] if hit else named.split(":", 1)[1]
         else:
             v = V.values.get(f, {}).get(_key(v), v)
         return Condition("context", f"{f}:{v}", "not" if neg else "has")

@@ -19,6 +19,7 @@ Rule context tokens (kind "context"):
     weapon:<Heavy|Medium|Light>        the weapon class the build records
                                        (Build.meta weapon) or else the class
                                        of its highest weapon stat (> 0)
+    weapon:<name>                      each weapon the build equips
     archetype:<key>                    the archetype the locators read at the
                                        build's place in the concept space
                                        (tri.reviews.locators), family key
@@ -178,11 +179,13 @@ def weapon_class(hi: Dict[str, int], recorded: Iterable[str] = ()) -> Optional[s
 def rule_tokens(b, archetype: Optional[str] = None) -> Set[str]:
     """Context tokens of a build for selection rules (see module docstring)."""
     from tri.core.context import build_context
+    from tri.game.weapons import build_weapon_tokens
     from tri.reviews.authority import build_weapons
     toks = {t for t in build_context(b)[0] if t.startswith(PLANNER_PREFIXES)}
     w = weapon_class(b.highest_stats, build_weapons(b))
     if w:
         toks.add(f"weapon:{w}")
+    toks |= build_weapon_tokens(b)                  # weapon:<name> for every equipped weapon
     if archetype:
         toks.add(f"archetype:{archetype}")
     return toks
