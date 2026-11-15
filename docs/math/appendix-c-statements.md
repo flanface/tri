@@ -2,7 +2,7 @@
 
 Every rule and fact the model states is written in one notation (`tri/rules/symbolic.py`). Each written form is shorthand for a precise statement below. $t,s$ are items, $A,B$ archetypes, $C$ a conjunction of conditions, $\hat p$ a held-out rate, $w$ worth ([Section 3](03-worth.md)).
 
-**Conditions.** `Strength ≥ 40` is $\text{hi}_{\text{Strength}}\ge40$; `oath = X` and `oath ≠ X` test a context token (also `weapon = Heavy`, from a weapons note); `s` and `¬s` test whether $s$ is picked; `⊤` is the empty conjunction (always true); `∧` is conjunction.
+**Conditions.** `Strength ≥ 40` is $\text{hi}_{\text{Strength}}\ge40$; `oath = X` and `oath ≠ X` test a context token (also `weapon = Heavy`, the class, and `weapon = Railblade`, true iff $\text{Railblade}\in W(b)$, the equipped weapons and weapon notes); `s` and `¬s` test whether $s$ is picked; `⊤` is the empty conjunction (always true); `∧` is conjunction.
 
 v3.0 adds `origin = X`; `A = chime` ($A_b=\text{chime}$, the locators' family at $b$; [Section 6.12](06-accuracy.md)); `|G(c)| ≥ n` and `|D(k)| < n` (picks of category $c$, or of the derivation tree of core talent $k$, other than the rule's item). The same text is the input language for authored rules ([Section 6.13](06-accuracy.md)): `[C] A = chime ∧ |D(Flame Leap)| ≥ 2 ⇒ Flame Wisp`, or in ASCII `[C] A = chime & |D(Flame Leap)| >= 2 => Flame Wisp`. Each rule prints its id `#3fa2c1` and its selection status (stands, refined, overruled, disputed, suppressed, authored).
 
