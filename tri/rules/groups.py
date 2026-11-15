@@ -40,12 +40,6 @@ def group_name(kind: str, key: str) -> str:
     return f"{kind}({key})"
 
 
-def parse_group(name: str) -> Tuple[str, str]:
-    """"G(Flamecharmer)" -> ("G", "Flamecharmer")."""
-    k, rest = name.split("(", 1)
-    return k, rest[:-1]
-
-
 def req_stats(item) -> Set[str]:
     """Stats named by an item's known requirements (all forms)."""
     out = set(item.requires or {})
@@ -110,7 +104,7 @@ def grounded_stats(catalog, item: str, groups: Dict[str, FrozenSet[str]]) -> Set
 
 def _closure(catalog) -> Dict[str, FrozenSet[str]]:
     """item -> its dependants, for every item, computed once per catalog state
-    (reverse prerequisite graph, one DFS per item; v3.1 memo)."""
+    (reverse prerequisite graph, one DFS per item; memoised)."""
     key = (len(catalog.ids), id(catalog.items))
     hit = catalog.__dict__.get("_dependants")
     if hit is not None and hit[0] == key:
@@ -136,13 +130,13 @@ def _closure(catalog) -> Dict[str, FrozenSet[str]]:
 def dependants(catalog, item: str) -> Set[str]:
     """Items that need item, directly or through another dependant (all-of or
     any-of prerequisites). Picking one says the build has (or nearly always
-    has) item: game data, not a selection rule (v3.0.1)."""
+    has) item: game data, not a selection rule."""
     return set(_closure(catalog).get(item, ()))
 
 
 def tautological_groups(catalog, item: str, groups: Dict[str, FrozenSet[str]],
                         deps: Optional[Set[str]] = None) -> Set[str]:
-    """Groups a literal on item may not count (v3.0.1): D(item) itself, and
+    """Groups a literal on item may not count: D(item) itself, and
     every group whose members other than item all need item."""
     deps = dependants(catalog, item) if deps is None else deps
     out = set()
@@ -156,7 +150,7 @@ def tautological_groups(catalog, item: str, groups: Dict[str, FrozenSet[str]],
 def related_items(catalog, item: str, groups: Dict[str, FrozenSet[str]]) -> Set[str]:
     """Items a rule on item may name (PassConfig.anchors = "related"): its
     prerequisites and the members of its groups. Its dependants are left out
-    (v3.0.1): "y ⇒ item" with y needing item is a prerequisite, not a rule."""
+: "y ⇒ item" with y needing item is a prerequisite, not a rule."""
     it = catalog.items[item]
     out = set(it.prerequisites or []) | {x for g in it.prerequisites_any or [] for x in g}
     for m in groups.values():

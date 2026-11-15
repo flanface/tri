@@ -93,7 +93,7 @@ class SetupView(discord.ui.View):
             ch = self.guild.get_channel(self.g.log_channel_id)
             me = self.guild.me
             if ch is None or not (ch.permissions_for(me).send_messages and ch.permissions_for(me).embed_links):
-                notes.append("I cannot send embeds in the log channel; give me Send Messages and Embed Links there.")
+                notes.append("The bot needs Send Messages and Embed Links in the log channel.")
         self.g.configured = True
         await inter.response.defer()                 # the database write can take over 3 seconds
         try:

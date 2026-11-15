@@ -73,7 +73,7 @@ class PassEngine(_Situations, _Constraints, _Completion, _Reviewing):
         self.values: Dict[str, float] = {}             # admin flat value offsets (Tri.set_values)
         self.locset = None
         self.class_prior = None                        # tri.focus.ClassPrior from the corpus (Tri.engine)
-        self.solo: Dict[str, float] = {}               # prerequisite -> corpus share without its dependants (v3.2)
+        self.solo: Dict[str, float] = {}               # prerequisite -> corpus share without its dependants
         self.is_tal = np.array([catalog.items[i].kind == Kind.TALENT for i in catalog.ids])
         # talent cap: talents <= talent_cap_base - cap_per_mantra * (mantras not of an exempt type)
         self._talents = {i for i in catalog.ids if catalog.items[i].kind == Kind.TALENT}

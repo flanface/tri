@@ -25,7 +25,7 @@ COMPATIBLE_MAJOR = ("2", "3")                  # model formats this tri loads
 
 
 def saved_major(meta: dict) -> str:
-    """The major model format of a saved run: `format` when written (v3.9), else the
+    """The major model format of a saved run: `format` when written, else the
     first number in `version` (older runs wrote "3.8.0"; "poca 3 build" reads as 3)."""
     import re
     f = meta.get("format")
@@ -36,12 +36,12 @@ def saved_major(meta: dict) -> str:
 
 
 class _Persist:
-    """Tri methods (Tri methods: saving and loading a run.)."""
+    """Tri methods: saving and loading a run."""
 
     # ------------------------------------------------------------ persistence
     def save(self, path: str) -> Dict[str, str]:
         """Write the fitted model to directory `path`. Reviews, locators and
-        sidegrades are not written (v3.0.2): the bot and its database are tri's
+        sidegrades are not written: the bot and its database are tri's
         front end and hand them over with set_memory; sidegrades are mined again
         from the stored corpus on load."""
         self._need()
@@ -56,7 +56,7 @@ class _Persist:
                            fitted_at=self.fitted_at, metric_selection=self.metric_selection,
                            held_out_ids=self.held_out_ids, categories=self.manual,
                            values=self.values), f)
-        self.authored.save(path)                        # v3.0: rules written in the rule language
+        self.authored.save(path)                        # rules written in the rule language
         self._save_latents(path)
         return dict(dir=path)
 
@@ -98,7 +98,7 @@ class _Persist:
         if meta["ids"] != list(catalog.ids):
             raise ValueError("saved for a different catalog: load with the old catalog, then migrate()")
         tri = cls(catalog, TriConfig.from_dict(meta["cfg"]))
-        tri._run_path = path                           # v3.3: content caches (availability, sidegrades)
+        tri._run_path = path                           # content caches (availability, sidegrades)
         tri.space = ConceptSpace.load(os.path.join(path, "space"), catalog)
         tri.cfg.space.metric = tri.space.cfg.metric        # runs before v2.3 load with the uniform metric
         tri.data = BuildMatrix.load(os.path.join(path, "data.npz"), catalog, meta["tokens"], meta["data_ids"],

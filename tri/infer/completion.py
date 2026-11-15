@@ -14,21 +14,21 @@ from tri.rules.passes import CENTRAL, FOUNDATIONAL, LUXURY
 
 
 class _Completion:
-    """PassEngine methods (PassEngine methods: completion: required passes, the class focus, luxuries and mantra room.)."""
+    """PassEngine methods: completion: required passes, the class focus, luxuries and mantra room."""
 
     def _required(self, s: _Sit, sel: Set[str], blocked: Set[str]) -> "OrderedDict[str, tuple]":
         """Items the passes require for this build: item -> (pass, source, why, review_id).
         Central anchors are re-read as picks are added (up to central_rounds)."""
         req: "OrderedDict[str, tuple]" = OrderedDict()
-        for it, why in (s.weapon or {}).get("require", {}).items():   # v3.2 weapon rules (math §2.8c)
+        for it, why in (s.weapon or {}).get("require", {}).items():   # weapon rules (math §2.8c)
             t = self.c.index.get(it)
             if t is not None and (it in sel or s.ctx.avail[t]):
                 req[it] = (FOUNDATIONAL, "weapon", f"{it}: {why} (weapon rule)", None)
         for it, v in self._hard(s, "add").items():
             if it in req:
-                continue                                  # v3.4: the weapon rule's entry stands
+                continue                                  # the weapon rule's entry stands
             if self._general(v):
-                # v3.0.1: a generally-good claim made on another archetype yields to what
+                # a generally-good claim made on another archetype yields to what
                 # the reviews say about this one ([X] A = a ⇒ ¬t, strong SM here)
                 if self._forbidden(it, sel, s) is None \
                         and self._rule_block(it, sel, s) is None:
@@ -46,7 +46,7 @@ class _Completion:
                         req[y] = (REVIEW, "review", f"{it} needs {', '.join(v[7])} (review {v[2]}, "
                                                     f"similarity {v[3]:.2f})" + self._note(v[2]), v[2])
                         s.req_why[y] = (Reason.SYNERGY_WITH.value, [it])
-        for it in sorted(getattr(self, "wanted", None) or ()):   # v3.6: "do you want X?" yes: take it
+        for it in sorted(getattr(self, "wanted", None) or ()):   # "do you want X?" yes: take it
             t = self.c.index.get(it)                             # (still subject to the cap and slots)
             if t is not None and it not in req and it not in blocked and (it in sel or s.ctx.avail[t]):
                 req[it] = (REVIEW, "answer", f"you said you want {it}", None)
@@ -85,7 +85,7 @@ class _Completion:
 
     def complete(self, b: Build, capacity: Optional[Tuple[int, int]] = None,
                  region: Optional[int] = None, force: Optional[dict] = None) -> Alternative:
-        """Complete b, then ask the reviews about the result (v3.0.4).
+        """Complete b, then ask the reviews about the result.
 
         A partial input sits far from the full builds the reviews were made on,
         so their claims do not reach it. The completed build does sit near them:
@@ -98,7 +98,7 @@ class _Completion:
         try:
             for _ in range(3):
                 alt = self._complete_rounds(b, capacity, region, force)
-                dang = self._dangling(set(alt.items()), own0)      # v3.2: a prerequisite left without its dependant
+                dang = self._dangling(set(alt.items()), own0)      # a prerequisite left without its dependant
                 if not dang:
                     return alt
                 self._ban_set |= set(dang)
@@ -130,10 +130,10 @@ class _Completion:
         return self._through_review(b, alt, capacity, region, force)
 
     def _through_review(self, b: Build, alt: Alternative, capacity=None, region=None, force=None) -> Alternative:
-        """v3.2: the completed build is reviewed as a full build (the refine step of
+        """the completed build is reviewed as a full build (the refine step of
         the original design: generate, check hard constraints, refine the complete
-        set). The input's picks are pinned, except where a weapon rule forbids
-        them; the review's edits (review claims on the result, weapon rules,
+        set). The input's picks and the adds binding reviews of the input
+        required are pinned, except where a weapon rule forbids them; the review's edits (review claims on the result, weapon rules,
         required picks, swaps) are applied, up to review_pass_rounds times or until
         the review proposes nothing. Adds the review takes back never appear.
         capacity (an explicit lower limit) keeps the completion's counts."""
@@ -141,6 +141,7 @@ class _Completion:
         if rounds <= 0:
             return alt
         own = [i for i in b.items() if i in self.c.index]
+        own += [c.item for c in alt.changes if c.action == "add" and c.source == "review"]   # bound on the input
         seen = {frozenset(alt.items())}
         for _ in range(rounds):
             res = replace(b, talents=list(alt.talents), mantras=list(alt.mantras))
@@ -174,7 +175,7 @@ class _Completion:
 
     def _merge_extra(self, memory: Dict[str, tuple], extra: Optional[Dict[str, tuple]]) -> None:
         """Carry the claims of the reviews of the result into the input's memory.
-        v3.1.3: such a claim outranks a generally-good claim made on another
+        such a claim outranks a generally-good claim made on another
         build and any claim from a less similar build (the nearest review wins,
         math §5); before, a binding generally-good add kept a review's removal
         of the very result from taking effect."""
@@ -184,7 +185,7 @@ class _Completion:
                 memory[k] = v
                 self._mver = getattr(self, "_mver", 0) + 1      # invalidates _review_sides
 
-    # ------------------------------------------------------------ addition order (v3.2)
+    # ------------------------------------------------------------ addition order
     @property
     def _dependants(self) -> Dict[str, List[str]]:
         d = getattr(self, "_deps_cache", None)
@@ -283,7 +284,7 @@ class _Completion:
             sel.discard(it); blocked.add(it)
             changes.append(Change(it, "remove", Reason.SCENARIO_MISMATCH.value, [],
                                   float(s.q[self.c.index[it]]), "rules", None, FOUNDATIONAL, why))
-        # v3.0.3: never ([X]) rules bind existing picks too, as in the analysis
+        # never ([X]) rules bind existing picks too, as in the analysis
         moved = True
         while moved:
             moved = False
@@ -324,7 +325,7 @@ class _Completion:
             have = [i for i in have if i in sel]
 
         worth_why = lambda it: f"taken by {s.q[self.c.index[it]]:.0%} of similar builds that can take it"
-        fallback = [False]                                   # v3.0: F / C talents by worth only as a last resort
+        fallback = [False]                                   # F / C talents by worth only as a last resort
 
         def take(it, pass_, source, why, rid=None, reason=None, cold_ok=False, follow=True):
             k = self._kind(it)
@@ -338,9 +339,9 @@ class _Completion:
             if source == "worth" and ((self._cold(it, s) and not cold_ok) or self._side_block(it, sel | intent, s)):
                 return False
             if source == "worth" and self._depends_unmet(it, sel, s):
-                return False                         # v3.6: x NW > y (review rule): never x without y
+                return False                         # x NW > y (review rule): never x without y
             if source == "worth" and follow and self._prereq_only(it, sel):
-                # v3.2: a talent taken almost only to unlock another is taken with it
+                # a talent taken almost only to unlock another is taken with it
                 # (the dependant pulls it in as a prerequisite), never alone
                 for d in sorted((x for x in self._dependants.get(it, ()) if x not in sel),
                                 key=lambda x: -s.q[self.c.index[x]]):
@@ -351,7 +352,7 @@ class _Completion:
                 return False
             chain: List[str] = []
             if not self._feasible(it, sel, s, rules=rules):
-                # v3.2 addition order: a pick whose prerequisites are missing brings
+                # addition order: a pick whose prerequisites are missing brings
                 # them in first, when the whole chain fits (math §2.8d)
                 chain = self._missing_chain(it, sel, s, blocked) or []
                 after = sel | set(chain) | {it}

@@ -9,7 +9,7 @@ from tri.core.types import NEVER_TAGS, Build, Kind
 
 
 class _Availability:
-    """Catalog methods (Catalog methods: availability: stats, stages, context locks, prerequisites and masks.)."""
+    """Catalog methods: availability: stats, stages, context locks, prerequisites and masks."""
 
     def voi_only(self, item_id: str) -> bool:
         """True if the item is only obtainable in Vow of Iron (tag "voi_only")."""
@@ -153,7 +153,7 @@ class _Availability:
         import numpy as np
         tk, fs = self.build_context(build)
         ctx = self.context_mask(tk, fs)
-        for x in wield_waived(build):                     # review-waived weapon locks (v2.23)
+        for x in wield_waived(build):                     # review-waived weapon locks
             if x in self.index:
                 ctx[self.index[x]] = self.context_ok(x, tk, set(fs) - {"wield"})
         stages = [np.array(self.availability_mask(st, st), bool)[None] & ctx for st in build.stages()]

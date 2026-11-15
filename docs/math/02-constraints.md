@@ -397,13 +397,13 @@ So Unfazed stays with Grasp on Reality when both are met at the same stage (for 
 
 ## 2.8e Completion as a reviewed build
 
-A completion $C(b)$ is checked as a full build before it is returned (the refine step: generate, check hard constraints, refine the complete set). With $R$ the review step (Section 7) on a full build, input picks pinned,
+A completion $C(b)$ is checked as a full build before it is returned (the refine step: generate, check hard constraints, refine the complete set). With $R$ the review step (Section 7) on a full build, pinned set $\Pi=S_{\text{in}}\cup A_{\text{rev}}$ (the input picks and the adds a binding review made),
 
 $$
 C_0 = C(b),\qquad C_{k+1} = R(C_k),\qquad k < 2\ (\texttt{review\_pass\_rounds}),
 $$
 
-stopping when $R$ changes nothing or a selection repeats. An add of $C_k$ that $R$ removes never appears, and a removal $R$ takes back never appears. The weapon rules (2.8c), required picks and the addition order hold at every step.
+stopping when $R$ changes nothing or a selection repeats; $\Pi\subseteq C_k$ for all $k$. An add of $C_k$ that $R$ removes never appears, and a removal $R$ takes back never appears. The weapon rules (2.8c), required picks and the addition order hold at every step.
 
 **Dependencies (v3.6).** A supported DEPENDS review rule $x \Rightarrow C$ (from NW removals, 5.5 item 7) gates every worth pick, in completion and in $R$:
 

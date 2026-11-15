@@ -181,7 +181,7 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
     from tri.infer import active
     from tri.views import insight as V
     if kind in DEPRECATED:
-        raise ValueError(f"the {kind} chart is deprecated (v2.21)")
+        raise ValueError(f"the {kind} chart is deprecated")
     if kind not in KINDS:
         raise ValueError(f"kind is one of {', '.join(KINDS)}")
     tri = svc.tri
@@ -254,12 +254,12 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
             data = dict(facts=rows, certified=n_c, candidates=len(cf.facts) - n_c,
                         new=len(cf.book_update.get("new", [])), retired=len(cf.book_update.get("retired", [])))
             text = f"{n_c} certified · {len(cf.facts) - n_c} candidates"
-        elif kind == "rules":                   # v2.21: how the model answers
+        elif kind == "rules":                   # how the model answers
             from tri.rules import statements as ST
             it = _item(svc, item) if item else None
             data = ST.model_rules(tri, it, limit=limit if limit else 25)
             text = f"{data['total']} rules" + (f" · {data['trivial']} trivial dropped" if data["trivial"] else "")
-        elif kind == "lookup":                  # v2.21: /talent, /mantra
+        elif kind == "lookup":                  # /talent, /mantra
             from tri.analysis import facts as F
             from tri.rules import statements as ST
             it = _item(svc, item)

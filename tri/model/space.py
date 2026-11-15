@@ -497,7 +497,7 @@ class ConceptSpace:
         for M in (bm.X, bm.T):
             M = M.tocsr()
             for a in (M.indptr, M.indices):
-                h.update(memoryview(np.ascontiguousarray(a)).cast("B"))   # v3.7: hashed in place, no copy
+                h.update(memoryview(np.ascontiguousarray(a)).cast("B"))   # hashed in place, no copy
             h.update(str(M.shape).encode())
         for a in (bm.hi, bm.gid, bm.masks):
             a = np.ascontiguousarray(a)
@@ -601,7 +601,7 @@ class ConceptSpace:
 
     def coords(self, bm: BuildMatrix, rows=None, partial: bool = False, dtype=np.float64,
                chunk: int = 8192) -> np.ndarray:
-        """[b, D'] concept coordinates of the builds. v3.7: row chunks (the field
+        """[b, D'] concept coordinates of the builds. row chunks (the field
         vector y and its centred copy were [b, D'] float64 each, 2.5 GB at 300k
         builds); dtype: the stored corpus coordinates are float32 (Tri.coord_dtype)."""
         rows = np.arange(len(bm)) if rows is None else np.asarray(rows)
@@ -628,7 +628,7 @@ class ConceptSpace:
         return BuildMatrix.from_builds([b], self.c, fields=self.fields, tokens=self.tokens)
 
     def ys(self, builds: Sequence[Build]) -> np.ndarray:
-        """[n, D] field vectors y of many builds in one solve (v3.1): the same
+        """[n, D] field vectors y of many builds in one solve: the same
         rows point(b).y gives one at a time (the latent solve is row-wise)."""
         if not len(builds):
             return np.zeros((0, self.cfg.dim))

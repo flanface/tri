@@ -37,7 +37,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                 if n in c.items and c.items[n].kind.value == want]
 
     async def _lookup(inter: discord.Interaction, name: str, want: str):
-        """v3.0.3: an exact (or loose) name, else a substring search: one match
+        """an exact (or loose) name, else a substring search: one match
         is looked up, several are listed."""
         if bot.svc and not bot.svc.resolve(name):
             hits = _kind_matches(name, want)

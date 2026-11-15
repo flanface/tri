@@ -36,7 +36,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         if not ids:
             return await say(inter, "No builds in that link.")
         lines, added = [], 0
-        for bid in ids:                                     # one or many (dwt.sh drive folders, v2.23)
+        for bid in ids:                                     # one or many (dwt.sh drive folders)
             try:
                 bid, parsed = await bot.load_build(bid)
             except Exception as e:

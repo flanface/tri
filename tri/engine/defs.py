@@ -46,8 +46,8 @@ class TriConfig:
     swap_grid: Tuple[float, ...] = (0.1, 0.15, 0.2, 0.3, 0.45, 0.6, 1.01)
     no_fit_grid: Tuple[float, ...] = (0.02, 0.05, 0.08, 0.12, 0.18)
     seed: int = 0
-    selection: SelectionConfig = field(default_factory=SelectionConfig)   # v3.0: review evidence on rules
-    caution: CautionConfig = field(default_factory=CautionConfig)         # v3.1: hold back or ask
+    selection: SelectionConfig = field(default_factory=SelectionConfig)   # review evidence on rules
+    caution: CautionConfig = field(default_factory=CautionConfig)         # hold back or ask
 
     def to_dict(self) -> dict:
         d = asdict(self)

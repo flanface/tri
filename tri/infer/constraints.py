@@ -9,7 +9,7 @@ from tri.rules.passes import CENTRAL, FOUNDATIONAL, LUXURY, PassRule
 
 
 class _Constraints:
-    """PassEngine methods (PassEngine methods: constraints: caps, slots, feasibility, rules, reviews and sides.)."""
+    """PassEngine methods: constraints: caps, slots, feasibility, rules, reviews and sides."""
 
     def _kind(self, item: str) -> str:
         return "t" if self.c.items[item].kind == Kind.TALENT else "m"
@@ -39,9 +39,9 @@ class _Constraints:
         return tr.get(item, LUXURY)
 
     def _worth_ok(self, item: str, fallback: bool = False, s: Optional[_Sit] = None) -> bool:
-        """May worth take item? v3.0: only luxury talents are ranked by worth; a
+        """May worth take item? Only luxury talents are ranked by worth; a
         foundational / central talent is decided by the selection rules (mantras
-        keep worth). v3.0.2 (InferConfig.tier_context): the tier is read on the
+        keep worth). InferConfig.tier_context: the tier is read on the
         build, so a talent whose F / C rules do not fire here is luxury here and
         worth may take it. Two further exceptions: (i) with s, a talent with a take rule whose
         context literals all hold here and that only lacks co-picks (anchors): worth
@@ -53,13 +53,13 @@ class _Constraints:
         if self.tier(item) == LUXURY:
             return True
         if s is not None and getattr(self.cfg, "tier_context", True) and not self._fires_here(item, s):
-            return True                                  # v3.0.2: no rule takes it here, so it is luxury here
+            return True                                  # no rule takes it here, so it is luxury here
         if s is not None and self._anchor_only(item, s):
             return True
         return fallback and getattr(self.cfg, "tier_fallback", False)
 
     def tier_here(self, item: str, s: _Sit) -> str:
-        """The tier of item on this build (v3.0.2, math §6.12): its category, else
+        """The tier of item on this build (math §6.12): its category, else
         the pass of a take rule that fires here, else luxury. A talent that is
         foundational or central elsewhere but has no rule firing here is luxury
         here: worth ranks it like any other luxury talent."""
@@ -93,9 +93,9 @@ class _Constraints:
         return False
 
     def _central(self, sel, s: _Sit) -> Set[str]:
-        """Confirmed central picks of sel (v2.18): talents that define the build's
+        """Confirmed central picks of sel: talents that define the build's
         playstyle. Only an admin "central" category, a reviewer's indicator / core
-        note or a promoted reviewer-consensus tell of the build's family (v2.19) confirms one; a mined take rule does not (it reports its picks under
+        note or a promoted reviewer-consensus tell of the build's family confirms one; a mined take rule does not (it reports its picks under
         the "archetype" pass). Central picks are respected: no removal for space,
         luxury, worth or the cap while anything else can go, and none unless a
         clash (a never rule naming a co-pick, mutual exclusion, a binding review,
@@ -108,7 +108,7 @@ class _Constraints:
         return out
 
     def _firing(self, s: _Sit, pass_: Optional[str] = None) -> List[PassRule]:
-        """Take rules that fire for s, across the chasm (math §5.4, v2.19): a mined
+        """Take rules that fire for s, across the chasm (math §5.4): a mined
         central rule whose covered builds lie in other families (its home) does not
         fire on a build located in a family outside its home. Foundational rules
         (spread over the corpus by construction) and category rules are unchanged."""
@@ -178,7 +178,7 @@ class _Constraints:
         return ""
 
     def _depends_unmet(self, it: str, sel, s=None) -> Optional[List[str]]:
-        """v3.6 (math §2.8e): the components a supported DEPENDS review rule says `it`
+        """(math §2.8e) The components a supported DEPENDS review rule says `it`
         does not work without (x NW > a, b) that sel lacks, or None. A worth pick
         is never taken without them; they are not pulled in for it (that is the
         dependant's job when they are worth it)."""
@@ -277,7 +277,7 @@ class _Constraints:
         if t is None or not s.ctx.avail[t]:
             return None
         if item in (s.weapon or {}).get("guard", ()):
-            return None                                    # v3.4: weapon rules hold over mined never rules
+            return None                                    # weapon rules hold over mined never rules
         for r in self._never.get(item, ()):
             if self._holds(r, set(sel) - {item}, s):
                 return r
@@ -295,7 +295,9 @@ class _Constraints:
     def _rule_block(self, item: str, sel: Set[str], s: _Sit):
         """(reason, related, why) if a review rule rejects item next to sel, else None."""
         if item in (s.weapon or {}).get("guard", ()):
-            return None                                    # v3.4: weapon rules hold over review rules
+            return None                                    # weapon rules hold over review rules
+        from tri.game.weapons import build_weapon_tokens
+        have = set(sel) | build_weapon_tokens(s.build)      # a related weapon counts where it is wielded
         for r in self.review_rules:
             if r.subject != item or not r.applies(s.build, s.feats):
                 continue
@@ -305,11 +307,11 @@ class _Constraints:
                 return Reason.NO_SYNERGY.value, [], r.describe()
             if r.kind == "OFF_ARCHETYPE":                   # strong SM: not on this archetype
                 return Reason.SCENARIO_MISMATCH.value, [], r.describe()
-            if r.kind == "REDUNDANT" and r.other in sel:
+            if r.kind == "REDUNDANT" and r.other in have:
                 return Reason.REDUNDANT_WITH.value, [r.other], r.describe()
-            if r.kind == "CONFLICT" and r.other in sel:
+            if r.kind == "CONFLICT" and r.other in have:
                 return Reason.WORKS_AGAINST.value, [r.other], r.describe()
-            if r.kind == "PREFER" and r.other in sel:
+            if r.kind == "PREFER" and r.other in have:
                 return Reason.LESS_NECESSARY_SPACE.value, [], r.describe()
         return None
 
@@ -320,7 +322,7 @@ class _Constraints:
 
     @staticmethod
     def _memory_why(verb: str, v: tuple) -> str:
-        """"added by review X (similarity s)", or for a pooled family claim (v3.3)
+        """"added by review X (similarity s)", or for a pooled family claim
         "added by the reviews of n builds of this family (newest X)"."""
         if len(v) > 6 and v[6] == "family":
             n = v[8] if len(v) > 8 else "several"

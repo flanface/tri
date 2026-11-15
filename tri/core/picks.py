@@ -5,7 +5,7 @@ from typing import Dict, List, Sequence, Set, Tuple
 
 
 class _Picks:
-    """Catalog methods (Catalog methods: pick relations: exclusions, prerequisites and their order.)."""
+    """Catalog methods: pick relations: exclusions, prerequisites and their order."""
 
     # ---- mutual exclusion and prerequisites ------------------------------
     def excludes(self, a: str, b: str) -> bool:

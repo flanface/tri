@@ -19,7 +19,7 @@ def atom_holds(atom: dict, highest: Dict[str, int], final: Optional[Dict[str, in
     return sum(highest.get(s, 0) for s in atom["stats"]) >= atom["value"]
 
 
-CONTEXT_LOCK_FIELDS: Tuple[str, ...] = ("oath", "murmur", "origin", "wield")   # wield: tri/weapons.py (v2.21)
+CONTEXT_LOCK_FIELDS: Tuple[str, ...] = ("oath", "murmur", "origin", "wield")   # wield: tri/weapons.py
 MANTRA_LOCKS: Tuple[str, ...] = ("oath:Silentheart",)   # Silentheart builds cannot use mantras
 #: Build.meta key -> lock field. The planner records Oath, Murmur and Origin on
 #: every build (an empty value means none).
@@ -56,7 +56,7 @@ def _empty(v) -> bool:
 def wield_waived(b: "Build") -> Set[str]:
     """Items whose weapon locks a review waived for this build (Build.meta
     "wield_waived": the build equips another weapon, wields one it did not
-    select, or the talent works without it). v2.23."""
+    select, or the talent works without it)."""
     m = {str(k).lower(): v for k, v in ((getattr(b, "meta", None) or {})).items()}
     v = m.get("wield_waived") or ()
     return {str(x) for x in ([v] if isinstance(v, str) else v)}
@@ -77,8 +77,8 @@ def build_context(b: "Build") -> Tuple[List[str], Set[str]]:
             fields.add(f)
             if not _empty(meta[k]):
                 tokens.append(f"{f}:{meta[k]}")
-    from tri.game import weapons as W  # forced weapon context (v2.21)
-    ws = [] if meta.get("wield_free") else W.equipped(b)   # wield_free: a review waived every weapon lock (v2.23)
+    from tri.game import weapons as W  # forced weapon context
+    ws = [] if meta.get("wield_free") else W.equipped(b)   # wield_free: a review waived every weapon lock
     if ws:
         fields.add(W.FIELD)
         tokens += W.tokens_of(ws)

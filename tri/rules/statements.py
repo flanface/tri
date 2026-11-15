@@ -1,4 +1,4 @@
-"""Rules and facts as two kinds of nontrivial statement (v2.21, math §12.6).
+"""Rules and facts as two kinds of nontrivial statement (math §12.6).
 
   rules   how the model generates completions and answers: the hard rules
           (cap, slots, capacity, requirements, locks, weapons, benchmarks,
@@ -61,7 +61,7 @@ def model_rules(tri, item: Optional[str] = None, limit: int = 25, hard: bool = T
         tok = W.table()["scale"].get(W._loose(item))
         if tok:
             out.append(dict(kind="weapons", symbol=f"w({item}) × share of equipped weapons with {tok}"))
-    # v3.0.3: the selection (mined + authored + review rules, suppressions
+    # the selection (mined + authored + review rules, suppressions
     # applied), not the mined rulebook alone, so database rules show here
     rb = getattr(tri, "rules", None) if getattr(tri, "selection", None) is not None else None
     rb = rb if rb is not None else getattr(tri, "rulebook", None)
@@ -78,7 +78,7 @@ def model_rules(tri, item: Optional[str] = None, limit: int = 25, hard: bool = T
             from tri.rules.symbolic import cond as _sym, conj
             from tri.rules.triviality import expand
             ex = expand(r.conds, r.item, tri.catalog, rb.groups)
-            if [c.id() for c in ex] != [c.id() for c in r.conds]:       # v3.0.5: what the group literal means
+            if [c.id() for c in ex] != [c.id() for c in r.conds]:       # what the group literal means
                 sym += "   ≡ " + conj(_sym(c) for c in ex)
         out.append(dict(kind="authored" if r.source == "authored" else r.pass_, symbol=sym))
     for r in getattr(tri, "review_rules", []) or []:

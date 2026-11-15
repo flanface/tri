@@ -10,7 +10,7 @@ replies, with one operation per line:
     - Item [s|w] code [> A, B]   remove by name
     draft  undo  clear  submit  skip
 
-(v3.5: audits, x / v verdict lines, are gone.)
+(audits, x / v verdict lines, are gone.)
 
 Numbers in a full review are the build's own picks as numbered on the sheet
 (mantras first, then talents, each alphabetical; Draft.numbered_items).
@@ -89,7 +89,7 @@ REPLY_HELP = (
     "= 4 9                      iffy\n"
     "~ 3                        unmark\n"
     "+ Item, Item [s|w] [code]  add (default s NA)\n"
-    "+ Item > Other             add, synergy (SY)\n"
+    "+ Item > Other|Weapon      add, synergy (SY); a weapon is noted as used\n"
     "- 3 NW > Item              needs Item\n"
     "- 4 LL | + Item LM         luxury worth less | more\n"
     "= 4 [w|s] > Item           sidegrade\n"
@@ -101,6 +101,8 @@ REPLY_HELP = (
     "LN less necessary, NA necessary, GG generally good, RW redundant, WA works against, NS no synergy, "
     "SM wrong scenario, BR broken, SY synergy, NW needs, LL/LM luxury worth, SG sidegrade. Unmarked = endorsed."
 )
+
+
 @dataclass
 class Line:
     n: int                        # line number in the message (1-based)
@@ -157,7 +159,7 @@ def parse_note(body: str) -> dict:
     if words and words[0].casefold() in WEAPON_HEADS and (sep and len(words) <= 2 or not sep and len(words) > 1
                                                           and words[0].casefold() != "w"):
         names = [x.strip() for x in re.split(r"[,;]", tail) if x.strip()] if tail else []
-        if names and not all(x.casefold() in _CLASS_WORDS for x in names):   # v3.3: # weapon: A, B sets
+        if names and not all(x.casefold() in _CLASS_WORDS for x in names):   # # weapon: A, B sets
             # equips by name; class names (# weapons: Heavy) stay the deprecated v2.21 comment
             return dict(kind="weapon", weapons=names, text=t)
         return dict(kind="comment", text=t)
@@ -399,7 +401,7 @@ def _apply_note(desk: ReviewDesk, user_id: int, ln: Line, svc) -> str:
 
 def _item_ref(svc, x: str, numbered, pool, weapons: bool = False) -> str:
     """A related item: a number from the sheet or a name. weapons: a weapon
-    name (not an item) gives "weapon:<name>" (v3.3)."""
+    name (not an item) gives "weapon:<name>"."""
     if weapons and not x.isdigit() and svc.resolve(x) is None:
         from tri.game.weapons import weapon_token
         w = weapon_token(x)

@@ -107,7 +107,7 @@ def remap_matrix(bm: BuildMatrix, new: Catalog, renames: Dict[str, str],
                  cache_dir: Optional[str] = None) -> BuildMatrix:
     """Same builds, new catalog: renamed items follow, removed items drop,
     availability recomputed with the new requirements (cached by content in
-    cache_dir, v3.3). No data is lost."""
+    cache_dir). No data is lost."""
     old_ids = bm.catalog.ids
     col = np.array([new.index.get(renames.get(i, i), -1) for i in old_ids])
     X = bm.X.tocoo()

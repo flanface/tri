@@ -75,7 +75,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         t0 = time.monotonic()
         was = bot.svc.run_id if bot.svc else "none"
         if not getattr(bot.settings, "reload_swap", False) and bot.svc is not None:
-            # v3.7: one model in memory: the old one is released before the new one
+            # one model in memory: the old one is released before the new one
             # loads (commands answer "no model loaded" meanwhile); TRI_RELOAD_SWAP=1
             # keeps it serving, at twice the memory
             bot.svc = None

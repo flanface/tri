@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Iterable, List, Optional
 
 from .wire import REASON_LABELS
+from tri.game.weapons import label as wlabel
 
 MARK = {"add": "[+]", "remove": "[-]", "iffy": "[=]", "overturn": "[x]", "uphold": "[v]"}
 ORDER = {"add": 0, "remove": 1, "iffy": 2, "overturn": 3, "uphold": 3}
@@ -32,7 +33,7 @@ def reason_text(o: dict) -> str:
     if o["action"] == "iffy":
         if o.get("reason"):                       # = x SG > y: a sidegrade (weak: this archetype, strong: generally)
             sc = " (generally)" if o.get("strength") == "strong" else " (this archetype)" if o.get("strength") else ""
-            return f"iffy: {REASON_LABELS.get(o['reason'], o['reason'])} {', '.join(o.get('related') or [])}{sc}"
+            return f"iffy: {REASON_LABELS.get(o['reason'], o['reason'])} {', '.join(map(wlabel, o.get('related') or []))}{sc}"
         return "iffy"
     if o["action"] in ("overturn", "uphold"):
         t = o.get("target") or {}
@@ -45,7 +46,7 @@ def reason_text(o: dict) -> str:
     if r == "needs" and o.get("related"):         # - x NW > a, b
         return f"does not work without {', '.join(o['related'])} (= adding them, given room)" + _pass_tag(o)
     if o.get("related"):
-        lab += " " + ", ".join(o["related"])
+        lab += " " + ", ".join(map(wlabel, o["related"]))
     lab += _pass_tag(o, lab)
     if o.get("note") and o["action"] in ("add", "remove"):
         lab += f'  // {o["note"]}'

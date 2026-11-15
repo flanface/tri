@@ -14,7 +14,7 @@ from tri.rules.passes import CENTRAL, FOUNDATIONAL, LUXURY
 
 
 class _Answering:
-    """Tri methods (Tri methods: answers: the pass engine, completion, review, worth and explanations.)."""
+    """Tri methods: answers: the pass engine, completion, review, worth and explanations."""
 
     # ------------------------------------------------------------ answers
     def engine(self) -> PassEngine:
@@ -23,7 +23,7 @@ class _Answering:
                        self.ledger, self.cfg.infer)
         e.manual = {i: c for i, c in self.manual.items() if i in self.catalog.index}
         e.locset = self.locset
-        e.stated = self.stated_by_review()           # v3.6: claims keep to their stated family
+        e.stated = self.stated_by_review()           # claims keep to their stated family
         e.unrated_items = {i for i in self.patches.release_times() if i in self.catalog.index}
         from tri.rules.registry import sidegrade_id
         gone = getattr(self, "sidegrades_dropped", set())
@@ -88,7 +88,7 @@ class _Answering:
         return cp
 
     def _rule_homes(self) -> Dict[str, set]:
-        """Home families of the mined central take rules (math §5.4, v2.19): on a
+        """Home families of the mined central take rules (math §5.4): on a
         reference sample, the families whose located builds the rule covers with at
         least rule_home_min weight and among which the item is still taken at rate
         theta_take. A build located elsewhere is across the chasm: the rule does not
@@ -119,7 +119,7 @@ class _Answering:
             if r.pass_ != CENTRAL or r.effect != "take" or r.status != "active" or r.item not in self.catalog.index:
                 continue
             if r.source in ("authored", "review") or any(c.key.startswith("archetype:") for c in r.conds):
-                continue                               # v3.0: an author, the reviews or an A literal already scope it
+                continue                               # an author, the reviews or an A literal already scope it
             m = self.rules.rule_mask(bm, r) & loc
             if w[m].sum() < mmin:
                 continue
@@ -129,7 +129,7 @@ class _Answering:
             home = {ls.keys[k] for k in range(len(ls.keys)) if cov[k] >= mmin and tak[k] >= th * cov[k]}
             ev = (getattr(self.selection, "evidence", None) or {}).get(r.key) or {}
             fams = set(ev.get("families", ()))
-            home |= {k for k in ls.keys if family_key(ls.names.get(k, k)) in fams}   # v3.0.1: reviewers kept it there
+            home |= {k for k in ls.keys if family_key(ls.names.get(k, k)) in fams}   # reviewers kept it there
             out[r.key] = home
         self.__dict__["_home_cache"] = (tag, out)
         return out
@@ -145,7 +145,7 @@ class _Answering:
         mantra counts instead (an input above the cap or its slots is still
         trimmed: the cap is strict). answers: the asker's answers to caution
         questions (tri.infer.caution.Answers or its dict); they act on this call only.
-        withheld: items not added in this call (held for thin evidence, v3.1.1)."""
+        withheld: items not added in this call (held for thin evidence)."""
         e, archetype, locked = self._answered(build, archetype, locked, answers)
         e.withheld = set(withheld) | Answers.of(answers).unwanted
         e.wanted = Answers.of(answers).wanted
@@ -175,7 +175,7 @@ class _Answering:
         if yes:
             e.manual = dict(e.manual, **{i: CENTRAL for i in yes if i in build.items() or e.manual.get(i) != FOUNDATIONAL})
             locked = tuple(locked) + tuple(i for i in yes if i in build.items())
-        if a.weapon:                                    # v3.2: a weapon name is read as equipped; a class sets the focus
+        if a.weapon:                                    # a weapon name is read as equipped; a class sets the focus
             from tri.game.weapons import resolve
             from tri.infer.focus import norm_class
             names = resolve(a.weapon)
@@ -199,7 +199,7 @@ class _Answering:
     def settle(self, build: Build, mode: str = "review", archetype: Optional[str] = None, answers=None,
                max_alternatives: int = 3, capacity: Optional[Tuple[int, int]] = None, rounds: int = 4,
                result=None):
-        """(result, Caution) with held marks settled (v3.1.1, math §14.1). A held
+        """(result, Caution) with held marks settled (math §14.1). A held
         change is not just hidden: a held removal keeps the pick (locked) and a
         held add is not taken (withheld), and the answer is solved again, so the
         slot goes to the next pick and the answer still fills the cap and the

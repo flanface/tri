@@ -73,7 +73,7 @@ def _two_means(X: np.ndarray, w: np.ndarray, rng, restarts: int, iters: int) -> 
     return best
 
 
-#: v3.7: rows per float block in weighted column sums (the bool tables are
+#: rows per float block in weighted column sums (the bool tables are
 #: never cast whole: a float copy of a 300k-row region was 1.7 GB per table).
 ROW_CHUNK = 16384
 
@@ -113,7 +113,7 @@ def _score(X, A, ia, ib) -> np.ndarray:
 
 
 def _one(X, A, w, h1, h2, cand, rng, cfg):
-    """One sidegrade among the candidate columns, or None. v3.8: every rate is
+    """One sidegrade among the candidate columns, or None. every rate is
     taken over the candidate columns only (the sides are drawn from them), not
     over the whole catalog and then cut; indices are local to cand inside and
     global in the result."""

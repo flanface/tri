@@ -145,7 +145,7 @@ class TriBot(discord.Client):
                                                  getattr(settings, "dwt_api", "https://api.dwt.sh")))
         self.fetcher = fetcher
         self.desk = desk or ReviewDesk(settings.state_path, settings.claim_ttl_min * 60)
-        self.questions: Dict[int, Session] = {}          # open question sheets by message id (v3.1.1)
+        self.questions: Dict[int, Session] = {}          # open question sheets by message id
         self.guild_cfg = guilds or GuildConfigStore(self.store, settings.guild_config_path,
                                                  settings.guild_config_store, settings.guilds_table)
         self.claim_lock = asyncio.Lock()
@@ -421,7 +421,7 @@ class TriBot(discord.Client):
         except Exception:
             log.exception("loading reviews into memory")
             r = dict(loaded=0, skipped=0, locators=0, error=True)
-            r.update(await self.load_rules(svc))           # v3.0.3: rules do not depend on the reviews
+            r.update(await self.load_rules(svc))           # rules do not depend on the reviews
             return r
         try:
             rows = await asyncio.wait_for(self.store.locators(), 60)
@@ -533,7 +533,7 @@ class TriBot(discord.Client):
                                         & set(g.reviewer_role_ids))
 
     def is_user(self, inter, g: GuildConfig) -> bool:
-        """analyze, complete and plot (v3.1): reviewers, user roles, or everyone when open."""
+        """analyze, complete and plot: reviewers, user roles, or everyone when open."""
         if self.is_reviewer(inter, g):
             return True
         if not g.configured:
@@ -611,7 +611,7 @@ class TriBot(discord.Client):
             except Exception:
                 log.exception("inline call failed")
 
-    # ------------------------------------------------------------ question sheets (v3.1.1)
+    # ------------------------------------------------------------ question sheets
     async def post_questions(self, inter: discord.Interaction, questions: List[dict], title: str,
                              round_no: int, timeout: float) -> Optional[Session]:
         """Post a question sheet as a channel message and open its session. None if
@@ -642,15 +642,15 @@ class TriBot(discord.Client):
         if message.author.id != s.user_id:
             return await answer(f"These questions belong to <@{s.user_id}>.")
         if not (message.content or "").strip():
-            return await answer("I could not read that reply. Turn on ping on reply (the @ ON toggle when "
-                                "replying), or ask an admin to enable the Message Content intent.")
+            return await answer("Reply unreadable: turn on ping on reply (@ ON), or ask an admin to enable "
+                                "the Message Content intent.")
         svc = self.svc
         arch = getattr(svc, "archetypes", None) or []
         p = parse_answers(message.content, s.questions,
                           resolve_item=(svc.resolve if svc is not None else None),
                           resolve_archetype=lambda n: next((a for a in arch if archetype_key(a) == archetype_key(n)), None))
         s.take(p)
-        # v3.1.3: no confirmation; tri replies only when something is unread or still open
+        # no confirmation; tri replies only when something is unread or still open
         errs = "; ".join(p.errors)
         if errs or not s.closed:
             left = s.open_numbers()
@@ -661,7 +661,7 @@ class TriBot(discord.Client):
             s.future.set_result("post" if s.done else "answered")
 
     async def ask_first(self, inter: discord.Interaction, gc: GuildConfig, res: dict, run, build, title: str):
-        """v3.1.1: ask the caution questions before posting. run(answers, caution) ->
+        """ask the caution questions before posting. run(answers, caution) ->
         result. Rounds go on while answers make new questions necessary (at most
         gc.max_questions in all when it is set). Returns (result to post, answers)."""
         qs0 = (res.get("caution") or {}).get("questions") or []
@@ -669,7 +669,7 @@ class TriBot(discord.Client):
             return res, None
         s_all = Session(inter.user.id, [])
         asked: set = set()
-        cap = int(gc.max_questions or 0) or int(getattr(self.svc.tri.cfg.caution, "max_questions", 0) or 0)   # v3.6: a budget in all
+        cap = int(gc.max_questions or 0) or int(getattr(self.svc.tri.cfg.caution, "max_questions", 0) or 0)   # a budget in all
         rounds = 0
         while rounds < 6:
             qs = [q for q in (res.get("caution") or {}).get("questions") or [] if q["key"] not in asked]
@@ -692,7 +692,7 @@ class TriBot(discord.Client):
             rounds += 1
             if how == "timeout":
                 try:
-                    await s.message.reply("No more answers in time; posting the analysis with what I have.",
+                    await s.message.reply("Time is up; posting the analysis with the answers so far.",
                                           mention_author=False, allowed_mentions=NO_PINGS)
                 except (discord.HTTPException, AttributeError):
                     pass
@@ -731,9 +731,8 @@ class TriBot(discord.Client):
         if not self.is_reviewer(message, g):
             return await answer("You need a reviewer role for this.")
         if not (message.content or "").strip():
-            return await answer("I could not read that reply. Turn on ping on reply (the @ ON toggle when "
-                                "replying), or ask an admin to enable the Message Content intent "
-                                "(TRI_MESSAGE_CONTENT=1).")
+            return await answer("Reply unreadable: turn on ping on reply (@ ON), or ask an admin to enable "
+                                "the Message Content intent (TRI_MESSAGE_CONTENT=1).")
         try:
             res = apply_reply(self.desk, d.user_id, message.content, self.svc)
         except DraftError as e:
@@ -763,7 +762,7 @@ class TriBot(discord.Client):
     async def model_call(self, fn, *a, **kw):
         """Run a model call off the event loop, giving up after
         TRI_COMMAND_TIMEOUT seconds (the command then says it timed out).
-        v3.8: the call waits for the model lock at most that long and is dropped,
+        the call waits for the model lock at most that long and is dropped,
         not run late, once the command has given up; before, every timed-out
         command still ran afterwards, one after another under the lock, so one
         slow step (a reload, a review rebuild) made every later command time out

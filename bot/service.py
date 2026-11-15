@@ -7,7 +7,7 @@ runs/LATEST is followed).
 Reviews take effect the moment they are submitted (review memory and worth).
 Locators (administrator-labelled builds) take effect the moment they are added.
 Categories are read only: they come from the run (tri.json), never the
-database (v3.0.2). A game data sync adds
+database. A game data sync adds
 new talents and mantras unrated, without a refit (tri.sync).
 The service never refits: rules and the field change only when you run tri.cli.fit
 and reload. The only thing written into the run is <run>/sync/ (the saved
@@ -33,7 +33,7 @@ from tri.reviews.locators import archetype_key
 from tri.sources.defs import PipelineConfig
 from tri.sources.pipeline import parse_record
 
-from .wire import REASON_LABELS, CatalogHelpers, LocatorInfo, ParsedBuild  # noqa: F401 (re-exported)
+from .wire import CatalogHelpers, LocatorInfo, ParsedBuild  # noqa: F401 (re-exported)
 
 
 def resolve_run(path: str) -> str:
@@ -94,7 +94,7 @@ class ModelService(CatalogHelpers):
         ic = self._read_json("item_counts.json", {})
         self.item_counts: Dict[str, dict] = ic.get("items", {})
         self.min_item_count = ic.get("min_item_count")
-        self.lock = threading.RLock()            # v3.8: re-entrant, so the bot can hold it around a call
+        self.lock = threading.RLock()            # re-entrant, so the bot can hold it around a call
         self._index_names()
         self.memory_skipped: List[str] = []
         self.locators_skipped: List[str] = []
@@ -102,7 +102,7 @@ class ModelService(CatalogHelpers):
         self.values_skipped: List[str] = []
         self.load_seconds = round(time.monotonic() - t0, 2)
         from tri.runtime import release
-        release()                                          # v3.7: the load's temporaries back to the OS
+        release()                                          # the load's temporaries back to the OS
 
     def load_text(self) -> str:
         """Where the latents came from (the run's cache or a fresh solve), the load
@@ -146,7 +146,7 @@ class ModelService(CatalogHelpers):
 
     def _lock_sources(self) -> list:
         """deepwoken.co game data as a second source of context locks (oath,
-        origin) for the sync, best effort. v3.7: off unless TRI_SYNC_DWCO=1;
+        origin) for the sync, best effort. off unless TRI_SYNC_DWCO=1;
         pocamind/data holds every lock the sync reads."""
         if os.environ.get("TRI_SYNC_DWCO", "0").strip().lower() in ("0", "false", "no", "off"):
             return []
@@ -169,7 +169,7 @@ class ModelService(CatalogHelpers):
         self.__dict__.pop("_sha_cache", None)
         return rep
 
-    # ------------------------------------------------------------ categories (read only, v3.0.2)
+    # ------------------------------------------------------------ categories (read only)
     def categories(self) -> Dict[str, str]:
         return dict(self.tri.manual)
 
@@ -200,7 +200,7 @@ class ModelService(CatalogHelpers):
     def values(self) -> Dict[str, float]:
         return dict(self.tri.values)
 
-    # ------------------------------------------------------------ authored rules (v3.0)
+    # ------------------------------------------------------------ authored rules
     def set_rules(self, rows: Sequence[dict]) -> dict:
         """Replace the authored rules with the stored rows; rows that no longer
         parse (an item renamed or removed) are kept but listed as broken."""
@@ -239,7 +239,7 @@ class ModelService(CatalogHelpers):
 
     def list_rules(self, item: Optional[str] = None, status: Optional[str] = None,
                    source: Optional[str] = None, build=None, every: bool = False) -> List[dict]:
-        """v3.4: every=True (or a build) lists every non-worth rule (Tri.all_rules)."""
+        """every=True (or a build) lists every non-worth rule (Tri.all_rules)."""
         with self.lock:
             return self.tri.list_rules(item=item, status=status, source=source, build=build, every=every)
 
@@ -424,6 +424,18 @@ class ModelService(CatalogHelpers):
         return out
 
     # ------------------------------------------------------------ parsing
+    def _inherit_weapons(self, b: Build) -> None:
+        """A build that records no weapon takes the weapons its newest review
+        named (# weapon notes): claims scoped to a weapon then hold on it again."""
+        from tri.game.weapons import equipped
+        if not b.build_id or equipped(b):
+            return
+        revs = [r for r in getattr(self.tri, "reviews", None) or ()
+                if r.original.build_id == b.build_id and equipped(r.original)]
+        if revs:
+            r = max(revs, key=lambda r: r.timestamp or 0)
+            b.meta = dict(b.meta or {}, weapon=equipped(r.original))
+
     def parse(self, build_id: str, record: dict) -> ParsedBuild:
         """Planner record -> ParsedBuild. Raises ValueError if unreadable."""
         cfg = PipelineConfig(include_private=True, min_power=0, min_talents=0,
@@ -432,11 +444,12 @@ class ModelService(CatalogHelpers):
         if pr is None:
             raise ValueError(f"could not read build {build_id}: {why}")
         b = pr.build
+        self._inherit_weapons(b)
         raw_t, raw_m = list(b.talents), list(b.mantras)
         unknown = [x for x in b.items() if x not in self.catalog.index]
         b.talents = [t for t in b.talents if t in self.catalog.index]
         b.mantras = [m for m in b.mantras if m in self.catalog.index]
-        if unknown:                                     # v3.6: they stay in the saved build, so they take room
+        if unknown:                                     # they stay in the saved build, so they take room
             b.meta = dict(b.meta or {}, unknown_items=dict(
                 talents=[x for x in unknown if x in raw_t], mantras=[x for x in unknown if x in raw_m and x not in raw_t]))
         unmet = [x for x in b.items() if not self.catalog.available_in(x, b)]
@@ -514,7 +527,7 @@ class ModelService(CatalogHelpers):
         return out
 
     def _unknown_room(self, b: Build):
-        """(unknown talents, unknown mantras) the build's record keeps (v3.6)."""
+        """(unknown talents, unknown mantras) the build's record keeps."""
         u = (b.meta or {}).get("unknown_items") or {}
         return len(u.get("talents") or ()), len(u.get("mantras") or ())
 
@@ -530,7 +543,7 @@ class ModelService(CatalogHelpers):
             ans = Answers.of(answers)
             archetype = archetype or ans.archetype
             ut, um = self._unknown_room(b)
-            if um:                                      # v3.6: unknown mantras fill slots (read as wildcards)
+            if um:                                      # unknown mantras fill slots (read as wildcards)
                 tot = sum(self.catalog.mantra_slot_usage(b.items(), self.catalog.oath_of(b))["slots"].values())
                 cap = (talents, max(0, min(tot - um, mantras if mantras is not None else tot)))
             for _ in range(3):
@@ -589,12 +602,6 @@ class ModelService(CatalogHelpers):
         """Changes whenever the catalog does (reload or applied sync)."""
         s = self.sync_info or {}
         return f"{self.run_id}:{len(self.catalog)}:{s.get('sha') or ''}:{id(self.catalog)}"
-
-    def catalog_bundle(self) -> dict:
-        """The catalog snapshot a client needs for autocomplete and draft checks."""
-        return dict(catalog=self.catalog.to_dict(), canonical_names=self.canonical_names,
-                    excluded=self.excluded, item_counts=self.item_counts, min_item_count=self.min_item_count,
-                    run_id=self.run_id, catalog_rev=self.catalog_rev())
 
     def plot_concept(self, *a, **kw) -> tuple:
         from .plotting import plot_concept

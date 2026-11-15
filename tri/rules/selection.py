@@ -1,4 +1,4 @@
-"""The selection rule set (v3.0): mined rules, authored rules and review
+"""The selection rule set: mined rules, authored rules and review
 evidence in one rulebook that decides foundational and central picks and
 exclusions (math §6.12).
 
@@ -48,20 +48,20 @@ class SelectionConfig:
     refine: bool = True            # try one separating literal before overruling
     corpus_check: bool = True      # a refinement must still certify on the corpus (needs bm)
     keep_weight: float = 1.0       # an unmarked keep, relative to an explicit operation
-    # v3.0.1: selection rules read off the reviews themselves (math §6.12.5)
+    # selection rules read off the reviews themselves (math §6.12.5)
     review_rules: bool = True
     family_min: int = 3            # A = a ⇒ t / ¬t: reviews of family a that bear on t
     family_ops: int = 2            # ... of which explicit operations on t (adds / removals / verdicts)
-    family_share: float = 0.75     # ... and the side's share of their weight (v3.0.2: 0.75, was 0.8)
+    family_share: float = 0.75     # ... and the side's share of their weight (0.75, was 0.8)
     found_min: int = 8             # ⊤ ⇒ t: builds reviewed in full (not made by tri) that can take t ...
-    found_share: float = 0.75      # ... that keep or get t, as a share of them (v3.0.2: 0.75, was 0.85)
+    found_share: float = 0.75      # ... that keep or get t, as a share of them (0.75, was 0.85)
     found_families: int = 2        # ... in at least this many stated / located families
-    # v3.0.2: A = a ⇒ t from endorsement alone (math §6.12.5): t kept or added on
+    # A = a ⇒ t from endorsement alone (math §6.12.5): t kept or added on
     # >= keep_share of the full reviewed builds of family a that can take it
     keep_rules: bool = True
     keep_min: int = 4
     keep_share: float = 0.75
-    avail_only: bool = True        # v3.0.2: denominators count only builds that can take t
+    avail_only: bool = True        # denominators count only builds that can take t
 
 
 @dataclass
@@ -88,7 +88,7 @@ def _cases(reviews, ledger, catalog, groups, family_of, cfg) -> Dict[str, List[t
         lw = ledger.weights.get(r.review_id) if ledger is not None else None
         order = (ledger.order.get(r.review_id, 0) if ledger is not None else 0, float(getattr(r, "timestamp", 0) or 0))
         ctx = None
-        marked = set(getattr(r, "neutral", None) or ())   # v3.1.1: neutral items say nothing
+        marked = set(getattr(r, "neutral", None) or ())   # neutral items say nothing
         sig = []
         for j, o in enumerate(r.operations):
             ow = 0.0 if o.item_id in marked else (lw.ops[j] if lw is not None else 1.0)
@@ -211,7 +211,7 @@ def _views(reviews, family_of, catalog) -> List[tuple]:
 
 def review_rules(sig: Dict[str, List[tuple]], views: List[tuple], catalog, cfg: SelectionConfig,
                  skip=frozenset()) -> List[PassRule]:
-    """Selection rules the reviews state directly (v3.0.1, math §6.12.5). Per item t
+    """Selection rules the reviews state directly (math §6.12.5). Per item t
     and stated / located family a, over the reviews that bear on t:
 
       A = a ⇒ ¬t   [X]  >= family_ops explicit removals (not for space) of t on
@@ -229,7 +229,7 @@ def review_rules(sig: Dict[str, List[tuple]], views: List[tuple], catalog, cfg: 
                          newer than its newest support. A family with an [X]
                          rule on t is excepted: (A ≠ a ∧ ...) ⇒ t.
 
-    "Can take t" (avail_only, v3.0.2): t's requirements hold at the build's
+    "Can take t" (avail_only): t's requirements hold at the build's
     pre-shrine or final stats (Catalog.available_in), or the build holds t. A
     build that could never take t says nothing about it.
 
@@ -280,7 +280,7 @@ def review_rules(sig: Dict[str, List[tuple]], views: List[tuple], catalog, cfg: 
         pos = {x[1]: x for x in cs if x[0] > 0}
         stated = {r.key for r in out if r.item == it}
         kept: List[PassRule] = []                      # added unless ⊤ ⇒ t forms (it covers them)
-        if getattr(cfg, "keep_rules", False):          # v3.0.2: A = a ⇒ t from endorsement
+        if getattr(cfg, "keep_rules", False):          # A = a ⇒ t from endorsement
             for f in sorted({v[2] for v in views if v[2]} - set(never_fams)):
                 tok = Condition("context", f"archetype:{f}", "has")
                 if PassRule(CENTRAL, it, [tok], 0, 0, 0, 0, effect=TAKE).key in stated:
@@ -342,7 +342,7 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
     sig = _cases(reviews, ledger, rb.c, rb.groups, family_of, cfg) if reviews else {}
     rules: List[PassRule] = []
     auth = list(authored.rules(vocab)) if (authored is not None and vocab is not None) else []
-    if cfg.review_rules and sig:                       # v3.0.1: what the reviews say, as rules
+    if cfg.review_rules and sig:                       # what the reviews say, as rules
         fo = family_of if family_of is not None else None
         for r in review_rules(sig, _views(reviews, fo, rb.c), rb.c, cfg):
             rid = rule_id(r.key)
@@ -397,7 +397,7 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
             r.note = (r.note + "; " if r.note else "") + f"disputed +{len(sup)} −{len(cnt)}"
             sel.evidence[r.key] = dict(info, status="disputed")
         rules.append(r)
-    from tri.rules.triviality import cull               # v3.0.5: review and refined rules too
+    from tri.rules.triviality import cull               # review and refined rules too
     for key, why in cull(rules, rb.c, rb.groups):
         sel.evidence.setdefault(key, {})["status"] = "trivial"
         sel.evidence[key]["why"] = why

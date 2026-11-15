@@ -1,4 +1,4 @@
-"""Triviality baselines for statements (v2.21, math §12.6).
+"""Triviality baselines for statements (math §12.6).
 
 A rule or fact is stated only when it says more than the game data already
 says. Pom's five baselines; each statement on the left is trivial when the
@@ -11,7 +11,7 @@ condition on the right holds:
   A and B differ in x             x is locked by oath, murmur or origin and A, B
                                   have different ones (the lock explains it)
 
-Group literals (v3.0.5). A literal counts the picks of a known group other
+Group literals. A literal counts the picks of a known group other
 than the rule's own item x: G' = G − {x}, |G'| = m, room ρ = the most members
 of G' a build can hold together (exclusive pairs, the rule's own absences).
 
@@ -105,7 +105,7 @@ def trivial_fact(f, catalog) -> Optional[str]:
 
 def trivial_rule(r, catalog, groups: Optional[Dict[str, FrozenSet[str]]] = None) -> Optional[str]:
     """A mined pass rule (tri.passes.PassRule). groups: the known groups, for
-    the group baselines (v3.0.5); group literals are read as the item literals
+    the group baselines; group literals are read as the item literals
     they are equivalent to."""
     item = getattr(r, "item", None)
     conds = list(getattr(r, "conds", []) or [])
@@ -133,7 +133,7 @@ def trivial_rule(r, catalog, groups: Optional[Dict[str, FrozenSet[str]]] = None)
     return None
 
 
-# ---------------------------------------------------------------- groups (v3.0.5)
+# ---------------------------------------------------------------- groups
 MAX_EXACT = 16          # exact room (largest compatible subset) up to this many members
 MAX_EXPAND = 4          # a saturated literal is read as at most this many item literals
 

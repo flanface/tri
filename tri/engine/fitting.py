@@ -21,11 +21,11 @@ from tri.model.worth import FieldWorth
 from tri.rules.induction import context_features
 from tri.rules.passes import Rulebook
 
-COORDS_DEFAULT = "float32"     # TRI_COORDS (v3.7)
+COORDS_DEFAULT = "float32"     # TRI_COORDS
 
 
 class _Fitting:
-    """Tri methods (Tri methods: fitting the model: fit, refit, worth refresh, calibration, catalog extension, patches and drift.)."""
+    """Tri methods: fitting the model: fit, refit, worth refresh, calibration, catalog extension, patches and drift."""
 
     # ------------------------------------------------------------ fitting
     def fit(self, builds, weights: Optional[Sequence[float]] = None, verbose: bool = False) -> dict:
@@ -119,7 +119,7 @@ class _Fitting:
         regions = self.space.region_of(self._Zdata)
         d = getattr(self, "_run_path", None)
         key = f = None
-        if d:                                          # v3.3: cached by content (corpus, regions, settings)
+        if d:                                          # cached by content (corpus, regions, settings)
             import dataclasses as _dc
             import hashlib
             import json as _json
@@ -175,7 +175,7 @@ class _Fitting:
         return hit
 
     def _renote(self) -> None:
-        """The locator set changed: coordinates stay, fine readings are re-noted (v3.1)."""
+        """The locator set changed: coordinates stay, fine readings are re-noted."""
         cache = self.__dict__.get("_place_cache") or {}
         pb = self.__dict__.get("_place_builds") or {}
         if self.locset is not None and self.locset.refining:
@@ -184,7 +184,7 @@ class _Fitting:
                     self.locset.note(u, pb[k])
 
     def _place_many(self, builds) -> None:
-        """Fill the placement memo for many builds with one batched solve (v3.1)."""
+        """Fill the placement memo for many builds with one batched solve."""
         if self.space is None:
             return
         cache = self.__dict__.setdefault("_place_cache", {})
@@ -209,7 +209,7 @@ class _Fitting:
 
     def _vec(self, b: Build) -> Tuple[np.ndarray, np.ndarray]:
         """(picks x [N], availability a [N]) of a build, as the corpus matrix sees it.
-        Memoised per catalog and field (v3.8: each review rebuild asked for the
+        Memoised per catalog and field (each review rebuild asked for the
         same reviewed builds about 2000 times, one availability solve each)."""
         memo = self.__dict__.setdefault("_vec_memo", {})
         key = (id(self.space), id(self.catalog), _build_key(b))
@@ -237,7 +237,7 @@ class _Fitting:
     def _family_of(self, b: Build) -> Optional[str]:
         """Family key of b's archetype, or None. A reviewed build's family is the
         one its reviewer states (# is a, else # a: ... notes naming a single
-        family; v3.0.1), else the one it is located in, unless a # not note
+        family), else the one it is located in, unless a # not note
         denies it. Reviews are accurate: a statement outranks the reading."""
         st = (getattr(self, "_stated", None) or {}).get(id(b))
         if st is not None and st[0] is b and st[1]:
@@ -284,7 +284,7 @@ class _Fitting:
 
     def _archetype_reader(self, bm: BuildMatrix, chunk: int = 8192) -> Optional[List[Optional[str]]]:
         """Archetype family key per row of bm (None = unlocated), read coarsely by the
-        locators at each row's place in the concept space (the A = a literal, v3.0)."""
+        locators at each row's place in the concept space (the A = a literal)."""
         ls = getattr(self, "locset", None)
         if ls is None or self.space is None or len(ls.keys) < 2:
             return None
@@ -305,7 +305,7 @@ class _Fitting:
 
     def mine_rules(self, items=None, reset_config: bool = True, verbose: bool = False) -> dict:
         """Re-mine the rulebook on the stored corpus without touching the concept
-        space (v3.0: picks up group, archetype and weapon literals and the
+        space (picks up group, archetype and weapon literals and the
         stricter certification in a run saved before them). reset_config:
         mine with today's PassConfig defaults (keeping seed, sample, n_jobs and item_rows)."""
         self._need()
@@ -362,7 +362,7 @@ class _Fitting:
         rev = self._review_matrix(touched, rids)
         tm = None
         conds = None
-        self._worth = None                             # v3.7: the old reference is freed before the new one is built
+        self._worth = None                             # the old reference is freed before the new one is built
         data = self.data
         sel = None
         n_ref = self.cfg.worth.reference_size
@@ -386,7 +386,7 @@ class _Fitting:
                 if d:
                     ix = self.catalog.index
                     # present condition y -> index; NW absent condition "!y" -> -(index + 1)
-                    # v3.3: a weapon condition cannot be read from picks: worth abstains
+                    # a weapon condition cannot be read from picks: worth abstains
                     # on it (index N is never picked); the review memory applies it
                     nn = len(self.catalog)
                     conds[len(data) + k] = {ix[i]: ((nn,) if any(y.startswith("weapon:") for y in rel) else
@@ -527,7 +527,7 @@ class _Fitting:
         changed = sorted(i for i in self.catalog.ids if i in ext.index and i not in retired
                          and core(self.catalog.items[i]) != core(ext.items[i]))
         prior = self._kind_prior()
-        self._worth = None                             # v3.7: freed before the corpus is remapped
+        self._worth = None                             # freed before the corpus is remapped
         r_old = self.space.solve_latent(self.data)     # memoised; unchanged by the extension (zero rows)
         self.space.extend(ext, {i: prior.get(ext.items[i].kind, 0.05) for i in added})
         self.data = remap_matrix(self.data, ext, {}, cache_dir=getattr(self, "_run_path", None))
@@ -549,7 +549,7 @@ class _Fitting:
             self.patches.add(p)
             rep["rules_stale"] = self.rulebook.mark_stale(changed, f"changed by {p.name}; refit after new builds arrive")
         self._locset(); self._name_regions()
-        # v3.7: the corpus coordinates are kept: new items have zero rows, so
+        # the corpus coordinates are kept: new items have zero rows, so
         # coordinates are unchanged exactly (ConceptSpace.extend) and the rows of
         # the corpus keep their order (remap_matrix); recomputing them doubled
         # the startup peak
@@ -557,7 +557,7 @@ class _Fitting:
         return rep
 
     def _coord_dtype(self):
-        """Storage type of the corpus coordinates _Zdata (v3.7): TRI_COORDS=float32
+        """Storage type of the corpus coordinates _Zdata: TRI_COORDS=float32
         halves the largest array the engine holds (B x D' x 8 bytes, 830 MB at
         300k builds); every distance is still computed in float64."""
         import os

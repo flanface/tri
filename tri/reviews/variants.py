@@ -1,4 +1,4 @@
-"""Finer archetypes: families, variants and build styles (v2.18, math §6.11).
+"""Finer archetypes: families, variants and build styles (math §6.11).
 
 An archetype name may carry a variant after a slash: "Gank / Frost Mage" is the
 variant "Frost Mage" of the family "Gank". Every reading that existed before
@@ -55,11 +55,6 @@ def join_archetype(family: str, variant: Optional[str]) -> str:
 def family_key(name: str) -> str:
     """Comparison key of the family of an archetype name."""
     return split_archetype(name)[0].casefold()
-
-
-def variant_key(name: str) -> Optional[str]:
-    v = split_archetype(name)[1]
-    return v.casefold() if v else None
 
 
 # ---------------------------------------------------------------- styles

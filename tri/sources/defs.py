@@ -100,7 +100,7 @@ class ParsedRecord:
 
 @dataclass
 class Record:
-    """A loaded frozen record: the full reviews (v3.5: audits are gone)."""
+    """A loaded frozen record: the full reviews (audits are gone)."""
     reviews: List[Review]
     locators: List[dict]
     values: List[dict]

@@ -111,7 +111,11 @@ and three rules apply to it. (i) An echo is used only when no explicit claim exi
 $$
 \text{claim}(x,\omega)\ \text{holds on}\ b'\ \Longleftrightarrow\ n\in W(b'), \tag{5.5'}
 $$
-and worth abstains on it (weight 0 in (4.5)), as for RW and WA. NW and SG cannot relate to a weapon.
+and worth abstains on it (weight 0 in (4.5)), as for RW and WA. NW and SG cannot relate to a weapon. A present-condition claim names a weapon the reviewed build wields:
+$$
+\text{reason}\in\{\mathrm{SY},\mathrm{RW},\mathrm{WA}\},\ \omega\in\mathrm{rel}\ \Longrightarrow\ n\in N_r. \tag{5.5''}
+$$
+A re-linked build $b$ that records no weapon takes $W(b)=W(b_r)$ for $r$ the newest review with the same build id. Its induced rule reads $A\wedge(\text{weapon}=n)\Rightarrow x$; a REDUNDANT, CONFLICT or PREFER rule whose other side is $\omega$ is tested on $S\cup\Omega(b)$, $\Omega(b)=\{\texttt{weapon:}n : n\in W(b)\}$. An add bound by the review is pinned through the completion's internal review (2.8e).
 
 15. **Stated families (v3.6).** A review whose notes state its build's archetype (`# is gank`) speaks for that family. Its claims do not reach a query read in another family, except generally-good claims and claims on the same build:
 $$
