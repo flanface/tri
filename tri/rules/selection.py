@@ -401,6 +401,14 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
     for key, why in cull(rules, rb.c, rb.groups):
         sel.evidence.setdefault(key, {})["status"] = "trivial"
         sel.evidence[key]["why"] = why
+    from tri.rules.triviality import prune
+    was = {id(r): r.key for r in rules}
+    rules, sel.pruned = prune(rules, rb.c)
+    for key, _ in sel.pruned:
+        sel.evidence.pop(key, None)
+    for r in rules:                                     # a rewritten rule keeps its evidence
+        if was[id(r)] != r.key and was[id(r)] in sel.evidence:
+            sel.evidence[r.key] = dict(sel.evidence.pop(was[id(r)]), id=rule_id(r.key))
     sel.rules = rules
     return sel
 

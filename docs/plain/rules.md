@@ -4,7 +4,7 @@ tri states two kinds of short, checkable claims.
 
 - **Rules** say how tri builds its answers. Some are game limits it never breaks: the talent cap, the mantra slots of each type, filling a build up to its cap before suggesting swaps, requirements met before the shrine or at the end, oath, murmur and origin locks, weapon needs, and stat benchmarks. Others are mined from the builds, for example "with these stats, always take this talent", and only kept if they still hold on builds they were not learned from. The rest come from patterns in the reviews.
 
-Since v3.0, foundational and central talents are chosen only by these rules, never by worth. A rule looks at the build's context: its stats, picks, oath, murmur, origin, weapon class, how many talents it has from a known family (a game category or a talent tree, like "two or more Flamecharm talents"), and its archetype (gank, chime, trackstar, support, boss PvE, wave PvE), read from where the build sits in the concept space. Rules are short (at most three conditions), every condition has to matter on builds the rule was not found on, and the rule has to hold a third time on yet another set of builds. Stats are only used if the talent's requirements, or its family's, mention them. Reviews then check each rule: it stands, gets one extra condition that separates the builds reviewers disagreed on, or is overruled by the newest review. Administrators can write rules themselves with `/rule add` in the same symbols. Worth only ranks luxury talents.
+Since v3.0, foundational and central talents are chosen only by these rules, never by worth. A rule looks at the build's context: its stats, picks, oath, murmur, origin, weapon class or a named weapon, how many talents it has from a known family (a game category or a talent tree, like "two or more Flamecharm talents"), and its archetype (gank, chime, trackstar, support, boss PvE, wave PvE), read from where the build sits in the concept space. Rules are short (at most three conditions), every condition has to matter on builds the rule was not found on, and the rule has to hold a third time on yet another set of builds. Stats are only used if the talent's requirements, or its family's, mention them. Reviews then check each rule: it stands, gets one extra condition that separates the builds reviewers disagreed on, or is overruled by the newest review. Administrators can write rules themselves with `/rule add` in the same symbols. Worth only ranks luxury talents.
 
   Since v3.0.1, some rules also come straight from the reviews. If reviewers keep a talent on almost every build they review, across several archetypes, it becomes `⊤ ⇒ t` (always take it). If they keep adding it on one archetype, it becomes `A = gank ⇒ t`. If they keep removing it there, it becomes `A = chime ⇒ ¬t`. The newest reviews decide. A review's `# is chime` note sets the archetype of the build it reviews, even where the map cannot place the build. A rule like "a talent that needs x ⇒ x" only restates the game's prerequisites, so tri no longer makes it.
 
@@ -23,6 +23,17 @@ Both are written in symbols, so they are short and you can compare them at a gla
 | x follows y | y is x's prerequisite |
 | y ⇒ x, or \|D(x)\| ≥ n ⇒ x | y needs x |
 | archetypes A and B differ in x | x is locked by oath, murmur or origin, and A and B have different ones |
+
+**Rules that cannot fail or cannot fire are deleted.** A build has 337 points at most. A talent's shrined requirement is its requirement minus 25 for each stat it needs: Ghost needs 40 Agility, so 15; All Above, Gods Below needs 100 Willpower and 100 Intelligence, so 150. A points condition outside those stats can only reach 337 minus that. So:
+
+| condition | when | becomes |
+|---|---|---|
+| points < n | n is more than the points can reach | always true: dropped (a rule left with nothing reads `⊤ ⇒ t`) |
+| points ≥ n | n is more than the points can reach | never true: the rule is deleted |
+| stat ≥ n | n is at most what the talent itself needs | always true: dropped |
+| stat < n | n is at most what the talent itself needs | never true: the rule is deleted |
+
+`attunement points < 270 ⇒ All Above, Gods Below` is therefore `⊤ ⇒ All Above, Gods Below`, and `attunement points ≥ 270 ⇒ ¬All Above, Gods Below` is gone. Once a talent has `⊤ ⇒ t`, every other "take t" rule is deleted; "never t" rules stay. Copies collapse to one, and a rule is deleted when a looser rule of the same kind already covers it. Rules written with `/rule add` are kept as written. This happens when rules are loaded, so nothing needs refitting.
 
 **Holes and gems.** A hole is a pick almost every build of an archetype takes but reviewers almost always remove (Endurance Runner on a low-Agility build). A gem is the reverse: rarely taken, almost always added by reviewers.
 

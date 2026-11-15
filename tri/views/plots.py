@@ -119,7 +119,7 @@ def theme_rc(name: str = "light") -> dict:
     if sns is not None:
         rc.update(sns.axes_style(t["style"]))
         rc.update(sns.plotting_context("notebook", font_scale=0.8))
-    rc.update({"figure.facecolor": t["bg"], "savefig.facecolor": t["bg"], "axes.facecolor": t["panel"],
+    rc.update({"figure.facecolor": t["bg"], "savefig.facecolor": "none", "savefig.transparent": True, "axes.facecolor": t["panel"],
                "axes.edgecolor": t["grid"], "axes.labelcolor": t["fg"], "text.color": t["fg"],
                "xtick.color": t["muted"], "ytick.color": t["muted"], "grid.color": t["grid"],
                "axes.titlecolor": t["fg"], "axes.titleweight": "bold", "axes.titlesize": 10,

@@ -4,6 +4,7 @@
     [worth of a, b, c > build]  the worth plot of the items (the build adds its own; optional)
     [a ⟂ b]  [a perp b]         cosine, angle and orthogonality of two worth vectors
     [a ~ b]                     the same, read as similarity
+    [a proj b]                  projection lengths of the two worth vectors on each other
     [like a]                    the items whose worth vectors point most like a's
     [place > build]             a build's regions and archetype
     [help]  [?]                 this list
@@ -33,12 +34,14 @@ INLINE_LIMIT = 1900             # longer answers go out as a .txt file
 _CALL = re.compile(r"\[([^\[\]\n]{1,400})\](?!\()")
 _PERP = re.compile(r"\s*(?:⟂|⊥|_\|_|\bperp\b|\borth\b)\s*", re.I)
 _SIM = re.compile(r"\s*~\s*")
+_PROJ = re.compile(r"\s*\bproj(?:ect)?\b\s*", re.I)
 
 HELP = """inline functions (square brackets anywhere in a message):
 [A ^ B ^ C]  three representative builds where the archetypes meet
 [worth of a, b, c > build]  worth plot of the items; the build (optional) adds its own
 [a ⟂ b]  or [a perp b]  cosine, angle and orthogonality of two worth vectors
 [a ~ b]  the same, read as similarity
+[a proj b]  projection length of each worth vector on the other
 [like a]  items whose worth vectors point most like a's
 [place > build]  a build's regions and archetype
 [help]  this list"""
@@ -46,7 +49,7 @@ HELP = """inline functions (square brackets anywhere in a message):
 
 @dataclass
 class Call:
-    kind: str                                   # intersect | worth | perp | sim | like | place | help
+    kind: str                                   # intersect | worth | perp | sim | proj | like | place | help
     args: List[str] = field(default_factory=list)
     build: Optional[str] = None
     raw: str = ""
@@ -86,7 +89,7 @@ def parse(s: str) -> Optional[Call]:
     m = re.match(r"like\s+(.+)$", s, re.I)
     if m:
         return Call("like", [m.group(1).strip()], raw=raw)
-    for kind, rx in (("perp", _PERP), ("sim", _SIM)):
+    for kind, rx in (("proj", _PROJ), ("perp", _PERP), ("sim", _SIM)):
         parts = [x.strip() for x in rx.split(s)]
         if len(parts) == 2 and all(parts):
             return Call(kind, parts, raw=raw)
@@ -154,14 +157,17 @@ async def run(bot: "TriBot", c: Call, hide: bool) -> Answer:
             if miss:
                 text = f"Not found: {', '.join(miss[:10])}\n" + text
             return Answer(text, list(files))
-        if c.kind in ("perp", "sim"):
+        if c.kind in ("perp", "sim", "proj"):
             hi, miss = _items(bot, c.args)
             if miss or len(hi) != 2:
                 return Answer("Not found: " + ", ".join(miss) if miss else "name two different items")
             r = await asyncio.to_thread(PL.worth_pair, bot.svc, hi[0], hi[1])
             head = (f"{hi[0]} ⟂ {hi[1]}: orthogonality {r['orthogonality']:.2f}" if c.kind == "perp"
-                    else f"{hi[0]} ~ {hi[1]}: cos {r['cos']:+.2f}")
-            return Answer(f"{head}\n" + PL.pair_lines(hi, [[1.0, r["cos"]], [r["cos"], 1.0]], "")[0]
+                    else f"{hi[0]} ~ {hi[1]}: cos {r['cos']:+.2f}" if c.kind == "sim"
+                    else f"{hi[0]} on {hi[1]}: {r['a_on_b']:+.3g} of |{hi[1]}| = {r['norm_b']:.3g}; "
+                         f"{hi[1]} on {hi[0]}: {r['b_on_a']:+.3g} of |{hi[0]}| = {r['norm_a']:.3g}")
+            nm = [r["norm_a"], r["norm_b"]] if "norm_a" in r else None
+            return Answer(f"{head}\n" + PL.pair_lines(hi, [[1.0, r["cos"]], [r["cos"], 1.0]], "", norms=nm)[0]
                           + "\n(worth axes 4-5-6 from the dense origin; orthogonality |sin θ|: 0 parallel, 1 orthogonal)")
         if c.kind == "like":
             hi, miss = _items(bot, c.args)

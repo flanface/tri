@@ -6,10 +6,13 @@ with coloured edges (or one dot per point), locators as small white diamonds,
 group centres as coloured circles with a faint name, marked builds as stars and
 item vectors as arrows from an origin. No title, ticks, panes, grid, legend or
 colourbar; the PNG background is transparent (assets/atlas_export1.png).
+
+Depth: polytope faces are lit (Lambert, light from over the viewer's
+shoulder), dots fade with distance, and every vector casts a shadow on the
+floor of the scene with a drop line from its head.
 """
 from __future__ import annotations
 
-import io
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
@@ -80,12 +83,37 @@ def field_hulls(sc: Scene) -> List[dict]:
     return out
 
 
-def _fields(ax, sc: Scene, cols: List[str], alpha: float = 0.2) -> None:
+def _light(view: Tuple[float, float]) -> np.ndarray:
+    """Light direction for a view (elev, azim in degrees): towards the viewer, raised."""
+    el, az = np.radians(view[0]), np.radians(view[1])
+    e = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
+    return e + np.array([0.0, 0.0, 0.9])
+
+
+def _fields(ax, sc: Scene, cols: List[str], alpha: float = 0.2, view: Tuple[float, float] = (22, -58),
+            span: Optional[np.ndarray] = None) -> None:
     from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
+
+    from .depth import lambert, mix
+    k = 1.0 / np.maximum(np.asarray(span if span is not None else np.ones(3), float), 1e-12)
+    L = _light(view)
     for h in field_hulls(sc):
         P, c = h["V"], cols[h["g"]]
-        ax.add_collection3d(Poly3DCollection([P[s] for s in h["F"]], facecolors=c, alpha=alpha, edgecolors="none"))
+        T = np.array([P[s] for s in h["F"]])
+        Q = T * k
+        lam = lambert(np.cross(Q[:, 1] - Q[:, 0], Q[:, 2] - Q[:, 0]), L)
+        fc = [mix(c, 0.45 * x - 0.25)[:3] + (alpha * (0.6 + 0.8 * x),) for x in lam]
+        ax.add_collection3d(Poly3DCollection(list(T), facecolors=fc, edgecolors="none"))
         ax.add_collection3d(Line3DCollection([P[[a, b]] for a, b in h["E"]], colors=[c], linewidths=0.9, alpha=0.9))
+
+
+def _shadow(ax, o: np.ndarray, tip: np.ndarray, floor: float, c: str) -> None:
+    """A vector's shadow on the plane z = floor and a drop line from its head."""
+    a, b = np.array(o, float), np.array(tip, float)
+    sa, sb = a.copy(), b.copy()
+    sa[2] = sb[2] = floor
+    ax.plot(*np.c_[sa, sb], color="black", lw=2.2, alpha=0.18, solid_capstyle="round")
+    ax.plot(*np.c_[b, sb], color=c, lw=0.6, ls=":", alpha=0.45)
 
 
 def _axes(ax, lo: np.ndarray, hi: np.ndarray, at: np.ndarray) -> None:
@@ -117,10 +145,10 @@ def draw(sc: Scene, view: Tuple[float, float] = (22, -58), size: Tuple[float, fl
     at = np.asarray(sc.origin, float) if sc.origin is not None else np.clip(np.zeros(3), lo, hi)
     _axes(ax, lo, hi, at)
     if sc.style == "fields":
-        _fields(ax, sc, cols)
+        _fields(ax, sc, cols, view=view, span=hi - lo)
     else:
         pc = sc.point_colour or [cols[g] if g >= 0 else FAINT for g in sc.group]
-        ax.scatter(*P.T, s=sc.point_size, c=list(pc), alpha=0.6, linewidths=0, depthshade=False)
+        ax.scatter(*P.T, s=sc.point_size, c=list(pc), alpha=0.7, linewidths=0, depthshade=True)
     if sc.locators is not None and len(sc.locators):
         ax.scatter(*np.asarray(sc.locators).T, marker="D", s=16, c="white", edgecolors=EDGE,
                    linewidths=0.8, depthshade=False, zorder=4)
@@ -136,8 +164,11 @@ def draw(sc: Scene, view: Tuple[float, float] = (22, -58), size: Tuple[float, fl
     if sc.origin is not None:
         o = np.asarray(sc.origin, float)
         ax.scatter(*o, s=30, c="white", edgecolors=EDGE, linewidths=0.9, depthshade=False, zorder=6)
+        E = np.vstack([o] + [np.asarray(t, float) for _, t, _ in sc.vectors])
+        floor = max(lo[2], E[:, 2].min() - 0.25 * max(float(np.ptp(E, 0).max()), 1e-12))
         for lbl, tip, c in sc.vectors:
             v = np.asarray(tip, float) - o
+            _shadow(ax, o, tip, floor, c)
             ax.quiver(*o, *v, color=c, lw=1.4, arrow_length_ratio=0.08, alpha=0.95)
             ax.text(*(o + 1.04 * v), str(lbl)[:30], fontsize=6.5, color=c)
     pad = 0.02 * np.maximum(hi - lo, 1e-9)
@@ -151,11 +182,8 @@ def draw(sc: Scene, view: Tuple[float, float] = (22, -58), size: Tuple[float, fl
 
 def png(fig, dpi: int = 150) -> bytes:
     """Transparent PNG bytes; closes the figure."""
-    import matplotlib.pyplot as plt
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, transparent=True, bbox_inches="tight", pad_inches=0.02)
-    plt.close(fig)
-    return buf.getvalue()
+    from .depth import export
+    return export(fig, dpi, 0.02)
 
 
 # ------------------------------------------------------------------ worth origin and cosines
@@ -182,6 +210,15 @@ def orthogonality(c) -> np.ndarray:
 def angle(c) -> np.ndarray:
     """The angle in degrees for cosine c."""
     return np.degrees(np.arccos(np.clip(np.asarray(c, float), -1.0, 1.0)))
+
+
+def projections(u, w) -> dict:
+    """Scalar projections of two vectors on each other:
+    u_on_w = u·w / |w| (signed length of u along w), w_on_u = u·w / |u|."""
+    u, w = np.asarray(u, float), np.asarray(w, float)
+    d = float(u @ w)
+    nu, nw = float(np.linalg.norm(u)), float(np.linalg.norm(w))
+    return dict(u_on_w=d / nw if nw > 1e-12 else 0.0, w_on_u=d / nu if nu > 1e-12 else 0.0, norm_u=nu, norm_w=nw)
 
 
 def cosines(V: np.ndarray) -> np.ndarray:
@@ -299,6 +336,8 @@ def draw_vectors(labels: Sequence[str], V: np.ndarray, cols: Sequence[str],
     ax.set_box_aspect((1, 1, 1), zoom=1.1)
     ax.view_init(*view)
     ax.scatter(0, 0, 0, s=26, c="white", edgecolors=EDGE, linewidths=0.9, depthshade=False)
+    for v, c in zip(V, cols):
+        _shadow(ax, np.zeros(3), v, mid[2] - half, c)
     for v, c, m, rr in zip(V, cols, norms, reach):
         ax.quiver(0, 0, 0, *v, color=c, lw=1.8, arrow_length_ratio=min(0.07, 0.07 * R / max(m, 1e-12) * 0.3))
         if m > 1e-12 and rr > m:
