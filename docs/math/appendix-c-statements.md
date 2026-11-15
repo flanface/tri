@@ -18,6 +18,34 @@ $$
 
 with `P` the observed rate, `n` the weighted support and `else` the rate when the pivotal condition is flipped. The tag is the pass: F foundational, C central, X exclusion.
 
+**Pruning** (`tri/rules/triviality.py`, `prune`). Let $M=337$ be the most points a build has. For an item $t$ let $D_s(t)$ be its least demand on stat $s$: the maximum of $t$'s single-stat requirements over $t$ and its all-of prerequisites, transitively. A points literal $v_S\ \mathrm{op}\ n$ tests a stat ($S=\{s\}$) or an aggregate over member stats $S$ (sum or max). Its shrined requirement outside $S$ and the most $S$ can hold beside $t$ are
+
+$$
+\mathrm{sh}(t,S)=\sum_{s\notin S}\max\bigl(0,\,D_s(t)-25\bigr),\qquad \mathrm{top}(t,S)=M-\mathrm{sh}(t,S),
+$$
+
+so $\mathrm{sh}(\text{Ghost},\varnothing)=40-25=15$ and $\mathrm{sh}(\text{All Above, Gods Below},\varnothing)=(100-25)+(100-25)=150$. With $f(t,S)=\sum_{s\in S}D_s(t)$ for a sum, $\max_{s\in S}D_s(t)$ for a max or a stat,
+
+$$
+\begin{aligned}
+n>\mathrm{top}(t,S)&:\quad v_S\ge n\equiv\bot,\qquad v_S<n\equiv\top,\\
+n\le f(t,S)&:\quad v_S\ge n\equiv\top,\qquad v_S<n\equiv\bot,
+\end{aligned}
+$$
+
+on every build that can take $t$. Mined and review rules (authored rules are kept as written) are then rewritten to a fixed set $R'$:
+
+$$
+\begin{aligned}
+&\text{(1)}\quad \bot\in C\ \Rightarrow\ \text{delete } (C\Rightarrow\cdot);\qquad C\setminus\{\top\}\ \text{replaces}\ C\ \ (\varnothing\ \text{reads}\ \top),\\
+&\text{(2)}\quad (\top\Rightarrow t)\in R'\ \Rightarrow\ \text{delete every other } (C\Rightarrow t);\ \ (C\Rightarrow\neg t)\ \text{stays},\\
+&\text{(3)}\quad \text{equal } (\text{pass},C,t,\text{effect})\ \text{collapse to one};\ \ [F]\,\top\Rightarrow t\ \text{absorbs}\ [C]\,\top\Rightarrow t,\\
+&\text{(4)}\quad C'\subsetneq_{\Rightarrow} C,\ (C'\Rightarrow e)\in R'\ \text{same pass}\ \Rightarrow\ \text{delete } (C\Rightarrow e),
+\end{aligned}
+$$
+
+where $C'\subsetneq_{\Rightarrow}C$ means every build meeting $C$ meets $C'$ and not conversely. Rules a group baseline makes dead or implied are deleted too. Since $270+150>337$: `[F] attunement points < 270 ⇒ All Above, Gods Below` becomes `[F] ⊤ ⇒ All Above, Gods Below` and `[X] attunement points ≥ 270 ⇒ ¬All Above, Gods Below` is deleted. Pruning runs after mining, on load (no refit) and on the selection rule set.
+
 **Review rules** ([Section 5.6](05-locality.md)). `[R status]` then one of
 
 | written | statement |

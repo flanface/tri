@@ -54,6 +54,8 @@
 | $z$ | Wilson $z$ of the tell weight $\omega$ (6.8c) | `tell_z` (1.64) |
 | $k$ | worth origin neighbours (4.5.1) | `figure.dense_origin` ($k=12$) |
 | $\theta$, $\perp$ | angle and orthogonality $\lvert\sin\theta\rvert$ of two worth vectors (4.5.3) | `figure.angle`, `figure.orthogonality` |
+| $\mathrm{comp}_{w}u$ | projection length of $u$ on $w$, $\langle u,w\rangle/\lVert w\rVert$ (4.5.3a) | `figure.projections` |
+| $D_s(t)$, $\mathrm{sh}(t,S)$, $M$ | least demand on $s$, shrined requirement outside $S$, $M=337$ points (App. C, pruning) | `triviality.demand`, `triviality.shrined` |
 | $\mu$, $\chi$ | atlas field margin $\pi_1-\pi_2$, field core share (4.5.4) | `plotting.FIELD_MARGIN` (0.25), `FIELD_CORE` (0.8); `Scene.core` (0.9) |
 | $g_S$, $s_S$, $\delta$ | intersection score, strength, diversity scale (4.5.5) | `categorize.intersection` (`k` 3, `pool` 40) |
 | $k_\times$, $h_\times$, $\lambda_\times$ | cross-archetype ring (4.5b) | `WorthConfig.k_cross` (600), `cross_bandwidth` (1.5), `cross_weight` (0.15) |

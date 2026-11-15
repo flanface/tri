@@ -87,6 +87,7 @@ def model_rules(tri, item: Optional[str] = None, limit: int = 25, hard: bool = T
         out.append(dict(kind="review", symbol=r.describe()))
     culled = sum(1 for r in (rb.rules if rb is not None else []) if r.status == "trivial" and
                  (item is None or r.item == item or any(c.key == item for c in r.conds)))
+    culled += sum(1 for k, _ in (getattr(rb, "pruned", None) or []) if item is None or f"|{item}|" in k)
     keep = out[:limit] if limit else out
     return dict(rules=keep, total=len(out), trivial=dropped + culled, culled=culled, symbols=RULE_SYMBOLS)
 

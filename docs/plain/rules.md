@@ -24,6 +24,17 @@ Both are written in symbols, so they are short and you can compare them at a gla
 | y ⇒ x, or \|D(x)\| ≥ n ⇒ x | y needs x |
 | archetypes A and B differ in x | x is locked by oath, murmur or origin, and A and B have different ones |
 
+**Rules that cannot fail or cannot fire are deleted.** A build has 337 points at most. A talent's shrined requirement is its requirement minus 25 for each stat it needs: Ghost needs 40 Agility, so 15; All Above, Gods Below needs 100 Willpower and 100 Intelligence, so 150. A points condition outside those stats can only reach 337 minus that. So:
+
+| condition | when | becomes |
+|---|---|---|
+| points < n | n is more than the points can reach | always true: dropped (a rule left with nothing reads `⊤ ⇒ t`) |
+| points ≥ n | n is more than the points can reach | never true: the rule is deleted |
+| stat ≥ n | n is at most what the talent itself needs | always true: dropped |
+| stat < n | n is at most what the talent itself needs | never true: the rule is deleted |
+
+`attunement points < 270 ⇒ All Above, Gods Below` is therefore `⊤ ⇒ All Above, Gods Below`, and `attunement points ≥ 270 ⇒ ¬All Above, Gods Below` is gone. Once a talent has `⊤ ⇒ t`, every other "take t" rule is deleted; "never t" rules stay. Copies collapse to one, and a rule is deleted when a looser rule of the same kind already covers it. Rules written with `/rule add` are kept as written. This happens when rules are loaded, so nothing needs refitting.
+
 **Holes and gems.** A hole is a pick almost every build of an archetype takes but reviewers almost always remove (Endurance Runner on a low-Agility build). A gem is the reverse: rarely taken, almost always added by reviewers.
 
 **Weapons.** Some talents depend on the weapon: Speed Demon is pointless when the weapon already bleeds, and Turtle Shell needs a two-handed weapon. tri reads the build's weapons. A build that carries several is only locked out when none of them allows the talent; Speed Demon with one bleeding and one plain weapon is kept but counts half as much.

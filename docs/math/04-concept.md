@@ -117,6 +117,14 @@ $$
 
 $\perp(t,t')=\lVert v_t-\mathrm{proj}_{v_{t'}}v_t\rVert/\lVert v_t\rVert$: the share of $v_t$'s length orthogonal to $v_{t'}$. It is symmetric, $\perp=0$ iff $v_t\parallel v_{t'}$ (same or opposite direction), $\perp=1$ iff $c=0$, and $c^2+\perp^2=1$. Orthogonality does not separate opposite from aligned; the sign of $c$ does.
 
+**Projection lengths.** The signed length of each vector along the other,
+
+$$
+\mathrm{comp}_{v_{t'}}v_t=\frac{\langle v_t,v_{t'}\rangle}{\lVert v_{t'}\rVert}=\lVert v_t\rVert\,c,\qquad \mathrm{comp}_{v_t}v_{t'}=\frac{\langle v_t,v_{t'}\rangle}{\lVert v_t\rVert}=\lVert v_{t'}\rVert\,c. \tag{4.5.3a}
+$$
+
+Unlike $c$ and $\perp$ they carry magnitude: $\mathrm{comp}_{v_{t'}}v_t$ is how much of $t$'s worth direction lies along $t'$'s, in worth units. They are not symmetric, $\mathrm{comp}_{v_{t'}}v_t\cdot\lVert v_{t'}\rVert=\mathrm{comp}_{v_t}v_{t'}\cdot\lVert v_t\rVert$, and $\lvert\mathrm{comp}_{v_{t'}}v_t\rvert^2+(\lVert v_t\rVert\perp)^2=\lVert v_t\rVert^2$.
+
 **Atlas fields.** Let $\pi_1(b)\ge\pi_2(b)$ be the two largest archetype probabilities of build $b$ and $a(b)$ its top archetype. A build shapes and shows in its archetype's field iff it is placed and
 
 $$

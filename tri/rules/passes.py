@@ -286,6 +286,7 @@ class Rulebook:
         self.pick_rate: Optional[np.ndarray] = None
         self.region_names: List[str] = []
         self.vetoed: Dict[str, dict] = {}      # item -> why it has no take rule (the vetoing cluster)
+        self.pruned: List[Tuple[str, str]] = []  # (key, reason) of rules prune() deleted
         self._pick_ZC = None                    # (Z, C) of the last pick_regions call (leave-item-out)
         self.groups: Dict[str, frozenset] = {}  # known groups (tri.rules.groups)
         self.reader = None                      # bm -> archetype key per row (Tri sets it)
@@ -421,8 +422,9 @@ class Rulebook:
         self.rules = keep + new
         if changed_since:
             self._rescore_changed(bm, changed_since)
-        from tri.rules.triviality import cull           # group baselines
+        from tri.rules.triviality import cull, prune    # group baselines, then deletion
         cull(self.rules, self.c, self.groups)
+        self.rules, self.pruned = prune(self.rules, self.c)
         return self
 
     def _mine_one(self, item: str, ctx: dict, info: Optional[dict] = None) -> List[PassRule]:
@@ -1051,6 +1053,7 @@ class Rulebook:
         rb.pick_rate = None if d.get("pick_rate") is None else np.array(d["pick_rate"])
         rb.vetoed = dict(d.get("vetoed") or {})
         rb.groups = {g: frozenset(m) for g, m in (d.get("groups") or {}).items()}
-        from tri.rules.triviality import cull           # runs fitted before the group baselines
+        from tri.rules.triviality import cull, prune    # runs fitted before the baselines
         cull(rb.rules, catalog, rb.groups)
+        rb.rules, rb.pruned = prune(rb.rules, catalog)
         return rb

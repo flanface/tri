@@ -268,3 +268,146 @@ def cull(rules, catalog, groups) -> List[Tuple[str, str]]:
             r.note = (r.note + "; " if getattr(r, "note", "") else "") + why
             out.append((r.key, why))
     return out
+
+
+# ---------------------------------------------------------------- pruning
+MAX_POINTS = 337        # the most stat points a build has
+SHRINE = 25             # what a shrine leaves of each requirement: req_s − 25
+
+
+def demand(catalog, item: str, memo: Optional[dict] = None) -> Dict[str, float]:
+    """D_s: the least each stat must reach for item to be taken — the
+    item's all-of requirements and single-stat unit clauses, over item and its
+    all-of prerequisites (transitively). A lower bound."""
+    if memo is not None and item in memo:
+        return memo[item]
+    d: Dict[str, float] = {}
+    for y in _need(catalog, item):
+        it = catalog.items.get(y)
+        if it is None:
+            continue
+        reqs = list((it.requires or {}).items())
+        for cl in it.clauses or []:
+            if len(cl) == 1 and len(cl[0].get("stats", ())) == 1 and cl[0]["stats"][0] != "Total":
+                reqs.append((cl[0]["stats"][0], cl[0].get("value", 0)))
+        for s, v in reqs:
+            d[s] = max(d.get(s, 0.0), float(v or 0))
+    if memo is not None:
+        memo[item] = d
+    return d
+
+
+def shrined(catalog, item: str, outside: Sequence[str] = (), memo: Optional[dict] = None) -> float:
+    """sh(x, S) = Σ_{s ∉ S} max(0, D_s − 25): x's shrined requirement
+    outside the stats S of a points clause."""
+    S = set(outside)
+    return sum(max(0.0, v - SHRINE) for s, v in demand(catalog, item, memo).items() if s not in S)
+
+
+def _members(c) -> Optional[Tuple[str, Tuple[str, ...]]]:
+    """(how, member stats) of a points literal, or None."""
+    if c.kind == "stat":
+        return "stat", (c.key,)
+    if c.kind == "agg":
+        from tri.rules.passes import AGGREGATES
+        for name, how, mem, _ in AGGREGATES:
+            if name == c.key and mem is not None and how in ("sum", "max"):
+                return how, tuple(mem)
+    return None
+
+
+def point_literal(c, catalog, item: str, memo: Optional[dict] = None) -> Optional[str]:
+    """"true" if the points literal holds in every build that can take
+    item, "false" if in none, else None.
+
+      top(x, S) = 337 − sh(x, S)          the most S can hold beside x
+      v_S ≥ n:  n > top  false,   n ≤ Σ_{s∈S} D_s (sum) / max_{s∈S} D_s  true
+      v_S < n:  n > top  true,    n ≤ that floor                        false"""
+    m = _members(c)
+    if m is None or c.op not in (">=", "<") or c.value is None:
+        return None
+    how, S = m
+    D = demand(catalog, item, memo)
+    top = MAX_POINTS - shrined(catalog, item, S, memo)
+    vals = [D.get(s, 0.0) for s in S]
+    floor = sum(vals) if how == "sum" else max(vals)
+    n = float(c.value)
+    if n > top:
+        return "false" if c.op == ">=" else "true"
+    if n <= floor:
+        return "true" if c.op == ">=" else "false"
+    return None
+
+
+def _rank(r) -> tuple:
+    return (getattr(r, "source", "") == "authored", r.pass_ == "foundational",
+            getattr(r, "support", 0) or 0, getattr(r, "bound", 0) or 0)
+
+
+def prune(rules, catalog) -> Tuple[list, List[Tuple[str, str]]]:
+    """(kept rules, [(key, reason)]) — rules that say nothing are deleted:
+
+      1. points literals: a false one deletes the rule; a true one is
+         dropped (a rule left with none reads ⊤ ⇒ x);
+      2. ⊤ ⇒ x present: every other take rule of x goes (never rules stay);
+      3. equal keys collapse to one; ⊤ ⇒ x [F] absorbs ⊤ ⇒ x [C];
+      4. a rule is deleted when a rule of the same item, effect and pass
+         with weaker conditions exists (it fires wherever this one does).
+    Authored rules are kept as written. Rules marked trivial by a group
+    baseline (cull) are deleted."""
+    from tri.rules.passes import TAKE, _implied
+    gone: List[Tuple[str, str]] = []
+    out, memo = [], {}
+    for r in rules:
+        if getattr(r, "source", "") == "authored":
+            out.append(r); continue
+        if getattr(r, "status", "active") == "trivial":
+            gone.append((r.key, "trivial")); continue
+        keep, dead = [], None
+        for c in r.conds:
+            v = point_literal(c, catalog, r.item, memo) if c.kind in ("stat", "agg") else None
+            if v == "false":
+                dead = c; break
+            if v != "true":
+                keep.append(c)
+        if dead is not None:
+            gone.append((r.key, f"never holds: {dead.text()}")); continue
+        if len(keep) < len(r.conds):
+            dropped = [c.text() for c in r.conds if c not in keep]
+            r.note = (r.note + "; " if getattr(r, "note", "") else "") + "always holds: " + ", ".join(dropped)
+            r.conds = keep
+        out.append(r)
+    active = [r for r in out if getattr(r, "status", "active") == "active"]
+    top = {}
+    for r in active:
+        if r.effect == TAKE and not r.conds and (r.item not in top or _rank(r) > _rank(top[r.item])):
+            top[r.item] = r
+    best: Dict[str, object] = {}
+    for r in out:
+        if getattr(r, "status", "active") != "active" or getattr(r, "source", "") == "authored":
+            continue
+        if r.key not in best or _rank(r) > _rank(best[r.key]):
+            best[r.key] = r
+    stage = []
+    for r in out:
+        if getattr(r, "source", "") != "authored" and getattr(r, "status", "active") == "active":
+            t = top.get(r.item)
+            if r.effect == TAKE and t is not None and r is not t and (r.conds or getattr(t, "source", "") == "authored"
+                                                                     or t.pass_ == "foundational"):
+                gone.append((r.key, "⊤ ⇒ " + r.item)); continue
+            if best.get(r.key) is not r:
+                gone.append((r.key, "duplicate")); continue
+        stage.append(r)
+    live: Dict[tuple, list] = {}
+    for r in stage:
+        if getattr(r, "status", "active") == "active":
+            live.setdefault((r.item, r.effect, r.pass_), []).append(r)
+    kept = []
+    for r in stage:
+        if getattr(r, "source", "") != "authored" and getattr(r, "status", "active") == "active":
+            g = next((q for q in live[(r.item, r.effect, r.pass_)] if q is not r and _implied(q.conds, r.conds)
+                      and not _implied(r.conds, q.conds)), None)
+            if g is not None:
+                gone.append((r.key, "subsumed by " + (g.when() if g.conds else "⊤"))); continue
+        kept.append(r)
+    return kept, gone

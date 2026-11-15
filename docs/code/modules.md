@@ -153,7 +153,8 @@ Definitions are in `types.py` (kinds, reasons, `Item`, `Build`, `Operation`, `Re
 | `tri/game/gamedata.py` | parse requirements from pocamind/data (`auto`, `pocamind`; `all` adds api.deepwoken.co) into a `Catalog`; granted talents; `coverage` |
 | `tri/sources/pipeline.py` | optional: planner export to `PretrainSet` (parsing, granted-talent exclusion, dedupe, lineage weighting). Your own pipeline can skip it and call `Tri.fit` |
 | `tri/views/plots.py` | data functions (`concept_map`, `place`, `worth_matrix`, `worth_space`, `fit_projection`, `view_kept`) and the themes; reads the model, never changes it |
-| `tri/views/figure.py` | `Scene`, `draw` (one transparent 3-D figure), `png`, `field_hulls`, `dense_origin`, `cosines`, `angle`, `orthogonality` ([math §4.5](../math/04-concept.md)) |
+| `tri/views/figure.py` | `Scene`, `draw` (one transparent 3-D figure), `png`, `field_hulls`, `dense_origin`, `cosines`, `angle`, `orthogonality`, `projections` ([math §4.5](../math/04-concept.md)) |
+| `tri/views/depth.py` | depth cues (drop shadows, bar gradients, Lambert lighting) and `export`, the transparent PNG every figure is saved through |
 | `tri/views/interactive.py` | `scene_data`, `page`: a `Scene` as one self-contained HTML tool (no network): orthographic view, notes, strokes, points, vectors, planes, measurement, JSON and PNG export |
 | `tri/core/stats.py` | `wilson`, `wilson_lower` (score interval of a proportion; tell weight [math §6.7](../math/06-accuracy.md)) |
 | `tri/analysis/categorize.py` | `build_atlas` (one latent solve per build, readings from the locators or regions), `categorize(tri, b)` (frame, archetype, reading, variants), `soft_kind`, `separating` ([math §12.2](../math/12-reading-the-field.md)), `hierarchy` (Ward on centres, families at reach), `discover` (stable k-means of unplaced builds), `quality` (margins, stability, review consistency), `intersection` (representative builds where archetypes meet, [math §4.5](../math/04-concept.md)) |
@@ -162,7 +163,7 @@ Definitions are in `types.py` (kinds, reasons, `Item`, `Build`, `Operation`, `Re
 | `tri/analysis/stream.py` | `prequential`, `variogram`, `lowrank` (re-exported by `evaluate.py`) |
 | `tri/views/insight.py` | `atlas_view`, `plot_atlas`, `archetype_card` / `plot_card`, `placement` / `plot_placement` (`part="map"` or `"pi"`), `item_landscape` / `plot_item`, `stat_curves` / `plot_stats` (benchmark line), `plot_lookup`, `plot_replay`; same themes as `plots.py` |
 | `tri/rules/statements.py` | `HARD` (the hard rules), `model_rules`, `entries` / `entry` (pocamind/data), `lookup`, `RULE_SYMBOLS`, `FACT_SYMBOLS` ([math §12.6](../math/12-reading-the-field.md)) |
-| `tri/rules/triviality.py` | `BASELINES`, `trivial_fact`, `trivial_rule`, `related`, `lock_locked` ([math §12.6](../math/12-reading-the-field.md)) |
+| `tri/rules/triviality.py` | `BASELINES`, `trivial_fact`, `trivial_rule`, `related`, `lock_locked`, `cull`, `prune`, `demand`, `shrined` ([math App. C](../math/appendix-c-statements.md)) |
 | `tri/game/weapons.py` | `table`, `resolve`, `equipped`, `weapon_tokens`, `tokens_of`, `item_clauses`, `scale`, `summary` ([math §2.8](../math/02-constraints.md)) |
 | `tri/game/weapon_rules.py` | `WeaponRules`, `weapon_rules`, `main_weapons`, `needs_weapon` ([math §2.8c](../math/02-constraints.md)) |
 | `tri/infer/focus.py` | `class_names`, `norm_class`, `token_classes`, `item_classes`, `class_table`, `weapon_classes`, `evidence`, `ClassPrior` ([math §2.10](../math/02-constraints.md)) |
