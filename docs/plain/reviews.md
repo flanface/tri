@@ -40,6 +40,7 @@ A reviewer can say why, in a few characters:
 | `# avoid: X` | nearby builds should not take X | nearby builds value X less |
 | `# weapon: Silver Dagger, Railblade` | the build also uses these weapons | they are added to the build's weapons, with their classes |
 | `- X NS > Silver Dagger` | X is wrong with this weapon | applies only to nearby builds that use Silver Dagger; others are unaffected |
+| `+ X SY > Silver Dagger` | X works with this weapon | the build is noted as using Silver Dagger; X is added on nearby builds that use it |
 | `// text` | any comment | stored and shown next to every change the review causes |
 
 A comment after a line (`- 3 NS // too slow`) belongs to that line.

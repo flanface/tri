@@ -98,7 +98,7 @@ _MADE_BY_TRI = re.compile(r"\(tri (completion|proposal|analysis|review|plan|sugg
 
 def made_by_tri(b: Optional[Build]) -> bool:
     """A build tri made: meta made_by "tri" (dwt.sh description "tri <kind> of
-    <url>", v2.25.1) or the name save_dwt gives it ("<name> (tri completion)")."""
+    <url>") or the name save_dwt gives it ("<name> (tri completion)")."""
     m = (getattr(b, "meta", None) or {}) if b is not None else {}
     if str(m.get("made_by") or "").lower() == "tri":
         return True
@@ -123,8 +123,8 @@ class ReviewLedger:
         self.cfg = cfg or LedgerConfig()
         self.embed = embed
         self.kernel = kernel
-        self.kernel_many = kernel_many                 # (u, V) -> [m]; v3.1
-        self.family_many = family_many                 # (u, V) -> [m] family overlap; v3.3
+        self.kernel_many = kernel_many                 # (u, V) -> [m]
+        self.family_many = family_many                 # (u, V) -> [m] family overlap
         self._vec: Dict[str, np.ndarray] = {}
         self.change_times = dict(change_times or {})
         self.stale: List[Tuple[str, str]] = []        # (review id, item) discounted by a patch
@@ -141,7 +141,7 @@ class ReviewLedger:
             self.claims[r.review_id] = self._claims(r, k)
         self._resolve()
         self._patches()
-        for cl in self.claims.values():                    # v2.25.1: echoed endorsements count less
+        for cl in self.claims.values():                    # echoed endorsements count less
             for c in cl:
                 if c.origin == "echo":
                     c.weight *= self.cfg.echo_keep
@@ -151,7 +151,7 @@ class ReviewLedger:
     def _claims(self, r: Review, k: int) -> List[Claim]:
         out = []
         neutral = set(getattr(r, "neutral", None) or ())
-        marked = set(neutral)                              # v3.1.1: a purged item says nothing
+        marked = set(neutral)                              # a purged item says nothing
         for j, o in enumerate(r.operations):
             if o.item_id in neutral:
                 continue
@@ -160,7 +160,7 @@ class ReviewLedger:
             out.append(Claim(r.review_id, k, o.item_id, label, o.reason.value if o.reason else None, j,
                              strength=st, related=tuple(o.related or ())))
             marked.add(o.item_id)
-        echo = made_by_tri(r.original)                     # tri's own picks, echoed back (v2.25.1)
+        echo = made_by_tri(r.original)                     # tri's own picks, echoed back
         for it in r.original.items():
             if it not in marked:
                 out.append(Claim(r.review_id, k, it, "keep", origin="echo" if echo else "review"))
@@ -183,7 +183,7 @@ class ReviewLedger:
             self.kernel = ReviewLedger.reach_kernel(self.cfg)
         return float(self.kernel(va, vb))
 
-    # v3.1: one kernel call per query build against every reviewed build
+    # one kernel call per query build against every reviewed build
     def _matrix(self) -> Optional[np.ndarray]:
         """[R, D] coordinates of the reviewed builds (self.reviews order), or None."""
         if self.embed is None or not self.reviews:
@@ -301,14 +301,14 @@ class ReviewLedger:
 
     @staticmethod
     def _context(b: Build) -> set:
-        """A build's picks and its weapons ("weapon:<name>", v3.3): what claim conditions read."""
+        """A build's picks and its weapons ("weapon:<name>"): what claim conditions read."""
         from tri.game.weapons import build_weapon_tokens
         return set(b.items()) | build_weapon_tokens(b)
 
     def _weights(self, r: Review) -> ReviewWeights:
         cl = self.claims[r.review_id]
         ops = [1.0] * len(r.operations)
-        keep = {i: 0.0 for i in getattr(r, "neutral", None) or ()}           # v3.1.1: neutral items are not endorsed
+        keep = {i: 0.0 for i in getattr(r, "neutral", None) or ()}           # neutral items are not endorsed
         for j, o in enumerate(r.operations):
             if o.item_id in keep:
                 ops[j] = 0.0
@@ -331,7 +331,7 @@ class ReviewLedger:
 
     def active_claims(self, review_id: str) -> List[Claim]:
         """Claims of the review with weight > 0. The ledger is fixed once built,
-        so the list is computed once per review (v3.8; read-only)."""
+        so the list is computed once per review (read-only)."""
         memo = self.__dict__.setdefault("_active", {})
         hit = memo.get(review_id)
         if hit is None:
@@ -339,7 +339,7 @@ class ReviewLedger:
         return hit
 
     def _global_claims(self) -> List[Tuple[str, Claim]]:
-        """(review id, claim) of every active context-free claim, newest review first (v3.8)."""
+        """(review id, claim) of every active context-free claim, newest review first."""
         g = self.__dict__.get("_globals")
         if g is None:
             g = self._globals = [(r.review_id, c) for r in reversed(self.reviews)
@@ -347,7 +347,7 @@ class ReviewLedger:
         return g
 
     def _unreturned(self, r: Review) -> frozenset:
-        """Candidates a full review r leaves out of its returned build (v3.8 memo)."""
+        """Candidates a full review r leaves out of its returned build (memo)."""
         memo = self.__dict__.setdefault("_unret", {})
         if r.review_id not in memo:
             memo[r.review_id] = self._candidates() - self._returned(r)
@@ -356,7 +356,7 @@ class ReviewLedger:
     def neighbours(self, build: Build, min_sim: Optional[float] = None, vec=None) -> List[Tuple[Review, float]]:
         """Reviewed builds similar to `build` (sim >= min_sim, default cfg.sim_min), newest first.
         vec: the build's concept coordinates when they are not its own placement
-        (a completion forced into an archetype, v2.25.1)."""
+        (a completion forced into an archetype)."""
         lo = self.cfg.sim_min if min_sim is None else min_sim
         S = self.sims_to(build, vec)
         return [(self.reviews[i], float(S[i])) for i in range(len(self.reviews) - 1, -1, -1) if S[i] >= lo]
@@ -383,7 +383,7 @@ class ReviewLedger:
                         echo.setdefault(c.item, v)
                     else:
                         out[c.item] = v
-        for it, v in self.family_for(build, vec, items).items():     # v3.3: pooled claims fill gaps and
+        for it, v in self.family_for(build, vec, items).items():     # pooled claims fill gaps and
             cur = out.get(it)                                         # override a lone claim that only nudges
             if cur is None or (self.cfg.pool_override and self.binding(v) and not self.binding(cur)):
                 out[it] = v
@@ -417,7 +417,7 @@ class ReviewLedger:
         return self._cand
 
     def family_for(self, build: Build, vec=None, items=None) -> Dict[str, tuple]:
-        """v3.3 family reach (math §5.8): {item: claim} pooled over the reviews of
+        """Family reach (math §5.8): {item: claim} pooled over the reviews of
         builds located in the same family as `build` (family_many overlap >=
         fam_overlap), newest claim per reviewed build. Echoed picks, iffy marks,
         rule verdicts and the build's own reviews are left out. A side needs
@@ -531,7 +531,7 @@ class ReviewLedger:
         label, w, _rid, sim, reason, strength, origin = (tuple(claim) + (None, None, None))[:7]
         if w < hard:
             return False
-        if origin == "family":                             # v3.3 pooled family claim (math §5.8)
+        if origin == "family":                             # pooled family claim (math §5.8)
             return strength == "strong" and label in ("add", "remove", "keep", "absent")
         if origin == "general":                            # generally good, from another build:
             return strength == "strong"                    # strong binds (where feasible), weak nudges

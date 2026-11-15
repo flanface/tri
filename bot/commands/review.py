@@ -45,8 +45,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         sheet = await bot.post_sheet(inter, inter.user.id,
                                      f"Review sheet for <@{inter.user.id}>: {link}\n{REPLY_HELP}", embed=e)
         if sheet is None:
-            await say(inter, "I could not post a review sheet here (Send Messages permission), "
-                             "so use the commands.")
+            await say(inter, "No review sheet here (needs Send Messages); use the commands.")
 
     @tree.command(name="review", description="Review a build (link, id or random)")
     @app_commands.guild_only()
@@ -65,7 +64,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                     bid, parsed = await bot.load_build(build)
                 except Exception as e:
                     return await say(inter, f"Could not read that build: {clip(str(e), 300)}", ephemeral=False)
-                link = full_link(build, bid)                 # v3.0.2: the link as given, not the bare id
+                link = full_link(build, bid)                 # the link as given, not the bare id
                 try:
                     bot.desk.claim(inter.user.id, None, link, parsed, direct=True)
                 except DraftError as e:

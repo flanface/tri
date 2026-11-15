@@ -1,4 +1,4 @@
-"""Every rule that bears on a pick, other than worth (v3.4, math §2.11).
+"""Every rule that bears on a pick, other than worth (math §2.11).
 
 tri.all_rules(item=None, build=None) lists them in one shape:
 
@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 from typing import List, Optional
 
-PREFIXES = ("rv:", "sg:")      # v3.5: sc: (standing corrections from audits) is gone
+PREFIXES = ("rv:", "sg:")      # sc: (standing corrections from audits) is gone
 
 
 def review_rule_id(r) -> str:

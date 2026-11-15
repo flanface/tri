@@ -1,4 +1,4 @@
-"""The real review record: frozen datasets and sheet scoring (v2.20).
+"""The real review record: frozen datasets and sheet scoring.
 
 Everything here reads reviews as they are stored (Supabase rows
 written by the bot, see bot.ingest). Nothing here changes an answer. The model
@@ -8,7 +8,7 @@ enters only through two optional callables:
   rate(build, item) -> local pick rate in [0, 1] (Tri.worth)
 
 Math sections: 11.6 (the reviewer-agreement scorecard), 11.4 (evidence
-margins), 12.6 (insight reports). v3.5: audits and their labels are gone."""
+margins), 12.6 (insight reports). audits and their labels are gone."""
 from __future__ import annotations
 
 import datetime as _dt
@@ -70,7 +70,7 @@ def load(path_or_export) -> Record:
     tables = d.get("tables", d)
     man = d.get("manifest", {})
     revs, meta, bad = [], {}, []
-    for row in tables.get("reviews") or []:          # v3.5: an "audits" table in old freezes is ignored
+    for row in tables.get("reviews") or []:          # an "audits" table in old freezes is ignored
         try:
             body = _body(row)
             r = review_from_dict(body)

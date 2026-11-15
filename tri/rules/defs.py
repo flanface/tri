@@ -18,17 +18,17 @@ class PassConfig:
     theta_contrast: float = 0.10   # never: rate when one condition is flipped
     z: float = 1.645               # one-sided confidence (1.645 ~ 95%)
     min_support: float = 30.0      # weighted builds a rule must rest on
-    max_depth: int = 3             # longest conjunction considered (v3.0: 3, was 5; interpretability)
-    grounded: bool = True          # v3.0: stat literals only on stats of the item's own requirements,
+    max_depth: int = 3             # longest conjunction considered (3, was 5; interpretability)
+    grounded: bool = True          # stat literals only on stats of the item's own requirements,
                                    # its prerequisites and its groups (tri.rules.groups.grounded_stats)
-    ground_fallback: bool = True   # v3.0: an item whose grounded take rules cover too few of its takers
+    ground_fallback: bool = True   # an item whose grounded take rules cover too few of its takers
     ground_cover: float = 0.5      # (share below ground_cover) is searched once more with every stat
-    anchors: str = "related"       # v3.0: item literals: "related" (prerequisites, group mates; v3.0.1: no dependants),
+    anchors: str = "related"       # item literals: "related" (prerequisites, group mates; no dependants),
                                    # "mi" (any item by mutual information, the pre-3.0 behaviour), "none"
-    groups: bool = True            # v3.0: group literals |G(c)| >= n, |D(k)| >= n (known groups)
-    archetypes: bool = True        # v3.0: archetype literals A = a (locator readings of the corpus)
-    replicate: bool = True         # v3.0: the certified form must also pass on a third, untouched split
-    necessity: bool = True         # v3.0: every literal must matter on the certification split
+    groups: bool = True            # group literals |G(c)| >= n, |D(k)| >= n (known groups)
+    archetypes: bool = True        # archetype literals A = a (locator readings of the corpus)
+    replicate: bool = True         # the certified form must also pass on a third, untouched split
+    necessity: bool = True         # every literal must matter on the certification split
     stat_step: int = 5             # stat thresholds are multiples of this (1 = any integer)
     co_items: int = 32             # anchor candidates per item (by mutual information)
     min_breadth: float = 0.5       # foundational: overlap of covered builds' cluster mix with the corpus mix

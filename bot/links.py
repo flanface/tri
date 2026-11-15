@@ -68,7 +68,7 @@ def parse_build_link(link: str) -> str:
 
 def full_link(given: str, build_id: str) -> str:
     """The link a user gave (with a scheme), or the canonical link when they gave a
-    bare id. Embeds and the stored review need a URL, never a bare id (v3.0.2)."""
+    bare id. Embeds and the stored review need a URL, never a bare id."""
     s = (given or "").strip().strip("<>")
     if s and not _ID.match(s) and not _dwt.is_dwt_id(s) and ("/" in s or "." in s):
         return s if "://" in s else "https://" + s
@@ -205,7 +205,7 @@ class BuildFetcher:
     async def expand(self, text: str, limit: int = 200) -> List[str]:
         """Links in `text` (spaces or commas) -> build ids, in order, without
         repeats. A dwt.sh drive link (https://dwt.sh/drive/ID) expands to every
-        build in that folder and its subfolders (v2.23). BuildLinkError on a
+        build in that folder and its subfolders. BuildLinkError on a
         token that is neither."""
         out: List[str] = []
         for tok in (text or "").replace(",", " ").split():

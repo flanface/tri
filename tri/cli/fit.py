@@ -176,7 +176,7 @@ def main(argv=None):
                     "default: the config's (auto), or TRI_JOBS")
     ap.add_argument("--rules-only", metavar="RUN",
                     help="re-mine the rules of a saved run (RUN/model + RUN/catalog.json) with today's "
-                         "rule language and certification; the concept space is not touched (v3.0)")
+                         "rule language and certification; the concept space is not touched")
     a = ap.parse_args(argv)
 
     np.random.seed(a.seed)

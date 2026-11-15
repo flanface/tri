@@ -36,7 +36,7 @@ from tri.model.space import sigmoid
 
 
 class RowStack:
-    """Reference coordinates without a copy (v3.7): rows `idx` of a shared base
+    """Reference coordinates without a copy: rows `idx` of a shared base
     (the corpus coordinates Tri._Zdata, never copied) followed by a few extra
     rows (the reviewed builds). Indexing, row norms and products with a query
     point are what FieldWorth needs; a float32 base is cast in row chunks."""
@@ -75,7 +75,7 @@ class RowStack:
 
     def d2(self, u: np.ndarray, U2: np.ndarray, kmax: int, exclude=()) -> np.ndarray:
         """Squared distances to u, exact (float64) on every row that can be
-        among the kmax nearest and +inf elsewhere (v3.8). A float32 base is
+        among the kmax nearest and +inf elsewhere. A float32 base is
         screened in float32 with no cast or copy; rows whose screened distance
         exceeds the kmax-th smallest by more than twice the rounding bound
         (n+2) 2^-22 |b||u| per side cannot be among the kmax nearest, so only
@@ -121,7 +121,7 @@ class RowStack:
 
 def smallest(d: np.ndarray, k: int) -> np.ndarray:
     """Indices of the k smallest entries of d in row order; rows at the same
-    distance as the k-th are taken in row order too (v3.8), so the neighbour
+    distance as the k-th are taken in row order too, so the neighbour
     set and its order never depend on how the partition breaks ties."""
     nb = np.argpartition(d, k - 1)[:k]
     t = d[nb].max()
@@ -153,7 +153,7 @@ class FieldWorth:
         # (u, U_rows) -> [rows] in [0, 1]: scales a reviewed build's boost when the
         # administrators' locators put it and the query under different archetypes
         self.barrier = barrier
-        self.chasm_corpus = bool(chasm_corpus) and barrier is not None   # v2.19: the chasm gates corpus rows too
+        self.chasm_corpus = bool(chasm_corpus) and barrier is not None   # the chasm gates corpus rows too
 
     @property
     def prior(self) -> np.ndarray:
@@ -243,7 +243,7 @@ class FieldWorth:
         if not len(ring):
             return num, den
         cw = f.cross_weight * self.ref.w[ring] * np.exp(-d2[ring] / (2 * f.cross_bandwidth ** 2))
-        if self.chasm_corpus and u is not None:              # the ring crosses variants, not families (v2.19)
+        if self.chasm_corpus and u is not None:              # the ring crosses variants, not families
             cw = cw * np.asarray(self.barrier(u, self.U[ring]), float)
         Xr = self.ref.X[ring].toarray()
         Ar = self.ref.masks[self.ref.gid[ring]].astype(np.float64)

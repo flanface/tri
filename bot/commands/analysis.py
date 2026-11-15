@@ -34,7 +34,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         return n if build is not None and n < need else None
 
     async def save_dwt(inter: discord.Interaction, parsed, alt: dict, kind: str, url: str):
-        """Save tri's proposal (alt: drops/takes) as a dwt.sh build in DWT_FOLDER (v2.22)."""
+        """Save tri's proposal (alt: drops/takes) as a dwt.sh build in DWT_FOLDER."""
         cl = getattr(bot.fetcher, "dwt", None)
         if cl is None or not cl.can_write:
             return await say(inter, "dwt.sh builds cannot be saved: DWT_API_KEY is not set.", ephemeral=False)
@@ -42,7 +42,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         takes = [c["item"] for c in alt.get("takes") or []]
         arch = alt.get("name") or "its archetype"
         notes = ""
-        if kind == "completion":                          # completion notes go to the summary notes (v2.23)
+        if kind == "completion":                          # completion notes go to the summary notes
             desc = f"tri completion of {url} as {arch}."
             try:
                 notes = completion_notes(parsed, alt, bot.svc, url)
@@ -79,7 +79,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
             emb.set_author(name=clip(r["text"], 256))
         if not r.get("files"):
             return []
-        name, png = r["files"][0]                      # the map in the embed, the reading bar beside it (v2.21)
+        name, png = r["files"][0]                      # the map in the embed, the reading bar beside it
         emb.set_image(url=f"attachment://{name}")
         return [discord.File(io.BytesIO(p_), n_) for n_, p_ in r["files"][:2]]
 
@@ -120,7 +120,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         async def rerun(ans, mode):
             return await bot.model_call(bot.svc.analyze, parsed.build, archetype=archetype or None, answers=ans,
                                         caution=mode)
-        if not gc.private_replies:                       # questions first, then the analysis (v3.1.1)
+        if not gc.private_replies:                       # questions first, then the analysis
             res, _ = await bot.ask_first(inter, gc, res, rerun, parsed.build, parsed.name or url)
         elif gc.caution == "ask":
             res = await rerun(None, "hold")
@@ -165,7 +165,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         async def rerun(ans, mode):
             return await bot.model_call(bot.svc.complete, parsed.build, talents, mantras, archetype=archetype or None,
                                         answers=ans, caution=mode)
-        if not gc.private_replies:                       # questions first, then the completion (v3.1.1)
+        if not gc.private_replies:                       # questions first, then the completion
             res, _ = await bot.ask_first(inter, gc, res, rerun, parsed.build, parsed.name or canonical_link(bid))
         elif gc.caution == "ask":
             res = await rerun(None, "hold")

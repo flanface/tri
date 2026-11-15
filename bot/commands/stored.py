@@ -84,7 +84,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         hv = with_dependants([x.strip() for x in (having or "").split(",") if x.strip()],
                              bot.svc.tri.catalog if bot.svc else None)
         names = [item]
-        if prereqs and bot.svc and item.strip() not in ("*", "any"):      # v3.4: the prerequisite chain too
+        if prereqs and bot.svc and item.strip() not in ("*", "any"):      # the prerequisite chain too
             cat = bot.svc.tri.catalog
             key = {k.casefold(): k for k in cat.items}
             names += cat.prereq_closure(key.get(item.strip().casefold(), item.strip()))

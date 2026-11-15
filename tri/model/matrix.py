@@ -68,11 +68,11 @@ def _unique_rows(a: np.ndarray):
     return a[first], inv.reshape(-1).astype(np.int64)
 
 
-#: v3.3: where availability groups are cached by content (set by Tri.load to the
+#: where availability groups are cached by content (set by Tri.load to the
 #: run's model folder). None: no disk cache.
 AVAIL_DIR: Optional[str] = None
 
-#: v3.7: distinct stat rows per availability chunk in _avail_groups.
+#: distinct stat rows per availability chunk in _avail_groups.
 AVAIL_CHUNK = 16384
 _AVAIL_KEEP = 4
 
@@ -98,7 +98,7 @@ def avail_key(catalog: Catalog, pr, fi, T=None, tokens=None, lk=None, lk_vocab=N
 
 def avail_groups(catalog: Catalog, pr, fi, T=None, tokens=None, lk=None, lk_vocab=None,
                  cache_dir: Optional[str] = None):
-    """_avail_groups through a disk cache keyed by content (v3.3): a load and the
+    """_avail_groups through a disk cache keyed by content: a load and the
     saved game-data sync after it compute availability once per catalog and
     corpus, not on every start."""
     import os
@@ -170,7 +170,7 @@ def _avail_groups(catalog: Catalog, pr: np.ndarray, fi: np.ndarray, T=None, toke
         key = np.concatenate([key, cinv.reshape(-1, 1).astype(key.dtype)], 1)
     uniq, inv = _unique_rows(key)
     S = pr.shape[1]
-    # v3.7: in row chunks, each chunk's masks bit-packed at once. The whole-table
+    # in row chunks, each chunk's masks bit-packed at once. The whole-table
     # form held about eight [U, N] bool tables (stat masks per stage, context,
     # propagation copies), 1.5-2 GB at 300k distinct stat rows. Rows are
     # independent, and packed rows sort as the bool rows do (_unique_rows), so
@@ -196,7 +196,7 @@ def _avail_groups(catalog: Catalog, pr: np.ndarray, fi: np.ndarray, T=None, toke
 
 class MaskStack:
     """Two availability tables read as one [G1 + G2, N] bool table without a copy
-    (v3.7): BuildMatrix.append (corpus + a few reviewed builds) concatenated the
+: BuildMatrix.append (corpus + a few reviewed builds) concatenated the
     whole corpus table (G x N bytes, 186 MB at 265k groups) for a handful of
     rows. Row gathers, slices, (rows, cols) reads, len, shape and astype behave
     as on the concatenated array; anything else materialises it once."""
@@ -262,7 +262,7 @@ MASK_CHUNK = 16384     # rows of an availability table cast to float64 at a time
 
 def group_dot(wg: np.ndarray, masks: np.ndarray, chunk: int = MASK_CHUNK) -> np.ndarray:
     """wg @ masks for a [G] weight and a [G,N] bool table, cast in row chunks
-    (v3.7): masks.T.astype(float64) @ wg made a full float64 copy of the table
+: masks.T.astype(float64) @ wg made a full float64 copy of the table
     (G x N x 8 bytes, 1.5 GB at 265k groups)."""
     out = np.zeros(masks.shape[1])
     for a in range(0, len(masks), chunk):
@@ -471,7 +471,7 @@ class BuildMatrix:
         np.savez_compressed(path, X_data=self.X.data, X_ind=self.X.indices, X_ptr=self.X.indptr,
                             T_data=self.T.data, T_ind=self.T.indices, T_ptr=self.T.indptr,
                             shape=np.array([len(self), self.N, len(self.tokens)]), hi=self.hi, fi=self.fi,
-                            # v3.7: availability is recomputed on load (or read from its cache), so the
+                            # availability is recomputed on load (or read from its cache), so the
                             # stored masks are only a placeholder unless the corpus is empty
                             w=self.w, ts=self.ts, gid=self.gid if not len(self) else np.zeros(len(self), np.int64),
                             masks=self.masks if not len(self) else np.ones((1, self.N), bool), n_tal=self.n_tal,
@@ -487,7 +487,7 @@ class BuildMatrix:
             raise ValueError("reference builds were stored for a different catalog; use Tri.migrate")
         X = sp.csr_matrix((z["X_data"], z["X_ind"], z["X_ptr"]), shape=(B, N))
         T = sp.csr_matrix((z["T_data"], z["T_ind"], z["T_ptr"]), shape=(B, K))
-        # v3.3: the stored masks are read only for an empty corpus; availability is
+        # the stored masks are read only for an empty corpus; availability is
         # recomputed (or read from its content cache) below, so a large stored
         # mask array is never decompressed on a load
         gid0, masks0 = (z["gid"], z["masks"]) if not B else (np.zeros(B, np.int64), np.ones((1, N), bool))
@@ -495,6 +495,6 @@ class BuildMatrix:
                          z["n_tal"], z["n_man"], ids, tuple(fields), z["pr"] if "pr" in z.files else None,
                          z["lk"] if "lk" in z.files else None,
                          [str(x) for x in z["lk_vocab"]] if "lk_vocab" in z.files else [])
-        if B:   # availability follows the current rules (v2.15.1 staged prerequisites); no refit
+        if B:   # availability follows the current rules (staged prerequisites); no refit
             bm.gid, bm.masks = _avail_cached(path, catalog, bm)
         return bm

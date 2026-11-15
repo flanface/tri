@@ -1,4 +1,4 @@
-"""Forced weapon context (v2.21, math §2.8).
+"""Forced weapon context (math §2.8).
 
 The planner records what a build equips (Build.meta "weapon", the deepwoken.co
 "weapons" field). Corpus builds rarely act on it, so the pretrain has no sense
@@ -131,7 +131,7 @@ def summary(weapons: Sequence[str]) -> str:
                      f"{', bleed' if T[w].get('bleed') else ''})" for w in weapons if w in T)
 
 
-# ---------------------------------------------------------------- v3.3: weapons in reviews
+# ---------------------------------------------------------------- weapons in reviews
 #: a review's related item "weapon:<name>" scopes its claim to builds wielding <name>
 WEAPON_PREFIX = "weapon:"
 
@@ -147,6 +147,11 @@ def weapon_token(name) -> Optional[str]:
         s = s[len(WEAPON_PREFIX):]
     hit = resolve(s)
     return WEAPON_PREFIX + hit[0] if len(hit) == 1 and _loose(hit[0]) == _loose(s) else None
+
+
+def label(x) -> str:
+    """"weapon:Railblade" -> "Railblade (weapon)"; anything else unchanged."""
+    return f"{x[len(WEAPON_PREFIX):]} (weapon)" if is_weapon_token(x) else str(x)
 
 
 def build_weapon_tokens(b) -> Set[str]:

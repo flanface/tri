@@ -21,7 +21,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     item_name_ac = c.item_name_ac
     reviewer = c.reviewer
 
-    # ------------------------------------------------------------ authored rules (v3.0)
+    # ------------------------------------------------------------ authored rules
     rule = app_commands.Group(name="rule", description="Selection rules",
                               guild_only=True)
 

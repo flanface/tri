@@ -1,4 +1,4 @@
-"""Process memory helpers (v3.7).
+"""Process memory helpers.
 
     release()        collect garbage, then hand freed heap pages back to the OS
                      (glibc malloc_trim; a no-op elsewhere). The large
@@ -8,7 +8,7 @@
     rss_mb()         resident size now (Linux /proc; None elsewhere).
     peak_mb()        the process's peak resident size (getrusage).
     cap_threads()    size the BLAS / OpenMP thread pools to the CPU quota
-                     (cgroup cpu.max) before numpy loads (v3.8).
+                     (cgroup cpu.max) before numpy loads.
 """
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ THREAD_VARS = ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NU
 
 
 def cap_threads() -> int:
-    """Size the BLAS / OpenMP pools to the CPU quota (v3.8). Must run before
+    """Size the BLAS / OpenMP pools to the CPU quota. Must run before
     numpy is imported; variables already set are left alone. Without it a
     1-CPU container starts one BLAS thread per host core, and every matrix
     product is throttled by the quota."""

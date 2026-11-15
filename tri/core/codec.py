@@ -34,7 +34,7 @@ def validate_review(r: Review, catalog: Catalog, strict_capacity: bool = True) -
         if o.action == Action.REMOVE and o.reason in (Reason.SYNERGY_WITH, Reason.LUXURY_MORE):
             raise ReviewError(f"{o.reason.value} is a reason for adds, not removes ({o.item_id})")
         for y in o.related:
-            if isinstance(y, str) and y.startswith("weapon:"):       # v3.3: a weapon scopes the claim
+            if isinstance(y, str) and y.startswith("weapon:"):       # a weapon scopes the claim
                 from tri.game.weapons import weapon_token
                 if weapon_token(y) != y:
                     raise ReviewError(f"unknown weapon {y[7:]} on {o.item_id}")
@@ -75,7 +75,7 @@ def validate_review(r: Review, catalog: Catalog, strict_capacity: bool = True) -
             held = [y for y in n.get("items") or [] if y in final]
             if held:
                 raise ReviewError(f"note: avoid {', '.join(held)}, which the reviewed build keeps")
-        if n.get("kind") == "weapon":                    # v3.3: # weapon: A, B (equips by name)
+        if n.get("kind") == "weapon":                    # # weapon: A, B (equips by name)
             from tri.game.weapons import resolve
             bad = [w for w in n.get("weapons") or [] if not resolve(w)]
             if bad or not n.get("weapons"):

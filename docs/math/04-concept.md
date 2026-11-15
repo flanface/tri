@@ -139,6 +139,12 @@ $$
 
 $\delta$ the median pairwise concept distance of the 40, so the picks are strong and differ. $\max_b s_S(b)<\tfrac12$ is reported as a weak intersection.
 
+**Interactive view.** The page draws a point $q$ (scaled to the data box) at
+$$
+(X,Y)=c+s\,\big((R_x(\epsilon)R_z(\alpha)\,q)_1,\ -(R_x(\epsilon)R_z(\alpha)\,q)_2\big),
+$$
+an orthographic projection: no depth divide, so parallel lines stay parallel and lengths along the screen plane are true to scale. Depth $(R_x R_z q)_3$ only orders drawing. Added objects are kept in data units: a point $p$, a vector $h-t$ with $\lVert h-t\rVert$, a plane $\{x:\langle n,x\rangle=d\}$ (through $p_1,p_2,p_3$: $n=(p_2-p_1)\times(p_3-p_1)$, $d=\langle n,p_1\rangle$) drawn as its section of the box, and a note or stroke anchored at $R^{-1}(x,y,0)$. Two vectors are measured by (4.5.2) and (4.5.3); two points by $\lVert p-p'\rVert$. A named item in a scene with origin $o$ is added as $z_t-o$.
+
 Code: `plots.worth_space`, `plots.view_kept`, `figure.dense_origin`, `figure.cosines`, `figure.angle`, `figure.orthogonality`, `figure.field_hulls`, `categorize.intersection`; atlas constants `plotting.FIELD_MARGIN` ($\mu$), `FIELD_CORE` ($\chi$).
 
 ## 4.6 Regions

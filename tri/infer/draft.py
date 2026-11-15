@@ -1,4 +1,4 @@
-"""tri's analysis as a review sheet in the reviewers' own grammar (v2.20).
+"""tri's analysis as a review sheet in the reviewers' own grammar.
 
 Tri.as_review(build) turns the best Alternative of Tri.review into a Review
 (scope full: every unmarked pick is endorsed) and the reply lines a reviewer
@@ -17,7 +17,7 @@ Strength and emission come from the evidence margin of each change (docs/math
 InferConfig.emit_margin, and is strong when the margin reaches
 InferConfig.strong_margin. A change without a margin is emitted, strong.
 A change that is not emitted never appears, and the sheet keeps the build's
-counts: its pick is kept (or not taken) and the review solved again (v3.1.2).
+counts: its pick is kept (or not taken) and the review solved again.
 Withholding never breaks the protocol: the sheet is checked with
 codec.validate_review; iffy marks are written only with
 InferConfig.emit_iffy (reviewers stay silent on near-ties); adds that no longer fit (talent cap 76 - 2m and
@@ -121,7 +121,7 @@ def as_review(tri, build: Build, archetype: Optional[str] = None, emit_margin: O
     emit = float(icfg.emit_margin if emit_margin is None else emit_margin)
     strong = float(icfg.strong_margin if strong_margin is None else strong_margin)
     have = build.item_set()
-    # v3.1.2: a mark that is not emitted (held for thin evidence, or below emit_margin)
+    # a mark that is not emitted (held for thin evidence, or below emit_margin)
     # never appears, and the sheet still keeps the build's counts: the pick it would
     # have removed is kept, the pick it would have added is not taken, and the review
     # is solved again (at most `rounds` times; after that the marks stand)

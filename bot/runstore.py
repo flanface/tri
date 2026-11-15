@@ -1,4 +1,4 @@
-"""Fitted runs in Supabase Storage (v3.7): the database carries the model too.
+"""Fitted runs in Supabase Storage: the database carries the model too.
 
     python -m bot.runstore publish runs/20261030-152416      # from the machine that fitted it
     python -m bot.runstore fetch /var/data/runs              # on the host (the bot does this itself)
@@ -328,7 +328,7 @@ CACHE_FILES = ("avail-", "data.avail.npz", "latents.npy", "latents.json", "sideg
 
 
 def warm(run: str, log: Callable[[str], None] = print) -> List[str]:
-    """Load the run once so its derived caches exist before upload (v3.8): the
+    """Load the run once so its derived caches exist before upload: the
     availability table (model/avail-*.npz), the corpus latents and the mined
     sidegrades. A host that downloads them starts in seconds; without them it
     rebuilds them on its first load (minutes on one CPU), and commands answer

@@ -172,7 +172,7 @@ class PassRule:
     lift: float = 1.0              # confidence / the item's overall rate
     contrast: Optional[float] = None   # never: rate with the pivotal condition flipped
     effect: str = TAKE
-    status: str = "active"         # active | stale | trivial (v3.0.5, culled by a group baseline)
+    status: str = "active"         # active | stale | trivial (culled by a group baseline)
     source: str = "data"
     note: str = ""
     breadth: Optional[float] = None
@@ -287,8 +287,8 @@ class Rulebook:
         self.region_names: List[str] = []
         self.vetoed: Dict[str, dict] = {}      # item -> why it has no take rule (the vetoing cluster)
         self._pick_ZC = None                    # (Z, C) of the last pick_regions call (leave-item-out)
-        self.groups: Dict[str, frozenset] = {}  # known groups (tri.rules.groups), v3.0
-        self.reader = None                      # bm -> archetype key per row (Tri sets it), v3.0
+        self.groups: Dict[str, frozenset] = {}  # known groups (tri.rules.groups)
+        self.reader = None                      # bm -> archetype key per row (Tri sets it)
         self._ctx_cache: Dict[int, tuple] = {}
 
     def context_matrix(self, bm: BuildMatrix) -> Tuple[List[str], np.ndarray]:
@@ -370,13 +370,13 @@ class Rulebook:
         elig = group_dot(np.asarray(G.T @ w).ravel(), bm.masks)
         self.pick_rate = np.asarray(XA.T @ w).ravel() / np.maximum(elig, 1e-12)
         mi = mutual_information(bm, w, signed=True)
-        rep = mi < 0                                # v3.0: antagonists may anchor ("works against")
+        rep = mi < 0                                # antagonists may anchor ("works against")
         mi = np.abs(mi)
         Xd = _dense_bool(bm.X)                     # bool: an eighth of float64, a quarter of float32
         H = bm.hi.astype(np.float32)
         from tri.rules.groups import derived_groups
         self.groups = derived_groups(self.c) if f.groups else {}
-        tokens, Tk = self.context_matrix(bm)       # v3.0: planner fields, weapon class, archetype
+        tokens, Tk = self.context_matrix(bm)       # planner fields, weapon class, archetype
         gnames = sorted(self.groups)
         gidx = [np.array([self.c.index[i] for i in self.groups[g] if i in self.c.index], np.int64) for g in gnames]
         GC = np.stack([Xd[:, ix].sum(1) for ix in gidx], 1).astype(np.float32) if gnames \
@@ -421,12 +421,12 @@ class Rulebook:
         self.rules = keep + new
         if changed_since:
             self._rescore_changed(bm, changed_since)
-        from tri.rules.triviality import cull           # v3.0.5: group baselines
+        from tri.rules.triviality import cull           # group baselines
         cull(self.rules, self.c, self.groups)
         return self
 
     def _mine_one(self, item: str, ctx: dict, info: Optional[dict] = None) -> List[PassRule]:
-        """Rules of one item (Rulebook.mine). v3.0: grounded stats first; an item
+        """Rules of one item (Rulebook.mine). grounded stats first; an item
         left without a take rule is searched once more with every stat
         (PassConfig.ground_fallback): a stat convention, marked "ungrounded"."""
         meta: dict = {}
@@ -463,7 +463,7 @@ class Rulebook:
         if GC is None:
             GC = np.zeros((len(H), 0), np.float32)
         sidx = list(range(H.shape[1]))
-        if f.grounded and not wide:                 # v3.0: stats of the item's own requirements and groups
+        if f.grounded and not wide:                 # stats of the item's own requirements and groups
             from tri.rules.groups import grounded_stats
             gs = grounded_stats(self.c, item, self.groups)
             sidx = [i for i, s_ in enumerate(self.c.stats) if s_ in gs]
@@ -484,13 +484,13 @@ class Rulebook:
         w_all = w[rows]
         excl = set(self.c.items[item].exclusive_with)
         pool = None
-        if f.anchors == "related":                  # v3.0.1: prerequisites, group mates (no dependants)
+        if f.anchors == "related":                  # prerequisites, group mates (no dependants)
             from tri.rules.groups import related_items
             pool = {self.c.index[i] for i in related_items(self.c, item, self.groups)}
             if ctx.get("rep") is not None:          # antagonists: picking j lowers the rate of the item
                 pool |= set(np.nonzero(ctx["rep"][:, t])[0].tolist())
         from tri.rules.groups import dependants, tautological_groups
-        deps = dependants(self.c, item)              # v3.0.1: "a dependant ⇒ item" is game data
+        deps = dependants(self.c, item)              # "a dependant ⇒ item" is game data
         co = [] if f.anchors == "none" else \
             [j for j in np.argsort(-mi[:, t]) if j != t and mi[j, t] > 1e-4 and self.c.ids[j] not in excl
              and self.c.ids[j] not in deps and (pool is None or j in pool)][: f.co_items]
@@ -507,7 +507,7 @@ class Rulebook:
                  + [("context", tokens[k]) for k in range(K)] + [("group", gn[g]) for g in range(NG)]
                  + [("item", self.c.ids[j]) for j in co])
         grid = {an[a]: ag_grid[a] for a in range(A)}
-        if f.replicate:                             # v3.0: discover on A, certify on B, replicate on C
+        if f.replicate:                             # discover on A, certify on B, replicate on C
             q2 = half + (len(rows) - half) // 2
             A_, B_, C_ = np.arange(half), np.arange(half, q2), np.arange(q2, len(rows))
         else:
@@ -661,7 +661,7 @@ class Rulebook:
         msB = f.min_support / (4 if C_ is not None else 2)
 
         def necessary(conds, part, eff) -> bool:
-            """v3.0: every literal must matter on the certification split: the
+            """every literal must matter on the certification split: the
             builds it alone excludes differ from the rule's builds by a
             one-sided two-proportion test at z (math §6.12)."""
             m = cell(conds)[part]
@@ -727,7 +727,7 @@ class Rulebook:
             fin = certify(conds, B_, msB, zB)        # the certificate: independent split
             if fin is None or fin[0] != res[0]:
                 continue
-            if C_ is not None:                       # v3.0: replicated on a third split
+            if C_ is not None:                       # replicated on a third split
                 rp = certify(conds, C_, msB, f.z)    # a replication, at the unadjusted level
                 if rp is None or rp[0] != res[0]:
                     continue
@@ -753,7 +753,7 @@ class Rulebook:
         if f.max_overlap < 1.0:                      # one take rule per set of covered builds (proxy families)
             dd: List[Tuple[PassRule, np.ndarray]] = []
             arch = lambda r: any(c.kind == "context" and c.key.startswith("archetype:") for c in r.conds)
-            for r in sorted(kept, key=lambda r: not arch(r)):   # v3.0.1: the archetype reading over its proxies
+            for r in sorted(kept, key=lambda r: not arch(r)):   # the archetype reading over its proxies
                 m = cell(r.conds)
                 if r.effect == TAKE and any(k.effect == TAKE and
                        float(wr[m & mk].sum()) >= f.max_overlap * max(float(wr[m | mk].sum()), 1e-12)
@@ -772,7 +772,7 @@ class Rulebook:
                [r for r in kept if r.effect == NEVER][: f.max_never_per_item]
         for r in kept:
             if r.effect == TAKE and all(c.kind in ("stat", "agg", "group") for c in r.conds):
-                # v3.0.1: group counts are build-wide too: a rule spread over the
+                # group counts are build-wide too: a rule spread over the
                 # corpus's pick profiles is foundational whichever literal carries it
                 m = cell(r.conds)
                 r.breadth = round(self._breadth(regions[rows][m], wr[m], gmix), 3)
@@ -983,7 +983,7 @@ class Rulebook:
         not transfer to the other for that item."""
         from tri.rules.groups import group_counts, rule_tokens
         ix = self.__dict__.get("_by_item")
-        if ix is None or ix[0] is not self.rules or ix[2] != len(self.rules):            # v3.8: rules per item, not a scan per call
+        if ix is None or ix[0] is not self.rules or ix[2] != len(self.rules):            # rules per item, not a scan per call
             d: Dict[str, list] = {}
             for r in self.rules:
                 d.setdefault(r.item, []).append(r)
@@ -1051,6 +1051,6 @@ class Rulebook:
         rb.pick_rate = None if d.get("pick_rate") is None else np.array(d["pick_rate"])
         rb.vetoed = dict(d.get("vetoed") or {})
         rb.groups = {g: frozenset(m) for g, m in (d.get("groups") or {}).items()}
-        from tri.rules.triviality import cull           # v3.0.5: runs fitted before the group baselines
+        from tri.rules.triviality import cull           # runs fitted before the group baselines
         cull(rb.rules, catalog, rb.groups)
         return rb
