@@ -51,7 +51,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         same = {archetype_key(p): p for p in bot.svc.archetypes}.get(archetype_key(archetype))
         archetype = same or archetype                       # one spelling per archetype
         lines, done = [], 0
-        for one in ids:                                     # one or many (dwt.sh drive folders, v2.23)
+        for one in ids:                                     # one or many (dwt.sh drive folders)
             try:
                 bid, rec = await bot.fetcher.fetch_record(one)
                 parsed = await bot.model_call(bot.svc.parse, bid, rec)

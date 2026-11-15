@@ -55,13 +55,13 @@ class Tri(_Fitting, _Archetypes, _Reviewing, _Answering, _Persist):
         self.data: Optional[BuildMatrix] = None       # corpus builds kept for refits and worth
         self.space: Optional[ConceptSpace] = None
         self.rulebook: Optional[Rulebook] = None       # mined rules
-        self.selection: Optional[Rulebook] = None      # what decides F/C picks: mined + authored + reviews (v3.0)
-        self.authored = AuthoredRules()                 # rules written in the rule language (v3.0)
+        self.selection: Optional[Rulebook] = None      # what decides F/C picks: mined + authored + reviews
+        self.authored = AuthoredRules()                 # rules written in the rule language
         self.reviews: List[Review] = []
         self.patches = PatchLog()
         self.ledger: Optional[ReviewLedger] = None
         self.review_rules: list = []
-        self.review_rules_all: list = []            # v3.4: before drop_rule's rv: ids
+        self.review_rules_all: list = []            # before drop_rule's rv: ids
         self.sidegrades_dropped: set = set()
         self._worth: Optional[FieldWorth] = None
         self._Zdata: Optional[np.ndarray] = None
@@ -71,8 +71,8 @@ class Tri(_Fitting, _Archetypes, _Reviewing, _Answering, _Persist):
         self.metric_selection: Optional[dict] = None   # the last leave-one-out choice of metric_power
         self.held_out_ids: List[str] = []               # locator builds kept out of the last field fit
         self.manual: Dict[str, str] = {}                # admin categories: item -> foundational | central | luxury
-        self.values: Dict[str, float] = {}              # admin flat value offsets: item -> delta on worth (v2.18)
-        self._note_worth: List[dict] = []               # indicator / core / avoid notes, for worth (v2.18)
+        self.values: Dict[str, float] = {}              # admin flat value offsets: item -> delta on worth
+        self._note_worth: List[dict] = []               # indicator / core / avoid notes, for worth
         self.sidegrades: List[Sidegrade] = []
         self.load_info: Dict[str, str] = {}
 

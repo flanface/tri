@@ -13,7 +13,7 @@ from tri.rules.passes import CENTRAL, EXCLUSION, FOUNDATIONAL, LUXURY
 
 
 class _Reviewing:
-    """PassEngine methods (PassEngine methods: review of full builds and assembling alternatives.)."""
+    """PassEngine methods: review of full builds and assembling alternatives."""
 
     # ------------------------------------------------------------ review
     def review(self, b: Build, max_alternatives: int = 3, region: Optional[int] = None,
@@ -36,9 +36,9 @@ class _Reviewing:
         keep_mem = {i: v for i, v in (self._hard(s, "keep") | self._hard(s, "add")).items() if not self._general(v)}
         keep_mem.update({i: ("keep", 1.0, None, 1.0, None, None) for i in locked if i in S})   # pinned by the user
         rem_mem = {i: v for i, v in self._hard(s, "remove").items() if i not in locked}
-        left_out = set(self._hard(s, "absent"))           # v3.3: pooled "absent": no worth swap brings it in
+        left_out = set(self._hard(s, "absent"))           # pooled "absent": no worth swap brings it in
         kept_by = set()
-        if cfg.swap_guard:                                # v3.3: review evidence guards worth swaps
+        if cfg.swap_guard:                                # review evidence guards worth swaps
             left_out |= {i for i, v in s.memory.items() if v[0] in ("absent", "remove")}
             kept_by = {i for i, v in s.memory.items() if v[0] == "keep"}
         cat_keep = self._cat_kept(s)                   # categories outrank never rules
@@ -53,7 +53,7 @@ class _Reviewing:
         # 0. a Pathfinder build holds no Vow of Iron only pick (nor what requires one)
         for it, why in self._voi_drops(cur):
             drop(it, Reason.SCENARIO_MISMATCH.value, [], "rules", why, FOUNDATIONAL)
-        for it, why in (s.weapon or {}).get("forbid", {}).items():   # v3.2 weapon rules hold over pins
+        for it, why in (s.weapon or {}).get("forbid", {}).items():   # weapon rules hold over pins
             if it in cur:
                 drop(it, Reason.SCENARIO_MISMATCH.value, [], "weapon", why, FOUNDATIONAL)
                 keep_mem.pop(it, None)
@@ -121,7 +121,7 @@ class _Reviewing:
         # 2. required picks
         hard_block = rejected | (set(rem_mem) - nw_kept)
         req = self._required(s, cur, hard_block)
-        guard = set((s.weapon or {}).get("guard", ()))     # v3.4: weapon-required picks and their prerequisites
+        guard = set((s.weapon or {}).get("guard", ()))     # weapon-required picks and their prerequisites
         protected = set(keep_mem) | {i for i in cur if i in req} | (central & cur) | (guard & cur)
         free = {"t": cap[0] - sum(self._kind(i) == "t" for i in cur),
                 "m": cap[1] - sum(self._kind(i) == "m" for i in cur)}
@@ -132,7 +132,7 @@ class _Reviewing:
                        for x in rest) or self._slot_needed(it, cur, s)
 
         def anchors(it):
-            """v3.2.1: it is the only pick a picked prerequisite unlocks (Unfazed
+            """it is the only pick a picked prerequisite unlocks (Unfazed
             for Grasp on Reality); a worth swap that takes it out strands the
             prerequisite, so the pair stays (math §2.8d)."""
             I = self.c.items.get(it)
@@ -156,7 +156,7 @@ class _Reviewing:
             for it, (ps, src, why, rid) in req.items():
                 if it in cur:
                     protected.add(it); continue
-                # v3.4 addition order: missing prerequisites come in first (Knight's Rally
+                # addition order: missing prerequisites come in first (Knight's Rally
                 # before Turtle Shell), as in the completion (math §2.8d)
                 chain = self._missing_chain(it, cur, s, hard_block - guard) if not self.c.prereqs_met(it, cur) else []
                 if chain is None:
@@ -190,7 +190,7 @@ class _Reviewing:
                     d = [v for v in displaceable(k) if k != "m" or self.fits((cur - {v}) | {it}, s)]
                     if not d and it in guard:
                         if self.cap_excess(cur | {it}) <= 0 and (k != "m" or self.fits(cur | {it}, s)):
-                            free[k] += 1               # v3.4: a weapon-required pick grows a build held to its
+                            free[k] += 1               # a weapon-required pick grows a build held to its
                             d = None                   # size when the cap and slots allow (only game data blocks it)
                         else:                          # or displaces the least worthy pick that no rule, prerequisite
                             d = sorted((v for v in cur if self._kind(v) == k and v not in guard and v not in req
@@ -290,7 +290,7 @@ class _Reviewing:
             if q(it) >= cfg.no_fit_rate:
                 break
             if it in protected or it not in S or needed_by_others(it) or self._lux(it) or self._cold(it, s):
-                continue                               # (v3.0: an F / C talent no rule requires here may go)
+                continue                               # (an F / C talent no rule requires here may go)
             drop(it, Reason.NO_SYNERGY.value, [], "worth",
                  f"taken by only {q(it):.0%} of similar builds that can take it")
             free[self._kind(it)] += 1
@@ -298,7 +298,7 @@ class _Reviewing:
 
         def best_candidates(kind, cap=True, luxury_first=True, fallback=False):
             """Feasible additions by worth; luxury (category) items first when
-            luxury_first (they are taken whenever a slot is free). v3.0: luxury
+            luxury_first (they are taken whenever a slot is free). luxury
             talents only (fallback: the foundational / central ones, last resort)."""
             out = []
             for t in np.argsort(-s.q):
@@ -310,7 +310,7 @@ class _Reviewing:
                 if self._cold(it, s) or self._side_block(it, cur, s):
                     continue
                 if (self._feasible(it, cur, s, cap=cap) and not self._rule_block(it, cur, s)
-                        and not self._depends_unmet(it, cur, s)):      # v3.6: x NW > y
+                        and not self._depends_unmet(it, cur, s)):      # x NW > y
                     out.append(it)
                 if len(out) >= 8:
                     break
@@ -319,7 +319,7 @@ class _Reviewing:
                        and i not in cur and i not in dropped and i not in rem_mem and i not in rejected
                        and not self._side_block(i, cur, s)
                        and self._feasible(i, cur, s, cap=cap) and not self._rule_block(i, cur, s)
-                       and not self._depends_unmet(i, cur, s)]      # v3.6: x NW > y
+                       and not self._depends_unmet(i, cur, s)]      # x NW > y
                 out = sorted(lux, key=lambda i: -q(i)) + [i for i in out if i not in lux]
             return out
         order = ("m", "t") if cfg.fill_capacity else ("t", "m")   # mantra first: each lowers the cap
@@ -379,7 +379,7 @@ class _Reviewing:
                     reason, rel = self._never_reason(r)
                     drop(it, reason, rel, "rules", r.text(), EXCLUSION)
                     rejected.add(it); by_rule.add(it); protected.discard(it); free[self._kind(it)] += 1; moved = True
-            for it in list(by_rule):                   # v3.0: picks (group counts, anchors) changed and the
+            for it in list(by_rule):                   # picks (group counts, anchors) changed and the
                 if self._forbidden(it, cur | {it}, s) is None:   # never rule no longer holds: a take rule may
                     rejected.discard(it); by_rule.discard(it)    # bring the item back
                     if it not in rem_mem:
@@ -480,7 +480,7 @@ class _Reviewing:
         for r in self._firing(s):
             if r.item in sel or r.item in seen:
                 continue
-            if r.item in blocked and (r.item in rev_block or                 # v3.0: a never rule that held
+            if r.item in blocked and (r.item in rev_block or                 # a never rule that held
                                       self._forbidden(r.item, set(sel) | {r.item}, s) is not None):
                 continue                               # on the build but not on the answer is reported
             seen.add(r.item)

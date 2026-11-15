@@ -1,4 +1,4 @@
-"""Hardcoded weapon rules (v3.2, math §2.8c).
+"""Hardcoded weapon rules (math §2.8c).
 
 The corpus records weapons too rarely to learn these, so they are stated from
 the game data (tri/data/weapons.json: deepwoken.co bleed tags, pocamind weight
@@ -10,7 +10,7 @@ w0 is the first.
          or Support                             => Speed Demon is required
          (Trackstar, Support: worth decides)
     FF   w in {Cursed Flames, Pleeksty's Inferno} => never Flaming Flourish
-    TS   some equipped w in TS_HEAVY_NO        => never Turtle Shell (v3.8.1; over w0)
+    TS   some equipped w in TS_HEAVY_NO        => never Turtle Shell (over w0)
          w0 light, w0 not in TS_LIGHT_OK        => never Turtle Shell
          w0 light, w0 in TS_LIGHT_OK            => Turtle Shell allowed (lock waived; worth decides)
          w0 medium or heavy, not in TS_HEAVY_NO => Turtle Shell is required (lock waived)
@@ -62,12 +62,12 @@ def _sd_by_worth(archetype: Optional[str]) -> bool:
 
 def answered_class(b) -> Optional[str]:
     """The weapon class the asker named for a build that records no weapon
-    (Build.meta "weapon_class", set by the answer; v3.6)."""
+    (Build.meta "weapon_class", set by the answer)."""
     return (getattr(b, "meta", None) or {}).get("weapon_class") or None
 
 
 def class_rules(cls: str, archetype: Optional[str] = None) -> WeaponRules:
-    """v3.6: the rules read from a weapon class alone (no named weapon). A rule
+    """the rules read from a weapon class alone (no named weapon). A rule
     holds when it holds for every weapon of the class: Fist, Dagger, Rapier and
     Pistol are light, so never Turtle Shell; a class of medium or heavy weapons
     requires it; a class with no bleeding weapon requires Speed Demon (worth
@@ -93,7 +93,7 @@ def class_rules(cls: str, archetype: Optional[str] = None) -> WeaponRules:
 
 def weapon_rules(b, archetype: Optional[str] = None) -> WeaponRules:
     """The rules for build b read as `archetype` (a family key or name). A build
-    that records no weapon but whose class was answered gets class_rules (v3.6)."""
+    that records no weapon but whose class was answered gets class_rules."""
     ws = main_weapons(b)
     out = WeaponRules()
     if not ws:
@@ -111,7 +111,7 @@ def weapon_rules(b, archetype: Optional[str] = None) -> WeaponRules:
     w0 = ws[0]
     wt = (T.get(w0) or {}).get("weight")
     no = [w for w in W.equipped(b) if w in TS_HEAVY_NO]
-    if no:                                        # v3.8.1: forced no Turtle Shell, whatever w0 is
+    if no:                                        # forced no Turtle Shell, whatever w0 is
         out.forbid[TURTLE_SHELL] = f"never with {no[0]}"
     elif wt == "Light":
         if w0 in TS_LIGHT_OK:

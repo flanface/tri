@@ -133,7 +133,7 @@ def normalize_table(name: str) -> str:
 
 class SupabaseStore:
     """Minimal async client for the bot's tables (pool, reviews; optional locators,
-    item_values, tri_rules). Categories are not stored here (v3.0.2): they live in the run.
+    item_values, tri_rules). Categories are not stored here: they live in the run.
 
     url: https://<project>.supabase.co ; key: service-role key.
     page: rows per request (PostgREST caps responses, 1000 by default)."""
@@ -148,9 +148,9 @@ class SupabaseStore:
         self.pool_table = normalize_table(pool_table)
         self.reviews_table = normalize_table(reviews_table)
         self.locators_table = normalize_table(locators_table)   # optional: administrator-labelled builds
-        self.values_table = normalize_table(values_table)           # optional: admin flat values (v2.18)
-        self.rules_table = normalize_table(rules_table)             # optional: authored selection rules (v3.0)
-        self.answers_table = normalize_table(answers_table)         # optional: caution answers (v3.1)
+        self.values_table = normalize_table(values_table)           # optional: admin flat values
+        self.rules_table = normalize_table(rules_table)             # optional: authored selection rules
+        self.answers_table = normalize_table(answers_table)         # optional: caution answers
         self.page = page
         self.timeout = timeout
         self._session = session
@@ -207,7 +207,7 @@ class SupabaseStore:
         count=exact), so a server row cap below `page` (PostgREST max-rows) does
         not cut the read short. order: a column of the table ("id.asc" only for
         tables with an id; tri_rules and item_values are keyed by rule_id / item).
-        A missing order column (42703) is retried once unordered (v3.0.2)."""
+        A missing order column (42703) is retried once unordered."""
         out, off, total = [], 0, None
         while True:
             params = {"select": columns, "limit": str(self.page), "offset": str(off)}
@@ -447,7 +447,7 @@ class SupabaseStore:
         return gone
 
     async def update_rows(self, table: str, bodies: Dict[int, Any]) -> List[int]:
-        """Replace the operations JSON of rows by id (v3.1.1: purge strips marks in place).
+        """Replace the operations JSON of rows by id (purge strips marks in place).
         Returns the ids updated. RlsRefused when nothing matched but the rows exist."""
         done = []
         for i, body in sorted(bodies.items()):
@@ -513,7 +513,7 @@ class SupabaseStore:
                                    headers={"Prefer": "return=representation"})
         return bool(rows)
 
-    # ------------------------------------------------------------ flat values (v2.18)
+    # ------------------------------------------------------------ flat values
     async def item_values(self) -> List[dict]:
         """Every flat value row {item, delta, note, set_by, updated_at}, or []
         when the table does not exist (run supabase/schema.sql)."""
@@ -538,7 +538,7 @@ class SupabaseStore:
                                    headers={"Prefer": "return=representation"})
         return bool(rows)
 
-    # ------------------------------------------------------------ caution answers (v3.1)
+    # ------------------------------------------------------------ caution answers
     async def answers(self) -> List[dict]:
         """Every caution answer {id, user_id, build, kind, item, value, ts}, or [] when
         the table does not exist (run supabase/schema.sql)."""
@@ -562,7 +562,7 @@ class SupabaseStore:
             if v is not None:
                 body.append(dict(user_id=str(user_id), build=build, kind="central", item=it,
                                  value="yes" if v else "no", ts=ts))
-        for it, v in (answers.get("want") or {}).items():      # v3.6: want and weapon answers are kept too
+        for it, v in (answers.get("want") or {}).items():      # want and weapon answers are kept too
             if v is not None:                                   # (they act locally; the model reads only
                 body.append(dict(user_id=str(user_id), build=build, kind="want", item=it,   # archetype / central)
                                  value="yes" if v else "no", ts=ts))
@@ -577,7 +577,7 @@ class SupabaseStore:
             await self._request("POST", self.answers_table, {}, body=body, headers={"Prefer": "return=minimal"})
         except StoreError as e:
             if "23514" in str(e) and "kind" in str(e) and not self.__dict__.get("_old_answer_kinds"):
-                # v3.6: the table predates want / weapon rows; keep the rest and warn once
+                # the table predates want / weapon rows; keep the rest and warn once
                 self._old_answer_kinds = True
                 log.warning("table %s only allows archetype / central answers: want and weapon answers are not "
                             "stored. In the Supabase SQL editor: alter table public.%s drop constraint if exists "
@@ -593,7 +593,7 @@ class SupabaseStore:
             return 0
         return len(body)
 
-    # ------------------------------------------------------------ authored rules (v3.0)
+    # ------------------------------------------------------------ authored rules
     async def authored_rules(self) -> List[dict]:
         """Every authored rule row {rule_id, op, text, author, note, ts}, oldest
         first, or [] when the table does not exist (run supabase/schema.sql)."""

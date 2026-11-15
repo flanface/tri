@@ -1,4 +1,4 @@
-"""Colour for embed text (v3.0.4): every code block becomes an ``ansi`` block
+"""Colour for embed text: every code block becomes an ``ansi`` block
 and plain embed text is wrapped in one, with marks coloured by meaning.
 
     [+] add, [v] uphold, gem                 green

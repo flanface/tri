@@ -1,4 +1,4 @@
-"""dwt.sh builds <-> tri (v2.22).
+"""dwt.sh builds <-> tri.
 
 dwt.sh (https://dwt.sh, API https://api.dwt.sh, docs https://dwt.sh/docs/api)
 stores a build as `meta` (name, description, visibility, stars, ...) and `game`
@@ -90,7 +90,7 @@ def parse_link(text: str) -> Optional[str]:
 
 
 def parse_drive_link(text: str) -> Optional[str]:
-    """dwt.sh drive (folder) link -> folder id; None if it is not one (v2.23).
+    """dwt.sh drive (folder) link -> folder id; None if it is not one.
     https://dwt.sh/drive/<id> ; "drive:<id>" also accepted."""
     s = (text or "").strip().strip("<>")
     if s.lower().startswith("drive:") and _RAW.match(s[6:]):
@@ -123,16 +123,6 @@ def folder_builds(listing: dict) -> Tuple[List[str], List[str]]:
 
 
 # ------------------------------------------------------------------ reading
-def stage_stats(stage: dict) -> Dict[str, int]:
-    """One dwt stage -> tri stat names (zero stats dropped)."""
-    out: Dict[str, int] = {}
-    for k, v in ((stage or {}).get("stats") or {}).items():
-        n = STAT_FROM_DWT.get(k)
-        if n is not None and isinstance(v, (int, float)) and v:
-            out[n] = int(v)
-    return out
-
-
 def _planner_block(stage: dict) -> dict:
     """One dwt stage -> a planner stat block ({"base": {planner name: v}})."""
     return {"base": {STAT_TO_PLANNER.get(k, k): int(v) for k, v in ((stage or {}).get("stats") or {}).items()
@@ -305,7 +295,7 @@ def _canon(name: str, catalog) -> str:
 def payload(game: dict, name: str, description: str = "", visibility: str = "unlisted",
             notes: str = "") -> Dict[str, Any]:
     """Body of POST /builds. `notes` is the build's summary notes (meta.notes),
-    where tri puts its completion notes (v2.23)."""
+    where tri puts its completion notes."""
     meta = dict(name=str(name)[:100], description=str(description)[:4000],
                 visibility=visibility if visibility in ("public", "private", "unlisted") else "unlisted")
     if notes:

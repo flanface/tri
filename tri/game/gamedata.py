@@ -89,7 +89,7 @@ def name_key(name: str) -> str:
 
 @functools.lru_cache(maxsize=65536)
 def _name_key(name: str) -> str:
-    """name_key of a str, memoised (v3.8: hundreds of thousands of calls per review rebuild)."""
+    """name_key of a str, memoised (hundreds of thousands of calls per review rebuild)."""
     return "".join(ch for ch in unicodedata.normalize("NFKC", name).casefold() if ch.isalnum())
 
 
@@ -790,7 +790,7 @@ def coverage(source, gd: GameData, limit: Optional[int] = None, top: int = 50) -
 
 
 def resolve_gamedata(specs: Sequence[str], dest: str, refresh: bool = False, ref: str = "main", log=None):
-    """specs: ["auto"] -> pocamind/data (v3.7: every requirement, prerequisite,
+    """specs: ["auto"] -> pocamind/data (every requirement, prerequisite,
     exclusion and lock tri reads is in pocamind/data); "all" -> fetch_all
     (deepwoken.co merged with pocamind/data, the pre-v3.7 auto); ["none"] ->
     None; paths -> load_any, merged in order (first wins); "auto" may be mixed

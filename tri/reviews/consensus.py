@@ -1,4 +1,4 @@
-"""Reviewer consensus per archetype family (math §8.5a, v2.19).
+"""Reviewer consensus per archetype family (math §8.5a).
 
 Single notes and review edits act locally (within reach of the reviewed build).
 When several reviews say the same thing about an archetype ("Replenishing
@@ -13,7 +13,7 @@ Evidence e = (family a, item t, sign s, weight w, reviewer r, time tau):
   remove t, reason NS / WA / BR / SM   s = -1, w = op_weight * strength
 Per (a, t) the newest piece of evidence of each reviewer on each reviewed
 build counts (a reviewer does not stack by repeating themselves on one build;
-the same verdict on distinct builds is distinct evidence, v2.23: with one
+the same verdict on distinct builds is distinct evidence, with one
 reviewer the per-reviewer count promoted nothing). With n+ and n- the summed weights,
   net = n+ - n-,     c(a, t) = max(net, 0) / (max(net, 0) + kappa)
 (an avoid tell uses max(-net, 0)). A tell is promoted once at least

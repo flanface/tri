@@ -276,7 +276,7 @@ class FactMiner:
     def holes(self, min_reviews: int = 5) -> List[Fact]:
         """A hole: a take with a high pretrain pick rate (P >= 0.5) that reviewers
         almost always remove (share >= ALWAYS); a gem: low pick rate (P <= 0.3),
-        almost always added (v2.21: "trap" renamed, "always" = ALWAYS)."""
+        almost always added ("trap" renamed, "always" = ALWAYS)."""
         tri, at, out = self.tri, self.at, []
         led = tri.ledger
         if led is None or not led.by_id:

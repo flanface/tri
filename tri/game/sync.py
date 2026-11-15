@@ -90,7 +90,7 @@ def _ref_sha(ref: str, timeout: float) -> Optional[str]:
 
 
 def _fp(it: GameItem) -> str:
-    """The v2.11 form (total mantra slots granted), plus the Vow of Iron flag
+    """The legacy form (total mantra slots granted), plus the Vow of Iron flag
     only where it is set, so other items keep their fingerprint across
     versions (no spurious "changed")."""
     x = [it.kind.value, it.clauses, sorted(sorted(g) for g in it.prereqs), sorted(it.exclusive),
@@ -165,7 +165,7 @@ def plan(catalog: Catalog, gd: GameData, state: Optional[dict] = None, exclude: 
     first = not prev
     full = gd.catalog(stats=catalog.stats, ruleset=catalog.ruleset, keep_groups=keep_groups)
     ex = set(exclude)
-    # v2.25.1: names match by name_key (casefold, alphanumerics), as builds are
+    # names match by name_key (casefold, alphanumerics), as builds are
     # parsed. "To the Finish" in the game data IS the fitted "To The Finish";
     # an exact comparison added it again as an unrated twin, which completions
     # then picked beside the original (one talent short in game) and which split
@@ -311,7 +311,7 @@ def restore(tri, run_dir: str) -> Optional[dict]:
         return None
     cat = Catalog.from_json(paths["catalog"])
     tw = twins(tri.catalog, cat)
-    if tw:                                             # v2.25.1: repair a sync saved by the exact-name bug
+    if tw:                                             # repair a sync saved by the exact-name bug
         cat = _drop_twins(cat, tw)
         st["patches"] = [dict(x, added=[a for a in x.get("added") or [] if a not in tw])
                          for x in st.get("patches") or []]

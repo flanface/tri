@@ -137,7 +137,10 @@ _REVIEW_HEAD = {
 def review_rule(r, region_names: Sequence[str] = ()) -> str:
     """A rule induced from reviews (tri.rules.Rule):
     [R supported] Agile Dash ⊥ Shoulder Bash | Strength ≥ 40   +3.0 −0.5 · lb 0.82"""
-    head = _REVIEW_HEAD[r.kind](r.subject, r.other)
+    o = r.other
+    if isinstance(o, str) and o.startswith("weapon:"):
+        o = f"(weapon = {o[7:]})"
+    head = _REVIEW_HEAD[r.kind](r.subject, o)
     if r.condition:
         c = token(r.condition, region_names)
         head = f"{head} ∧ {c}" if " | " in head else f"{head} | {c}"

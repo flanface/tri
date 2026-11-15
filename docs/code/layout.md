@@ -109,7 +109,7 @@ tri/                              repository root
 │   ├── views/                    graphics (matplotlib; optional extra)
 │   │   ├── plots.py              data views: concept map, placement, worth matrix, worth space, projections, themes
 │   │   ├── figure.py             one transparent 3-D figure: fields, locators, centres, vectors from an origin (math §4.5)
-│   │   ├── interactive.py        the same scene as one self-contained HTML page (drag, zoom, hover, legend)
+│   │   ├── interactive.py        the same scene as a self-contained HTML tool (orthographic; notes, pen, points, vectors, planes, measure)
 │   │   └── insight.py            archetype card, placement, item landscape, stat curves, replay
 │   │
 │   ├── engine/                   the facade

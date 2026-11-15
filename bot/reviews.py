@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from tri.core.codec import build_from_dict, build_to_dict, exclusion_message, review_to_dict, validate_review
-from tri.core.types import (ADD_REASONS, IFFY_REASONS, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build,
+from tri.core.types import (ADD_REASONS, IFFY_REASONS, PRESENT_CONDITION, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build,
                             Kind, Operation, Reason, Review, ReviewError, Strength)
 
 SCHEMA = "tri.review/1"
@@ -143,7 +143,7 @@ class ReviewDesk:
         fields = set(Draft.__dataclass_fields__)
         self.drafts = {int(k): Draft(**{f: x for f, x in legacy_names(v).items() if f in fields})
                        for k, v in d.get("drafts", {}).items()       # drafts saved before v2.5 say "purpose"
-                       if v.get("scope", "full") != "audit"}         # v3.5: open audits are dropped
+                       if v.get("scope", "full") != "audit"}         # open audits are dropped
         self.skipped = {int(k): list(v) for k, v in d.get("skipped", {}).items()}
         self.broken = {int(k): v for k, v in d.get("broken", {}).items()}
 
@@ -260,7 +260,7 @@ class ReviewDesk:
         if act == Action.ADD:
             if in_build:
                 raise DraftError(f"{name} is already in this build.")
-            b = _with_draft_waivers(b, d)                # v3.0.3: a lock waived on an earlier add counts here
+            b = _with_draft_waivers(b, d)                # a lock waived on an earlier add counts here
             why_not = svc.catalog.unavailable_reason(name, b)
             if why_not == "stats":
                 raise DraftError(f"{name} is not available at this build's stats "
@@ -273,7 +273,7 @@ class ReviewDesk:
             if bl:
                 raise ExclusionError(self.exclusion_hint(d, name, bl, dep), name, bl, dep)
         op = dict(action=act.value, item_id=name, strength=Strength.STRONG.value, reason=None, related=[], group=None)
-        if act == Action.ADD and waived:                 # a review may waive a weapon lock (v2.23)
+        if act == Action.ADD and waived:                 # a review may waive a weapon lock
             op["waived"] = True
             op["note"] = (note + " | " if note else "") + f"weapon requirement waived by review ({why_not})"
             note = None
@@ -315,7 +315,7 @@ class ReviewDesk:
         for x in related:
             if not x:
                 continue
-            if str(x).startswith("weapon:"):            # v3.3: the claim holds where this weapon is wielded
+            if str(x).startswith("weapon:"):            # the claim holds where this weapon is wielded
                 from tri.game.weapons import weapon_token
                 wt = weapon_token(x)
                 if wt is None:
@@ -345,6 +345,12 @@ class ReviewDesk:
         op["related"] = rel
         if note:
             op["note"] = note
+        if r in PRESENT_CONDITION:                       # + x SY > weapon: the build wields it
+            from tri.game.weapons import equipped
+            have_w = set(equipped(b)) | {w for n in d.notes if n.get("kind") == "weapon" for w in n.get("weapons") or []}
+            new_w = [y[7:] for y in rel if y.startswith("weapon:") and y[7:] not in have_w]
+            if new_w:
+                d.notes.append(dict(kind="weapon", weapons=new_w, text="weapon: " + ", ".join(new_w)))
         d.ops.append(op)
         self.touch(d)
         self.save()
@@ -424,10 +430,13 @@ class ReviewDesk:
         r = Review(review_id=rid, original=d.build_obj(), operations=ops,
                    reviewer_id=f"discord:{d.user_id}", ruleset=getattr(catalog, "ruleset", None) or d.build.get("ruleset"),
                    timestamp=now, notes=[dict(n) for n in d.notes])
+        from tri.game.weapons import is_weapon_token, weapon_token
+        here = r.original.item_set() | {a.item_id for a in r.added()}
         for o in ops:
-            bad = [x for x in o.related if x not in r.original.item_set() and x not in {a.item_id for a in r.added()}]
             if o.reason in (Reason.NEEDS, Reason.SIDEGRADE):
                 bad = [x for x in o.related if x not in catalog.items]
+            else:
+                bad = [x for x in o.related if not (weapon_token(x) if is_weapon_token(x) else x in here)]
             if o.reason in RELATIONAL_REASONS and (not o.related or bad):
                 raise DraftError(f"{o.item_id}: related items must be in the build or your adds ({', '.join(bad)}).")
         try:
@@ -447,20 +456,6 @@ class ReviewDesk:
     def finish(self, user_id: int):
         self.drafts.pop(user_id, None)
         self.save()
-
-
-def slot_status(b: Build, catalog) -> dict:
-    """Talents against the cap and mantras against their slots for one build.
-    The two are interdependent: every non-exempt mantra lowers the talent cap by 2
-    (76 - 2m), and talents such as Neuroplasticity and Will o' Wisp (and the oath)
-    grant mantra slots."""
-    items = [i for i in list(b.talents) + list(b.mantras) if i in catalog.items]
-    oath = catalog.oath_of(b) if hasattr(catalog, "oath_of") else None
-    u = catalog.mantra_slot_usage(items, oath)
-    m = sum(1 for i in items if catalog.lowers_cap(i))
-    return dict(talents=catalog.n_talents(items), cap=catalog.talent_cap(items), lowering=m,
-                excess=catalog.cap_excess(items), slots=u["slots"], used=u.get("need", u["used"]), over=u["over"],
-                oath=oath)
 
 
 def slot_line(st: dict) -> str:
@@ -503,15 +498,16 @@ def parse_numbers(spec: str, total: int, what: str = "item") -> List[int]:
 
 def describe_op(o: dict, labels: Optional[Dict[str, str]] = None) -> str:
     """One line for a draft listing."""
+    from tri.game.weapons import label as wlabel
     from .wire import REASON_LABELS
     labels = labels or REASON_LABELS
     tail = f"  // {o['note']}" if o.get("note") else ""
     if o["action"] == "iffy":
         if o.get("reason"):
             return (f"iffy {o['item_id']} ({o['strength']}): {labels.get(o['reason'], o['reason'])} "
-                    f"{', '.join(o.get('related') or [])}" + tail)
+                    f"{', '.join(map(wlabel, o.get('related') or []))}" + tail)
         return f"iffy {o['item_id']}" + tail
-    rel = f" {', '.join(o['related'])}" if o.get("related") else ""
+    rel = f" {', '.join(map(wlabel, o['related']))}" if o.get("related") else ""
     return f"{o['action']} {o['item_id']} ({o['strength']}): {labels.get(o['reason'], o['reason'])}{rel}" + tail
 
 
@@ -531,17 +527,17 @@ def describe_note(n: dict) -> str:
     """One line for a note: # archetype a: x, y / # weapons: Heavy / // text."""
     k = n.get("kind")
     if k == "archetype":
-        return f"# {n.get('archetype')}: {', '.join(n.get('items') or [])} (indicative components)"
+        return f"# {n.get('archetype')}: {', '.join(n.get('items') or [])}"
     if k == "weapons":
         return f"# weapons: {', '.join(n.get('classes') or [])}"
     if k == "weapon":
-        return f"# weapon: {', '.join(n.get('weapons') or [])} (the build equips these)"
+        return f"# weapon: {', '.join(n.get('weapons') or [])}"
     if k == "is":
-        return f"# is: {n.get('archetype')} (the build is this archetype)"
+        return f"# is: {n.get('archetype')}"
     if k == "not":
-        return f"# not: {n.get('archetype')} (the build is not this archetype)"
+        return f"# not: {n.get('archetype')}"
     if k == "core":
-        return f"# core: {', '.join(n.get('items') or [])} (the build stands on these)"
+        return f"# core: {', '.join(n.get('items') or [])}"
     if k == "avoid":
-        return f"# avoid: {', '.join(n.get('items') or [])} (builds like this should not take these)"
+        return f"# avoid: {', '.join(n.get('items') or [])}"
     return f"// {n.get('text', '')}"

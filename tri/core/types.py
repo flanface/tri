@@ -46,14 +46,14 @@ class Category(str, enum.Enum):
 
 
 class Action(str, enum.Enum):
-    """Review operation: add / remove / iffy edit the build. (v3.5: the audit
+    """Review operation: add / remove / iffy edit the build. (the audit
     verdicts overturn / uphold are gone; stored ones are dropped when read.)"""
     ADD = "add"
     REMOVE = "remove"
     IFFY = "iffy"
 
 
-# v3.5: audit verdict actions. Not operations any more: codec drops them on read.
+# audit verdict actions. Not operations any more: codec drops them on read.
 RETIRED_ACTIONS = ("overturn", "uphold")
 
 
@@ -88,7 +88,7 @@ class Reason(str, enum.Enum):
                                                      # strong: x does not belong on this archetype (off_archetype)
     BROKEN = "broken"                                # x does not work / garbage
     GENERALLY_GOOD = "generally_good"                # x is a foundational talent, good for any build
-    # v2.17 shorthands
+    # shorthands
     SYNERGY_WITH = "synergy_with"                    # + x SY > y: add x as it synergises with y
     NEEDS = "needs"                                  # - x,y NW > a,b: x,y do not work without a,b
                                                      #   (equivalent to adding a,b should there be space)
@@ -185,7 +185,7 @@ class Build:
     meta: Optional[Dict[str, object]] = None  # free-form context (oath, murmur, power, ...)
     # Stages between the initial and the final one (dwt.sh: after a Shrine of
     # Order, between Shrines of Mastery), in run order. Requirements may be met
-    # at them; the model never learns from them (v2.22).
+    # at them; the model never learns from them.
     mid_stages: Optional[List[Dict[str, int]]] = None
 
     def items(self) -> List[str]:
@@ -224,7 +224,7 @@ class Operation:
     reason: Optional[Reason] = None
     related: List[str] = field(default_factory=list)  # the "y" in reasons
     group: Optional[str] = None          # edit-group id binding a trade together
-    target: Optional[dict] = None        # v3.5: unused (was the audited change); kept so old rows load
+    target: Optional[dict] = None        # unused (was the audited change); kept so old rows load
     note: Optional[str] = None
 
 
@@ -237,27 +237,24 @@ class Review:
     reviewer_id: str
     ruleset: str = "unknown"
     timestamp: Optional[float] = None
-    # full: slots were full, unmarked items are endorsed (v3.5: the only scope; audits are gone).
+    # full: slots were full, unmarked items are endorsed (the only scope; audits are gone).
     scope: str = "full"
-    # v2.17 notes (# or // lines): {"kind": "archetype", "archetype": a, "items": [..]}
+    # notes (# or // lines): {"kind": "archetype", "archetype": a, "items": [..]}
     # (components indicative of archetype a), {"kind": "weapons", "classes": [..]} (the
     # weapon classes the build mainly equips) or {"kind": "comment", "text": ..}.
     # Each also keeps the reviewer's "text".
-    # v2.18 adds {"kind": "is", "archetype": a} (the reviewed build is a: an anchor
+    # adds {"kind": "is", "archetype": a} (the reviewed build is a: an anchor
     # in the archetype reading), {"kind": "not", "archetype": a} (it is not a),
     # {"kind": "core", "items": [..]} (components the build stands on, under its own
     # archetype) and {"kind": "avoid", "items": [..]} (items builds like it should not take).
     notes: List[dict] = field(default_factory=list)
-    # v3.1.1: items the review says nothing about (an admin purge undid its marks on
+    # items the review says nothing about (an admin purge undid its marks on
     # them): no claim, no endorsement by silence, no operation counts on them.
     neutral: List[str] = field(default_factory=list)
 
-    def note_items(self, kind: str) -> List[dict]:
-        return [n for n in (self.notes or []) if n.get("kind") == kind]
-
     def weapons(self) -> List[str]:
         """Weapon classes the reviewed build equips (Build.meta). The weapons
-        note is deprecated (v2.21): stored ones are kept but say nothing."""
+        note is deprecated: stored ones are kept but say nothing."""
         from tri.reviews.authority import build_weapons
         return sorted(build_weapons(self.original))
 

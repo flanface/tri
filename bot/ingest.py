@@ -123,12 +123,12 @@ def with_dependants(names: Sequence[str], catalog=None) -> List[str]:
 
 def purge_plan(rows: Sequence[dict], item: str, mark: str, archetype: str = None, reviewer: str = None,
                table: str = "reviews", having: Sequence[str] = ()) -> List[dict]:
-    """What /reviews purge undoes (v3.1.1): for every stored review row,
+    """What /reviews purge undoes: for every stored review row,
     the marks on item of the given kind (PURGE_MARKS), stripped from a copy of
     its body. The item also goes on the body's "neutral" list, so the review says
     nothing about it any more: no claim, no endorsement by silence. archetype:
     only reviews that state that family (indicator: notes naming it); reviewer:
-    only that reviewer's rows; having (v3.2.2): only rows whose reviewed build
+    only that reviewer's rows; having: only rows whose reviewed build
     holds one of these items. Returns [{id, table, build, removed: [text], body}]
     in id order; rows with nothing to undo are left out."""
     import copy
@@ -136,7 +136,7 @@ def purge_plan(rows: Sequence[dict], item: str, mark: str, archetype: str = None
     if mark not in PURGE_MARKS:
         raise ValueError(f"unknown mark {mark!r}: one of {', '.join(PURGE_MARKS)}")
     names = [item] if isinstance(item, str) else list(item)
-    anyitem = any(str(x).strip() in ("*", "any", "") for x in names)        # v3.4: "*" = every item
+    anyitem = any(str(x).strip() in ("*", "any", "") for x in names)        # "*" = every item
     wants = {_norm(x) for x in names}
     match = (lambda x: True) if anyitem else (lambda x: _norm(x) in wants)
     item = ", ".join(names)
@@ -251,7 +251,7 @@ async def fetch_reviews(store: SupabaseStore) -> Tuple[List[Review], List[str]]:
 
 FREEZE_TABLES = ("reviews", "locators", "item_values", "tri_rules", "pool")
 _TABLE_ATTR = {"item_values": "values_table", "tri_rules": "rules_table"}
-_ORDER = {"item_values": "item.asc", "tri_rules": "rule_id.asc"}       # tables without an id (v3.0.2)
+_ORDER = {"item_values": "item.asc", "tri_rules": "rule_id.asc"}       # tables without an id
 
 
 async def freeze_store(store: SupabaseStore, outdir: str) -> str:

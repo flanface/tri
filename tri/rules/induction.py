@@ -53,6 +53,12 @@ DEPENDS_JOIN = " + "                     # DEPENDS(x, "a + b"): the components x
 NOFIT_REASONS = {Reason.NO_SYNERGY, Reason.SCENARIO_MISMATCH}
 
 
+def _context(b: Build) -> set:
+    """Picks and wielded weapons ("weapon:<name>"): where a related item is present."""
+    from tri.game.weapons import build_weapon_tokens
+    return set(b.items()) | build_weapon_tokens(b)
+
+
 def context_features(b: Build, thresholds=(25, 40, 50, 60, 75, 90)) -> set:
     """Predicates a rule condition may test: item presence, stat thresholds,
     oath and murmur ("oath:<v>", "murmur:<v>"), weapon class ("weapon:<v>",
@@ -116,15 +122,17 @@ class Rule:
 
     def plain(self) -> str:
         """One-line description in words with evidence counts (the pre-2.14 wording)."""
-        head = {"REDUNDANT": f"{self.subject} is redundant given {self.other}",
-                "CONFLICT": f"{self.subject} works against {self.other}",
+        from tri.game.weapons import label
+        other = label(self.other) if self.other else self.other
+        head = {"REDUNDANT": f"{self.subject} is redundant given {other}",
+                "CONFLICT": f"{self.subject} works against {other}",
                 "BROKEN": f"{self.subject} does not work",
-                "PREFER": f"prefer {self.other} over {self.subject} when space is short",
-                "NECESSARY": f"{self.subject} is necessary for {self.other or 'the archetype'}",
+                "PREFER": f"prefer {other} over {self.subject} when space is short",
+                "NECESSARY": f"{self.subject} is necessary for {other or 'the archetype'}",
                 "GENERAL": f"{self.subject} is generally good (foundational)",
                 "NO_FIT": f"{self.subject} does not fit the build",
-                "OFF_ARCHETYPE": f"{self.subject} does not belong on {self.other}",
-                "SYNERGY": f"{self.subject} synergises with {self.other}",
+                "OFF_ARCHETYPE": f"{self.subject} does not belong on {other}",
+                "SYNERGY": f"{self.subject} synergises with {other}",
                 "DEPENDS": f"{self.subject} does not work without {self.other}",
                 "SIDEGRADE": f"{self.subject} is a sidegrade to {self.other}"}[self.kind]
         cond = f"  IF {self.condition}" if self.condition else ""
@@ -200,9 +208,9 @@ class RuleInducer:
             case = Case(r.review_id, r.reviewer_id, orig, w, order)
             res = r.apply(self.c)
             iffy = r.iffy()
-            neutral = set(getattr(r, "neutral", None) or ())   # v3.1.1: purged items say nothing
+            neutral = set(getattr(r, "neutral", None) or ())   # purged items say nothing
             added = {o.item_id for o in r.added()}
-            # v2.25.1: tri's own picks echoed back by a review of a build tri made are no
+            # tri's own picks echoed back by a review of a build tri made are no
             # reviewer's endorsement: they counter no rule and pair nothing (worth still
             # sees them, at LedgerConfig.echo_keep)
             endorsed = [] if made_by_tri(orig) else \
@@ -245,7 +253,7 @@ class RuleInducer:
                             get("PREFER", o.item_id, p.item_id).support.append(cs)
                             swapped[(o.item_id, p.item_id)].append(cs)
                 elif o.action == Action.ADD and o.reason == Reason.NECESSARY_FOR_ARCHETYPE:
-                    # v3.6: necessary for *the reviewed build's* archetype (its "is" note,
+                    # necessary for *the reviewed build's* archetype (its "is" note,
                     # else its reading): scoped to that family. With no family it stays a
                     # ledger claim on similar builds and makes no rule (borders are chasms).
                     fam = _family_token(self.features(orig))
@@ -285,7 +293,7 @@ class RuleInducer:
             elif rule.kind == "SYNERGY":
                 # x taken out of a build that had y (for a reason about x itself)
                 rule.counter = [cs for cs, why in removed_any.get(x, [])
-                                if y in cs.build.items() and why not in SPACE_REASONS]
+                                if y in _context(cs.build) and why not in SPACE_REASONS]
             elif rule.kind == "DEPENDS":
                 # x endorsed in a build that lacks one of its components
                 need = y.split(DEPENDS_JOIN)

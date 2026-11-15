@@ -95,7 +95,7 @@ def make_context(bot: TriBot) -> SimpleNamespace:
     async def plot_builds(inter, g, links: str) -> List[tuple]:
         marks = []
         toks = (links or "").replace(",", " ").split()[:6]
-        cap = 6 + 24 * any(_dwt_drive(t) for t in toks)    # a dwt.sh drive folder may mark up to 30 (v2.23)
+        cap = 6 + 24 * any(_dwt_drive(t) for t in toks)    # a dwt.sh drive folder may mark up to 30
         for bid in (await bot.fetcher.expand(" ".join(toks), limit=cap))[:cap]:
             if g.hide and bid in await bot.pending_ids():
                 raise BuildLinkError(f"{bid} is waiting for review; its place is held back until it is reviewed")

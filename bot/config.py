@@ -70,7 +70,7 @@ class Settings:
     guilds_table: str = "guilds"
     locators_table: str = "locators"
     values_table: str = "item_values"
-    rules_table: str = "tri_rules"        # RULES_TABLE: authored selection rules (v3.0)
+    rules_table: str = "tri_rules"        # RULES_TABLE: authored selection rules
     gamedata_sync_hours: float = 12.0
     gamedata_ref: str = "main"
     user_app: str = "anyone"
@@ -78,8 +78,8 @@ class Settings:
     plot_theme: str = "dark"
     placement_inset: bool = True         # PLACEMENT_INSET: archetype placement image under /analyze and /complete
     min_place_talents: int = 15          # MIN_PLACE_TALENTS: below this many talents no archetype placement is shown
-    run_remote: str = ""                 # TRI_RUN_REMOTE: latest | run name (Supabase Storage, v3.7)
-    reload_swap: bool = False            # TRI_RELOAD_SWAP: hold two models during /model reload (v3.7)
+    run_remote: str = ""                 # TRI_RUN_REMOTE: latest | run name (Supabase Storage)
+    reload_swap: bool = False            # TRI_RELOAD_SWAP: hold two models during /model reload
     reload_sync: bool = True             # RELOAD_SYNC: /model reload also syncs game data before the database
     facts_digest_days: float = 0.0       # FACTS_DIGEST_DAYS: post new and retired facts to the review log every N days (0 off)
     message_content: bool = False        # privileged intent: read replies even with ping on reply off

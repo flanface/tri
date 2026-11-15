@@ -57,7 +57,7 @@ class LocatorSet:
         self.locators: List[Locator] = list(locators)
         self.h = float(self.cfg.bandwidth if self.cfg.bandwidth is not None else space.cfg.bandwidth)
         self.reach = float(self.cfg.reach if self.cfg.reach is not None else reach)
-        self.h_read = self.h                     # v3.9: bandwidth of the archetype reading (select_read_bandwidth)
+        self.h_read = self.h                     # bandwidth of the archetype reading (select_read_bandwidth)
         names: Dict[str, str] = {}
         for l in self.locators:                         # display name: the newest spelling of each family
             names[l.key] = l.family
@@ -77,8 +77,8 @@ class LocatorSet:
             self.Al = np.stack([np.asarray(a, float) for _, a in xa])
             self.Xl = self.Xl * self.Al                  # a pick that is not available is no evidence
         self.indicators: List[dict] = []
-        self.tells: List[dict] = []              # v2.19 reviewer consensus (math §8.5a)
-        self.anchors: List[dict] = []            # v2.18 review anchors: {key, u, sign, review_id}
+        self.tells: List[dict] = []              # reviewer consensus (math §8.5a)
+        self.anchors: List[dict] = []            # review anchors: {key, u, sign, review_id}
         self._UA = np.zeros((0, 0)); self._labA = np.zeros(0, int); self._sgnA = np.zeros(0)
         self.set_background(background)
         self.select_read_bandwidth()
@@ -215,7 +215,7 @@ class LocatorSet:
     def set_anchors(self, anchors: Sequence[dict]) -> None:
         """Reviewed builds whose reviewer said "this build is a" (sign +1) or "is not
         a" (sign -1): dicts with key, u, sign, review_id. A positive anchor joins
-        a's locator mean as a pseudo-locator of weight anchor_mass (v3.9), a
+        a's locator mean as a pseudo-locator of weight anchor_mass, a
         negative one scales k_a by 1 - anchor_veto * K there (math §6.7). Far from
         the noted build K -> 0 and the reading is unchanged."""
         rows = [dict(a) for a in anchors if a.get("key") in self.kix and a.get("u") is not None]
@@ -233,7 +233,7 @@ class LocatorSet:
     def _anchor_logk(self, U: np.ndarray, lg: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """(log k with review anchors, distance to the nearest positive anchor).
 
-        v3.9: a positive anchor of a joins the mean of a's locators as a
+        a positive anchor of a joins the mean of a's locators as a
         pseudo-locator of weight w (anchor_mass):
             k_a(u) = (sum_loc K + w sum_anc K) / (n_a + w m_a),
         so an archetype with many reviewed builds gains reach where they sit,
@@ -266,7 +266,7 @@ class LocatorSet:
         dA = np.sqrt(DA[:, posm].min(1)) if posm.any() else np.full(q, np.inf)
         return out, dA
 
-    # ------------------------------------------------------------ reading bandwidth (v3.9)
+    # ------------------------------------------------------------ reading bandwidth
     def select_read_bandwidth(self) -> float:
         """h_read: the bandwidth of the archetype reading, chosen from
         cfg.read_grid (up to h) by the balanced leave-one-out log-likelihood
@@ -319,7 +319,7 @@ class LocatorSet:
                              balanced_accuracy=None if best_acc is None else round(best_acc, 3))
         return self.h_read
 
-    # ------------------------------------------------------------ evidence of a tell (v3.9)
+    # ------------------------------------------------------------ evidence of a tell
     def _loc_ctx(self) -> List[set]:
         c = self.__dict__.get("_lctx")
         if c is None or len(c) != len(self.locators):
@@ -473,7 +473,7 @@ class LocatorSet:
              transient: bool = False) -> np.ndarray:
         """Fine reading of the build b at u, remembered for the review barrier (which
         only sees coordinates). force: an archetype key the caller chose.
-        transient (v3.6): a query's reading, forgotten at the next query
+        transient: a query's reading, forgotten at the next query
         (forget_query), so an answer never depends on earlier questions."""
         u = np.asarray(u, float)
         if transient:
@@ -499,7 +499,7 @@ class LocatorSet:
         return p
 
     def forget_query(self) -> None:
-        """Undo the transient notes of the last query (v3.6)."""
+        """Undo the transient notes of the last query."""
         q = self.__dict__.pop("_qnotes", None)
         if not q:
             return
@@ -612,14 +612,14 @@ class LocatorSet:
     def read_many(self, U: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """(posterior [q, P], nearest distance [q], nearest locator index [q])."""
         U = np.atleast_2d(U)
-        D2 = sqdist(U, self.U)                 # v3.1: BLAS, no [q, L, D] cube
+        D2 = sqdist(U, self.U)                 # BLAS, no [q, L, D] cube
         j = D2.argmin(1)
         lg, dA = self._anchor_logk(U, self._archetype_logk(D2, self.lab))
         d = np.minimum(np.sqrt(D2[np.arange(len(U)), j]), dA)    # a positive anchor locates like a locator
         return self._posterior(lg), d, j
 
     def _read_one(self, u: np.ndarray):
-        """read_many(u[None]) memoised on u (v3.8): the barrier asks about the same
+        """read_many(u[None]) memoised on u: the barrier asks about the same
         query point thousands of times per answer. The memo holds the locator and
         anchor arrays it was computed with and is dropped when any is replaced."""
         u = np.asarray(u, float)
@@ -688,7 +688,7 @@ class LocatorSet:
         return chi
 
     def family_overlap(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
-        """[m] v3.3 family reach (math §5.8): 1 - TV of the family posteriors of
+        """[m] family reach (math §5.8): 1 - TV of the family posteriors of
         a build at u and builds at V when both are located in the same family
         (nearest locator within reach, top family probability >= min_confidence),
         else 0. Never crosses the chasm: different or unlocated families give 0."""
@@ -726,12 +726,12 @@ class LocatorSet:
         return (d <= self.reach) & ((P @ M).max(1) >= float(self.cfg.min_confidence))
 
     def _read_cached(self, V: np.ndarray):
-        """read_many(V) memoised on V's content (the reviewed builds repeat; v3.1)."""
+        """read_many(V) memoised on V's content (the reviewed builds repeat)."""
         key = (V.shape, hash(V.tobytes()))
         state = (self.U, self._UA, self._labA, self._sgnA, self.lab, self.h, self.h_read)
         st = self.__dict__.get("_vstate")
         if st is None or any(a is not b for a, b in zip(st, state)):
-            self.__dict__.pop("_vmemo", None)      # v3.8: kept across queries while the locators hold
+            self.__dict__.pop("_vmemo", None)      # kept across queries while the locators hold
             self._vstate = state
         memo = self.__dict__.setdefault("_vmemo", {})
         hit = memo.get(key)
@@ -750,7 +750,7 @@ class LocatorSet:
         return k
 
     def kernel_many(self, h2: float):
-        """(u, V) -> [m] the reach kernel times the barrier, in one call (v3.1)."""
+        """(u, V) -> [m] the reach kernel times the barrier, in one call."""
         def k(u, V):
             s = np.exp(-((V - u[None]) ** 2).sum(1) / (2 * h2))
             on = s > 0

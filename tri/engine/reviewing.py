@@ -14,16 +14,16 @@ from tri.rules.induction import RuleInducer
 
 
 class _Reviewing:
-    """Tri methods (Tri methods: taking reviews: the ledger, induced rules, memory, categories and value overrides.)."""
+    """Tri methods: taking reviews: the ledger, induced rules, memory, categories and value overrides."""
 
     def _ledger_and_rules(self) -> None:
         from tri.game.weapons import with_weapon_notes
-        for r in self.reviews:                     # v3.3: # weapon notes set the reviewed build's equips
+        for r in self.reviews:                     # # weapon notes set the reviewed build's equips
             with_weapon_notes(r)
-        self._note_stated()                  # v3.0.1: the families reviewers state
+        self._note_stated()                  # the families reviewers state
         emb = self._embed if self.space is not None else None
         if emb is not None:
-            self._place_many([r.original for r in self.reviews])      # v3.1: one solve, not one per review
+            self._place_many([r.original for r in self.reviews])      # one solve, not one per review
         kern = ReviewLedger.reach_kernel(self.cfg.ledger) if self.space is not None else None
         if kern is not None and self._barrier_on():
             kern = self.locset.kernel(kern)
@@ -69,7 +69,7 @@ class _Reviewing:
             return O
         return fam
 
-    # ------------------------------------------------------------ selection rules (v3.0)
+    # ------------------------------------------------------------ selection rules
     @property
     def rules(self):
         """The selection rule set (mined + authored + review evidence), else the mined rulebook."""
@@ -121,7 +121,7 @@ class _Reviewing:
 
     def drop_rule(self, rule_id: str, author: str = "", note: str = "") -> dict:
         """Remove an authored rule, suppress a mined one, or lift a suppression, by id.
-        v3.4: also review rules (rv:...) and sidegrades (sg:...), switched off
+        also review rules (rv:...) and sidegrades (sg:...), switched off
         and on the same way."""
         from tri.rules.registry import PREFIXES
         e = self.authored.get(rule_id)
@@ -172,7 +172,7 @@ class _Reviewing:
         return dict(id=rid(r.key), rule=r.text(self.rules.region_names), status=ev.get("status", r.status),
                     corpus=ev.get("corpus"), support=ev.get("support", []), counter=ev.get("counter", []))
 
-    # ------------------------------------------------------------ every rule (v3.4)
+    # ------------------------------------------------------------ every rule
     def dropped_ids(self) -> set:
         """Ids switched off with drop_rule (selection, rv:, sg:)."""
         return set(self.authored.suppressed) if getattr(self, "authored", None) is not None else set()
@@ -199,7 +199,7 @@ class _Reviewing:
     def list_rules(self, item: Optional[str] = None, status: Optional[str] = None, source: Optional[str] = None,
                    build: Optional[Build] = None, every: bool = False) -> List[dict]:
         """Selection rules as {id, rule, status, source, support, counter}.
-        every=True (v3.4): all_rules(item, build) filtered by status / source."""
+        every=True: all_rules(item, build) filtered by status / source."""
         if every or build is not None:
             out = self.all_rules(item, build)
             return [e for e in out if (not status or str(e["status"]).startswith(status))

@@ -31,10 +31,10 @@ class GuildConfig:
     admin_role_ids: List[int] = field(default_factory=list)
     log_channel_id: Optional[int] = None  # submitted reviews are posted here
     hide_pending: bool = True            # /analyze refuses builds still pending review (non-admins)
-    user_role_ids: List[int] = field(default_factory=list)   # v3.1: analyze, complete and plot only
+    user_role_ids: List[int] = field(default_factory=list)   # analyze, complete and plot only
     open_analysis: bool = False          # anyone in the server may analyze, complete and plot
     caution: str = "ask"                 # ask | hold | off: thin marks are asked about, held, or shown
-    max_questions: int = 0               # v3.1.1: 0 asks every necessary question; n caps them at n
+    max_questions: int = 0               # 0 asks every necessary question; n caps them at n
     question_timeout: int = 300          # seconds to answer a question sheet before tri posts anyway
     private_replies: bool = False        # analysis replies only the invoker sees
     verbose_default: bool = False        # /analyze opens the full page by default
@@ -49,7 +49,7 @@ class GuildConfig:
         known = {f.name for f in fields(cls)}
         d = {k: v for k, v in (d or {}).items() if k in known}
         if int(d.get("version", 1) or 1) < 2 and int(d.get("max_questions", 0) or 0) == 3:
-            d["max_questions"] = 0               # the v3.1 default cap of 3 is gone (v3.1.1)
+            d["max_questions"] = 0               # the v3.1 default cap of 3 is gone
         d["guild_id"] = int(gid)
         g = cls(**d)
         g.reviewer_role_ids = [int(x) for x in g.reviewer_role_ids]

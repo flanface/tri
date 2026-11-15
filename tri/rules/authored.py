@@ -1,4 +1,4 @@
-"""Authored selection rules (v3.0): rules people write in the rule language
+"""Authored selection rules: rules people write in the rule language
 (tri.rules.language), and suppressions of mined rules.
 
     ar = AuthoredRules()
@@ -41,7 +41,7 @@ class AuthoredEntry:
 
     @staticmethod
     def from_dict(d: dict) -> "AuthoredEntry":
-        """Also reads database rows (v3.0.3): ts as an ISO timestamp, null author / note."""
+        """Also reads database rows: ts as an ISO timestamp, null author / note."""
         kw = {k: d[k] for k in ("rule_id", "op", "text", "author", "ts", "note") if k in d}
         for k in ("text", "author", "note"):
             if kw.get(k) is None and k in kw:

@@ -1,4 +1,4 @@
-"""Caution questions as a sheet (v3.1.1, numbered answers v3.1.3).
+"""Caution questions as a sheet (numbered answers).
 
 Before /analyze or /complete posts, tri posts its questions as a numbered
 sheet:
@@ -121,7 +121,7 @@ def parse_answers(text: str, questions: Sequence[dict],
                             f"{(q.get('options') or ['name'])[0]}`")
             return
         it = q["item"]
-        if q.get("kind") == "want":                  # v3.1.3: do you want the held add?
+        if q.get("kind") == "want":                  # do you want the held add?
             if val is None:
                 p.want.pop(it, None)
                 p.unsure.add(q["key"])
@@ -172,7 +172,7 @@ def parse_answers(text: str, questions: Sequence[dict],
                 hit = norm_class(ans.strip())
             except Exception:                       # noqa: BLE001
                 hit = None
-        if hit is None:                              # v3.2: a weapon name, kept as written in the game data
+        if hit is None:                              # a weapon name, kept as written in the game data
             try:                                     # (a class name wins: "sword" is the class)
                 from tri.game.weapons import resolve
                 names = resolve(ans.strip())
@@ -218,7 +218,7 @@ def parse_answers(text: str, questions: Sequence[dict],
         return [x for x in re.split(r"[,\s]+" if re.fullmatch(r"[\d,\s]+", s) else r"\s*,\s*", s.strip()) if x]
 
     text = text or ""
-    # v3.1.3: "1. gank 2. yes 3. fist": numbered answers anywhere in the reply
+    # "1. gank 2. yes 3. fist": numbered answers anywhere in the reply
     num = re.compile(r"(?:(?<=\s)|(?<=^)|(?<=[;,]))(\d{1,2})\s*[.):]\s*(?!\d)")
     hits = list(num.finditer(text))
     if not hits and not re.search(r"^\s*[+\-=?#]", text, re.M):   # "1 gank 2 yes 3 fist"

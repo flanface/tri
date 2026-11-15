@@ -13,7 +13,7 @@ from tri.reviews.variants import family_key, join_archetype, read_variant, split
 
 
 class _Archetypes:
-    """Tri methods (Tri methods: archetypes: locators, regions, consensus, metrics and concept readings.)."""
+    """Tri methods: archetypes: locators, regions, consensus, metrics and concept readings."""
 
     def _sync_indicators(self) -> None:
         """Indicator notes ("# a: x, y, z") of the reviews -> the locator set (math §6.7).
@@ -91,7 +91,7 @@ class _Archetypes:
             return
         ix = self.catalog.index
         ev: List[dict] = []
-        self._place_many([r.apply(self.catalog) for r in self.reviews])     # v3.1: one batched solve
+        self._place_many([r.apply(self.catalog) for r in self.reviews])     # one batched solve
         for r in self.reviews:
             fam = None
 

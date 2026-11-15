@@ -19,34 +19,34 @@ from tri.rules.induction import context_features
 
 
 class _Situations:
-    """PassEngine methods (PassEngine methods: situations: reading the build, local worth, weapon-class focus and waivers.)."""
+    """PassEngine methods: situations: reading the build, local worth, weapon-class focus and waivers."""
 
     # ------------------------------------------------------------ situation
     def situations(self, b: Build, max_alternatives: int = 3, region: Optional[int] = None,
                    partial: bool = False, force: Optional[dict] = None) -> List[_Sit]:
         """force: a forced archetype from Tri.force(): {name, key, latent} for a named
         archetype (its locators' mean latent), or {name, region} for a region."""
-        b = self._answer_weapon(b)             # v3.2: the asker named the weapon
+        b = self._answer_weapon(b)             # the asker named the weapon
         pt = self.space.point(b, partial)
         ls = getattr(self, "locset", None)
         if ls is not None and hasattr(ls, "forget_query"):
-            ls.forget_query()                  # v3.6: no reading carries over from an earlier query
+            ls.forget_query()                  # no reading carries over from an earlier query
         ls = ls if ls is not None and (ls.refining or (force or {}).get("key")) else None
         xa = ls.vec(b) if ls is not None else None
         rd = self.space.reading(pt.u, top=max(max_alternatives, 1))
         fpt = None
         if force is not None and force.get("latent") is not None:
             fpt = self.space.point(b, partial, latent=force["latent"])
-        # v2.25.1: a build forced into an archetype asks the reviews of that archetype
+        # a build forced into an archetype asks the reviews of that archetype
         # (its forced coordinates), not of wherever its few picks happen to sit
         fv = fpt.u if fpt is not None else None
-        if ls is not None and self.ledger is not None:   # v3.6: the query's own reading (forced archetype)
+        if ls is not None and self.ledger is not None:   # the query's own reading (forced archetype)
             emb = getattr(self.ledger, "embed", None)        # sets the review barrier of its claims
             uq = fv if fv is not None else (emb(b) if emb is not None else pt.u)
             ls.note(uq, xa=xa, force=(force or {}).get("key"), transient=True)
         memory = self.ledger.claims_for(b, vec=fv) if self.ledger is not None else {}
         b = self._waive(b, memory)
-        b, wr0, memory = self._weapon_base(b, memory)   # v3.2 hardcoded weapon rules (math §2.8c)
+        b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules (math §2.8c)
         if fpt is not None:                    # placed again with the waived build, as before
             fpt = self.space.point(b, partial, latent=force["latent"])
         avail = self.c.availability_in(b)      # met at pre-shrine or final stats
@@ -56,7 +56,7 @@ class _Situations:
                 if it in self.c.index:
                     avail[self.c.index[it]] = False
         wh = [self.c.index[i] for i in (getattr(self, "withheld", None) or ()) if i in self.c.index and i not in b.items()]
-        if wh:                                 # v3.1.1: adds held for thin evidence are not taken here
+        if wh:                                 # adds held for thin evidence are not taken here
             avail = list(avail)
             for t in wh:
                 avail[t] = False
@@ -102,7 +102,7 @@ class _Situations:
             ind = self._notes_q(q, ptq.u, fine)
             fam = None
             if ls is not None and (force or {}).get("key") in getattr(ls, "keys", ()):
-                fam = force["key"]                                   # v2.25.1: forced: its family, always
+                fam = force["key"]                                   # forced: its family, always
             elif ls is not None and fine is not None and len(ls.keys) >= 2:
                 j = int(np.argmax(fine))
                 if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
@@ -111,13 +111,13 @@ class _Situations:
             wr = self._forbid_chain(weapon_rules(b, arch or (force or {}).get("name") or name))
             mem = self._same_family(memory, arch)
             guard = self._weapon_guard(wr, avail)
-            if guard:                                                # v3.4: a weapon-required pick and its prerequisite
+            if guard:                                                # a weapon-required pick and its prerequisite
                 mem = {k: v for k, v in memory.items()                # chain outrank every review claim against them
                        if not (k in guard and v[0] in ("remove", "absent"))}
             av, foc = self._focus(b, mem, avail, q, ptq.u)
             ctx = Ctx({s: int(v) for s, v in b.highest_stats.items()}, set(b.items()),
                       set(context_tokens(b)) | rule_tokens(b, archetype=arch), k, av,
-                      groups=getattr(self.rb, "groups", None) or None)       # v3.0 literals
+                      groups=getattr(self.rb, "groups", None) or None)       # literals
             feats = context_features(b) | {f"region:{k}"}
             if fam is not None:                                      # scope of OFF_ARCHETYPE rules (strong SM)
                 feats.add(f"family:{family_key(ls.names.get(fam, fam))}")
@@ -130,7 +130,7 @@ class _Situations:
         return out
 
     def _same_family(self, memory: dict, arch) -> dict:
-        """v3.6 (math §5): a claim from a review whose reviewer states the build's
+        """(math §5) A claim from a review whose reviewer states the build's
         archetype ("is" note) does not cross into another family: borders are
         chasms. Generally-good claims and claims on the same build are kept."""
         st = getattr(self, "stated", None) or {}
@@ -170,7 +170,7 @@ class _Situations:
                 else:
                     P = ls.read_many(np.asarray(u, float)[None])[0][0] if P is None else P
                     pa = float(P[ls.kix[n["key"]]])
-            w = float(np.exp(-d * d / (2 * h * h))) * pa * float(n.get("scale", 1.0))   # v3.1: answer consensus is scaled down
+            w = float(np.exp(-d * d / (2 * h * h))) * pa * float(n.get("scale", 1.0))   # answer consensus is scaled down
             if ls is not None and w >= self.cfg.note_floor and len(ls.keys) >= 2:
                 w *= float(ls.barrier_factor(np.asarray(u, float), np.asarray(n["u"], float)[None])[0])  # the chasm
             if w < self.cfg.note_floor:
@@ -232,7 +232,7 @@ class _Situations:
         share: Dict[str, float] = {}
         cand: Dict[str, List[float]] = {}
         wa = getattr(self, "weapon_answer", None)
-        if not allowed and wa:                          # v3.1.3: the asker named the class (math §14.3)
+        if not allowed and wa:                          # the asker named the class (math §14.3)
             allowed, src = {wa}, "answer"
         if not allowed:
             for it, cs in tab.items():
@@ -267,13 +267,13 @@ class _Situations:
 
     def _answer_weapon(self, b: Build) -> Build:
         """The weapon the asker named (Answers.weapon, a weapon name) when the build
-        records none: it is read as equipped (v3.2, math §14.3)."""
+        records none: it is read as equipped (math §14.3)."""
         w = getattr(self, "weapon_name", None)
         if main_weapons(b):
             return b
         if w:
             return dataclasses.replace(b, meta={**(b.meta or {}), "weapon": w})
-        wa = getattr(self, "weapon_answer", None)      # v3.6: a class answer feeds the weapon rules
+        wa = getattr(self, "weapon_answer", None)      # a class answer feeds the weapon rules
         if wa:
             return dataclasses.replace(b, meta={**(b.meta or {}), "weapon_class": wa})
         return b
@@ -293,7 +293,7 @@ class _Situations:
         return b, wr, memory
 
     def _forbid_chain(self, wr):
-        """v3.8.1: a weapon rule's never(x) also forbids every pick whose hard
+        """a weapon rule's never(x) also forbids every pick whose hard
         prerequisite chain contains x (removed, unavailable, kept out of review)."""
         if not wr.forbid:
             return wr
@@ -315,7 +315,7 @@ class _Situations:
         return wr if len(forbid) == len(wr.forbid) else dataclasses.replace(wr, forbid=forbid)
 
     def _weapon_guard(self, wr, avail) -> set:
-        """v3.4: the weapon-required picks whose stats are met, with their hard
+        """the weapon-required picks whose stats are met, with their hard
         prerequisite chain (Knight's Rally for Turtle Shell). Only game data
         (stats, exclusive_with, the cap) can keep them out (math §2.8c)."""
         out: set = set()
@@ -340,12 +340,12 @@ class _Situations:
         if self.ledger is None or not memory:
             return b
         same = self.ledger.cfg.sim_same
-        # v3.1.3: a talent a reviewer strongly marked generally good is used without
+        # a talent a reviewer strongly marked generally good is used without
         # its weapon class (Turtle Shell, Unstoppable Force): the lock is waived anywhere
         cand = [it for it, v in memory.items() if isinstance(it, str) and it in self.c.index
                 and v[0] in ("add", "keep") and (v[3] >= same or (
                     len(v) > 5 and v[4] == "generally_good" and v[5] == "strong"))]
-        todo = list(cand)                             # v3.2: the prerequisite chain shares the waiver
+        todo = list(cand)                             # the prerequisite chain shares the waiver
         while todo:
             for x in self.c.prereq_closure(todo.pop()):
                 if x not in cand:
@@ -353,7 +353,7 @@ class _Situations:
 
         from tri.core.context import wield_waived
         want: set = set()
-        while True:                                   # v3.0.3: a waived lock can unlock a dependant (Knight's Rally > Turtle Shell)
+        while True:                                   # a waived lock can unlock a dependant (Knight's Rally > Turtle Shell)
             cur = b if not want else dataclasses.replace(
                 b, meta={**(b.meta or {}), "wield_waived": sorted(wield_waived(b) | want)})
             new = {it for it in cand if it not in want and self.c.wield_only_block(it, cur)}

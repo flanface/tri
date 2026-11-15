@@ -20,7 +20,7 @@ def fact_graphic(graphic: str) -> tuple:
         return "card", dict(archetype=arg)
     if head in ("item", "stats"):
         return head, dict(item=arg)
-    if head in ("meta", "tree", "atlas"):          # tree and meta charts are deprecated (v2.21): the atlas
+    if head in ("meta", "tree", "atlas"):          # tree and meta charts are deprecated: the atlas
         return "atlas", {}
     raise ValueError(f"no graphic {graphic!r}")
 

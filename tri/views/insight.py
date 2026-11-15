@@ -436,7 +436,7 @@ def _placement_pi(bx, pl: dict, at: Atlas, cols) -> None:
 def plot_placement(pl: dict, av: dict, at: Atlas, title: Optional[str] = None, part: Optional[str] = None):
     """B4: inset atlas (axes 1-2) with the build, lines to its nearest locators
     (solid) and reviewed builds (dotted) with distances; pi bar of the top three.
-    part: "map" or "pi" draws that panel alone (v2.21: /analyze posts two images)."""
+    part: "map" or "pi" draws that panel alone (/analyze posts two images)."""
     plt = R._plt()
     cols = _colours(len(at.names))
     if part == "pi":
@@ -635,7 +635,7 @@ def plot_stats(sc: dict, title: Optional[str] = None, n_archetypes: Optional[int
                 transform=ax.get_xaxis_transform())
     ax.axhline(0.5, color=_T()["muted"], ls=":", lw=0.8)
     ys = [y for c in sc["curves"] for y in c["worth"]]
-    lo = max(0.0, np.floor((min(ys) - 0.05) * 10) / 10) if ys else 0.0     # v2.21: no dead band below the curves
+    lo = max(0.0, np.floor((min(ys) - 0.05) * 10) / 10) if ys else 0.0     # no dead band below the curves
     ax.set_ylim(lo, 1); ax.set_xlim(min(sc["values"]), max(sc["values"]))
     ax.set_xlabel(sc["stat"], fontsize=8); ax.set_ylabel("worth", fontsize=8); ax.tick_params(labelsize=7)
     if sc["curves"]:
@@ -697,7 +697,7 @@ def plot_replay(pq: dict, vg: dict, cov: dict, lr: dict, title: Optional[str] = 
     return fig
 
 
-# ------------------------------------------------------------------ lookup (v2.21)
+# ------------------------------------------------------------------ lookup
 def plot_lookup(lk: dict, n_archetypes: Optional[int] = None, names: Sequence[str] = (), title: Optional[str] = None):
     """One item's worth per archetype (bars, sorted), its pick rate as a tick on
     each bar, hole / gem archetypes marked."""

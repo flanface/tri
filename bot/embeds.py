@@ -1,7 +1,6 @@
-"""Pure embed and text builders for the Discord bot (v2.18: split out of
-bot/discord_bot.py, which re-exports every name here). No network, no state:
-each function maps a model result (a plain dict) to Discord text or an embed.
-"""
+"""Embed and text builders for the Discord bot: each maps a model result
+(a plain dict) to Discord text or an embed. No network, no state.
+bot/discord_bot.py re-exports every name."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Sequence
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
 SEP = " · "                                  # separator in /plot captions
 #: One-line key to the symbols in facts and rules (docs/plain, "Reading the symbols").
 SYMBOLS = "⇒ then · ∧ and · ¬ not · ⊥ works against · P share taking · w worth · Δ change · p fluke chance"
-#: v2.21: /rules and /facts each carry their own key (tri.statements).
+#: /rules and /facts each carry their own key (tri.statements).
 from tri.rules.statements import FACT_SYMBOLS, RULE_SYMBOLS  # noqa: E402
 
 
@@ -128,7 +127,7 @@ def analysis_fields(parsed: ParsedBuild, res: dict, svc: ModelService) -> List[t
         ops = alternative_ops(al)
         nm = f": {al['name']}" if al.get("name") else ""
         extra = violation_lines(al["violations"]) if al.get("violations") else []   # rules the answer could not meet: shown, never hidden
-        head = ("[=] no changes: already the model's optimum for this archetype" if not ops else
+        head = ("[=] no changes" if not ops else
                 ", ".join(f"{len(g)} {t.lower()}" for t, g in
                           grouped(ops, lambda o: o["action"], lambda o: o["item_id"], kind)))
         value = clip("```\n" + "\n".join([head] + extra) + "\n```", 1024)
@@ -228,13 +227,12 @@ def archetype_line(p: Optional[dict]) -> str:
     if p.get("located"):
         co = p.get("coarse") or {}
         top = max(co, key=co.get) if co else None
-        told = f"; told apart from {top} by its picks" if top and top != p["archetype"] else ""
+        told = f"; over {top}" if top and top != p["archetype"] else ""
         name = p.get("full_name") or p["archetype"]
         return (f"Reads as **{name}**" + (f", style {style}" if style else "")
-                + f" (p {p['confidence']:.2f}{told}; nearest locator "
-                f"#{p['nearest_locator']} at {p['distance']:.2f}).")
-    return (f"No locator archetype fits (closest: {p.get('best')}, p {p['confidence']:.2f}; nearest locator "
-            f"#{p['nearest_locator']} at {p['distance']:.2f}).")
+                + f" (p {p['confidence']:.2f}{told}; locator #{p['nearest_locator']} at {p['distance']:.2f})")
+    return (f"No locator archetype fits (closest {p.get('best')}, p {p['confidence']:.2f}; "
+            f"locator #{p['nearest_locator']} at {p['distance']:.2f})")
 
 
 def hide_placement(res: dict, n_talents: int, need: int) -> dict:
@@ -364,7 +362,7 @@ def analysis_embed(parsed: ParsedBuild, res: dict, svc: ModelService, link: Opti
 
 
 def caution_fields(res: dict) -> List[tuple]:
-    """[(name, value)]: open questions (v3.1). Held marks never appear (v3.1.2):
+    """[(name, value)]: open questions. Held marks never appear:
     the answer was solved again without them, so there is nothing to show."""
     qs = (res.get("caution") or {}).get("questions") or []
     if qs:
@@ -386,7 +384,7 @@ def mantra_count(res: dict) -> str:
 
 
 def focus_line(al: dict) -> str:
-    """"Rapier (64% of similar builds)" for an alternative's weapon-class focus (v2.24)."""
+    """"Rapier (64% of similar builds)" for an alternative's weapon-class focus."""
     f = al.get("focus") or {}
     cls = f.get("classes") or []
     if not cls:
@@ -416,14 +414,14 @@ def complete_fields(parsed: ParsedBuild, res: dict, svc: ModelService) -> List[t
     if fl:
         out.insert(0, ("Weapon class", fl))
     if res.get("silentheart"):
-        out.insert(0, ("Silentheart", "no mantras added"))
+        out.insert(0, ("Silentheart", "no mantras"))
     if res.get("mantras_first"):
-        out.insert(0, ("Mantras first", "no mantras in input: slots filled first"))
+        out.insert(0, ("Mantras first", "mantra slots filled before talents"))
     ind = indicative_lines([res])
     if ind:
         out.append(("Indicative picks", clip("```\n" + "\n".join(ind) + "\n```", 1024)))
     if not ops:
-        out.append(("Nothing to add", "```\n[=] the build is already full for this archetype\n```"))
+        out.append(("Nothing to add", "```\n[=] already full\n```"))
     notes = parsed.notes()
     if notes:
         out.append(("Notes", clip("\n".join(notes))))
@@ -432,7 +430,7 @@ def complete_fields(parsed: ParsedBuild, res: dict, svc: ModelService) -> List[t
 
 def completion_notes(parsed: ParsedBuild, res: dict, svc: ModelService, link: Optional[str] = None) -> str:
     """Plain-text completion notes for a saved dwt.sh build's summary notes
-    (v2.23): the same sections as the /complete embed, without markdown."""
+: the same sections as the /complete embed, without markdown."""
     hidden = res.get("placement_hidden") and not res.get("forced")
     head = ("Completed" if hidden else f"Completed as {res.get('name') or 'archetype ' + str(res['mode'])}"
             + (" (forced)" if res.get("forced") else ""))
@@ -465,14 +463,14 @@ def complete_embed(parsed: ParsedBuild, res: dict, svc: ModelService, link: Opti
 def item_text(x: dict) -> str:
     """ModelService.explain_item result as a short message."""
     if not x["in_catalog"]:
-        s = f"**{x['query']}** is not in the model's catalog: {x['why_missing']}."
+        s = f"**{x['query']}** is not in the catalog: {x['why_missing']}."
         if x.get("picks") is not None:
-            s += f" Seen {x['picks']} times in the training builds"
+            s += f" Seen {x['picks']} times"
             s += f" (minimum {x['min_item_count']})." if x.get("min_item_count") else "."
         return s
     s = f"**{x['item']}** ({x['kind']}), requires {x['requirement']}."
     if x.get("picks") is not None:
-        s += f" Picked {x['picks']} times in the training builds."
+        s += f" Picked {x['picks']} times."
     if "status" in x:
         s += (f"\nIn this build: **{x['status']}**, {x['pass_']} pick, worth {x['worth']:.2f} "
               f"(taken by {x['worth']:.0%} of similar builds; rank {x['rank']}/{x['of']})")
@@ -484,8 +482,8 @@ def item_text(x: dict) -> str:
             s += "\nRules:\n" + "\n".join(f"`{r}`" for r in x["rules"])
         c = x.get("review_claim")
         if c:
-            s += (f"\nReview memory: {c['label']} from review {short_rid(c['review_id'])} "
-                  f"(build similarity {c['similarity']:.2f}, strength {c['strength']:.2f}).")
+            s += (f"\nReview {short_rid(c['review_id'])}: {c['label']} "
+                  f"(similarity {c['similarity']:.2f}, strength {c['strength']:.2f})")
     return s
 
 
@@ -502,7 +500,6 @@ def review_embed(body: dict, svc=None, pool_id: Optional[int] = None) -> discord
     who = s["reviewer"]
     if who.startswith("discord:"):
         e.add_field(name="Reviewer", value=f"<@{who.split(':', 1)[1]}>", inline=True)
-    e.add_field(name="Operations", value=str(len(body.get("operations", []))) or "0", inline=True)
     e.set_footer(text=("review #" if body.get("direct") else "pool #")
                       + f"{pool_id if pool_id is not None else body.get('pool_id', '?')}"
                       f" | run {body.get('model_run') or '?'}")
@@ -512,23 +509,19 @@ def review_embed(body: dict, svc=None, pool_id: Optional[int] = None) -> discord
 def config_embed(g: GuildConfig, guild: Optional[discord.Guild]) -> discord.Embed:
     def roles(ids):
         return ", ".join(f"<@&{r}>" for r in ids) or "none"
-    e = discord.Embed(title="tri setup", description=(
-        "Pick who can review and administer tri here, then press Save.\n"
-        "Admins also always include members with Manage Server."))
+    e = discord.Embed(title="tri setup", description="Pick reviewers and admins, then Save. Manage Server always counts as admin.")
     e.add_field(name="Reviewers", value="everyone" if g.open_reviewing else roles(g.reviewer_role_ids), inline=False)
     e.add_field(name="tri admins", value=roles(g.admin_role_ids), inline=False)
     e.add_field(name="Review log channel", value=f"<#{g.log_channel_id}>" if g.log_channel_id else "none", inline=False)
     e.add_field(name="Users (analyze, complete, plot)", value="everyone" if g.open_analysis else roles(g.user_role_ids),
                 inline=False)
     e.add_field(name="Hide model on pending builds", value="on" if g.hide_pending else "off", inline=False)
-    e.add_field(name="Analysis", value=(f"caution {g.caution}, " + (f"up to {g.max_questions}" if g.max_questions else "every necessary")
-                                        + f" question(s) before posting, {g.question_timeout} s per sheet; "
-                                        f"replies {'private' if g.private_replies else 'public'}; "
-                                        f"verbose {'on' if g.verbose_default else 'off'}; "
-                                        f"inset {'on' if g.placement_inset else 'off'}; "
-                                        f"record answers {'on' if g.record_answers else 'off'} (/settings)"),
-                inline=False)
-    e.set_footer(text="status: " + ("set up" if g.configured else "not set up yet: reviewing is closed"))
+    onoff = lambda b: "on" if b else "off"                          # noqa: E731
+    e.add_field(name="Analysis (/settings)", value=(
+        f"caution {g.caution} · questions {g.max_questions or 'all needed'} · {g.question_timeout} s per sheet · "
+        f"replies {'private' if g.private_replies else 'public'} · verbose {onoff(g.verbose_default)} · "
+        f"inset {onoff(g.placement_inset)} · record answers {onoff(g.record_answers)}"), inline=False)
+    e.set_footer(text="status: " + ("set up" if g.configured else "not set up: reviewing closed"))
     return e
 
 
@@ -561,7 +554,7 @@ def rule_list_text(rows: Sequence[dict], limit: int = 25) -> str:
     for r in rows[:limit]:
         ev = f" +{r['support']}" if r.get("support") else ""
         ev += f" −{r['counter']}" if r.get("counter") else ""
-        if "source" in r and "droppable" in r:          # v3.4: every source (Tri.all_rules)
+        if "source" in r and "droppable" in r:          # every source (Tri.all_rules)
             fire = {True: " ▸", False: "", None: ""}[r.get("fires")]
             lock = "" if r["droppable"] else f" [{r.get('change') or 'fixed'}]"
             out.append(f"`{r['id']}` {r['source']} {r['status']}{fire} {r['rule']}{lock}")
@@ -586,7 +579,7 @@ def _cb(lines: Sequence[str], n: int = 1024) -> str:
 
 
 def lookup_fields(d: dict) -> List[tuple]:
-    """/talent, /mantra fields (v3.0.3): (name, lines) pairs, each shown as a
+    """/talent, /mantra fields: (name, lines) pairs, each shown as a
     code block. Empty sections are left out."""
     e = d.get("entry") or {}
     out: List[tuple] = []
@@ -642,52 +635,8 @@ def lookup_embed(d: dict, image: Optional[str] = "lookup.png") -> discord.Embed:
 
 
 def matches_embed(query: str, kind: str, names: Sequence[str], limit: int = 40) -> discord.Embed:
-    """Several items contain the query: list them (v3.0.3 substring search)."""
+    """Several items contain the query: list them (substring search)."""
     more = [f"... {len(names) - limit} more"] if len(names) > limit else []
     return discord.Embed(title=clip(f"{len(names)} {kind}s match '{query}'", 256),
                          description=_cb(list(names[:limit]) + more, 4000))
 
-
-def lookup_text(d: dict) -> str:
-    """/talent, /mantra: the pocamind/data entry, then tri's reading (symbolic, short)."""
-    e = d.get("entry") or {}
-    head = [f"**{d['item']}**"]
-    for k in ("category", "rarity", "type"):
-        if e.get(k):
-            head.append(str(e[k]))
-    if d.get("slot"):
-        head.append(f"slot {d['slot']}")
-    lines = [SEP.join(head)]
-    if e.get("desc"):
-        lines.append(clip(str(e["desc"]), 400))
-    if e.get("additional_info"):
-        lines.append("-# " + clip(str(e["additional_info"]), 300))
-    req = [f"{k} ≥ {v}" for k, v in (d.get("requires") or {}).items()]
-    if e.get("reqs") and e["reqs"] not in ("()", ""):
-        req = req or [str(e["reqs"])]
-    facts = []
-    if req:
-        facts.append("req: " + " ∧ ".join(req))
-    if d.get("prerequisites"):
-        facts.append("pre: " + " ∧ ".join(d["prerequisites"]))
-    if d.get("exclusive"):
-        facts.append("⊕ " + ", ".join(d["exclusive"][:4]))
-    if d.get("kind") == "mantra":
-        facts.append("cap −2" if d.get("lowers_cap") else "cap ±0")
-    if d.get("pick_rate") is not None:
-        facts.append(f"P {d['pick_rate']:.2f}")
-    if facts:
-        lines.append(SEP.join(facts))
-    w = d.get("worth") or []
-    if w:
-        top = SEP.join(f"{r['archetype']} {r['worth']:.2f}" for r in w[:4])
-        lines.append(f"w: {top}" + (f"{SEP}… {w[-1]['archetype']} {w[-1]['worth']:.2f}" if len(w) > 4 else ""))
-    if d.get("holes"):
-        lines.append("hole in " + ", ".join(d["holes"]))
-    if d.get("gems"):
-        lines.append("gem in " + ", ".join(d["gems"]))
-    for r in (d.get("rules") or [])[:6]:
-        lines.append(f"`{r['kind']}` {r['symbol']}")
-    for f in (d.get("facts") or [])[:3]:
-        lines.append(f"`{f['family']}` {f['symbol']}")
-    return "\n".join(lines)

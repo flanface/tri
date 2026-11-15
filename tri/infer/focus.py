@@ -176,7 +176,7 @@ class ClassPrior:
             return None
         from tri.model.worth import RowStack
         Zs = RowStack(Z, np.flatnonzero(lab)) if isinstance(Z, np.ndarray) and Z.ndim == 2 \
-            else RowStack(np.asarray(Z, np.float64)[lab])                 # v3.7: rows of Z, not a copy
+            else RowStack(np.asarray(Z, np.float64)[lab])                 # rows of Z, not a copy
         return ClassPrior(Zs, L[lab], np.asarray(bm.w, np.float64)[lab], names, n, k)
 
     def share(self, u: np.ndarray) -> Tuple[Dict[str, float], int]:
@@ -184,7 +184,7 @@ class ClassPrior:
         u = np.asarray(u, np.float64)
         if isinstance(self.Z, np.ndarray):
             d2 = ((self.Z - u[None]) ** 2).sum(1)
-        else:                                          # RowStack: no [n, D'] temporary per query (v3.7)
+        else:                                          # RowStack: no [n, D'] temporary per query
             if getattr(self, "_Z2", None) is None:
                 self._Z2 = self.Z.sqnorm()
             d2 = np.maximum(self._Z2 - 2 * self.Z.dot(u) + u @ u, 0)

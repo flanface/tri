@@ -93,33 +93,6 @@ class LocatorInfo:
                    loc.build if with_build else None)
 
 
-@dataclass
-class PlanView:
-    """A game data sync plan as the bot sees it (tri.sync.SyncPlan without the
-    catalog). plan_id names the full plan held by the service until applied."""
-    plan_id: Optional[str]
-    sha: Optional[str]
-    first: bool
-    added: List[str]
-    changed: List[str]
-    removed: List[str]
-    renames: Dict[str, str]
-    relocked: List[str]
-
-    def empty(self) -> bool:
-        return not (self.added or self.changed or self.removed or self.relocked)
-
-    def summary(self) -> dict:
-        return dict(sha=self.sha, first=self.first, added=self.added, changed=self.changed,
-                    removed=self.removed, renames=self.renames, relocked=self.relocked)
-
-    @classmethod
-    def from_summary(cls, s: dict, plan_id: Optional[str] = None) -> "PlanView":
-        return cls(plan_id, s.get("sha"), bool(s.get("first")), list(s.get("added") or []),
-                   list(s.get("changed") or []), list(s.get("removed") or []), dict(s.get("renames") or {}),
-                   list(s.get("relocked") or []))
-
-
 def load_dotenv(path: str = ".env") -> None:
     """Minimal KEY=VALUE loader; existing environment variables win."""
     import os

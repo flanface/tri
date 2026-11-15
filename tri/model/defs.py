@@ -81,7 +81,7 @@ class WorthConfig:
     reference_size: Optional[int] = 150_000   # corpus builds kept as neighbours (None = all)
     review_weight: float = 40.0     # a reviewed build counts this many times for the items its review changed
     patch_factor: float = 0.25      # weight of pre-patch builds for items a patch changed
-    # v2.18 cross-archetype ring: the next k_cross nearest corpus builds (beyond the
+    # cross-archetype ring: the next k_cross nearest corpus builds (beyond the
     # k neighbours) at a wider bandwidth and a small weight, scaled per item by
     # m / (m + W_t), so worth extrapolates a little across archetype borders where
     # local support W_t is thin. Reviewed

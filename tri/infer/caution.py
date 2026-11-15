@@ -1,4 +1,4 @@
-"""Caution (v3.1, math §14): hold back a mark when the evidence for it is thin,
+"""Caution (math §14): hold back a mark when the evidence for it is thin,
 or ask the person asking a few questions first.
 
 Only worth-sourced changes can be held. Rule changes are certified and review
@@ -11,10 +11,10 @@ i.e. the local rate is not clearly away from a coin flip. Questions are of two
 kinds: "what archetype is your build?" (when the reading is unlocated, unsure or
 two alternatives are close), "is X central to your concept?" (for held
 removals, and luxury picks a completion keeps on thin evidence), "do you want
-X?" (for held adds, v3.1.3) and "what weapon class is this build?" (when the
-build commits to no weapon class and the focus guessed one, v3.1.3). Only necessary
+X?" (for held adds) and "what weapon class is this build?" (when the
+build commits to no weapon class and the focus guessed one). Only necessary
 questions are asked, at most max_questions (6) per call, least sure first;
-answering may make new ones necessary (asked in the next round). v3.6: where the
+answering may make new ones necessary (asked in the next round). where the
 local support is thin (an archetype with few builds or reviews), the population
 rate stands in when it clearly agrees, and kept luxury picks are asked about only
 when their worth is low, so thin archetypes do not turn into questionnaires.
@@ -37,12 +37,12 @@ import numpy as np
 @dataclass
 class CautionConfig:
     enabled: bool = True
-    z_min: float = 0.6              # hold a worth change below this z (v3.2: was 1.0)
+    z_min: float = 0.6              # hold a worth change below this z (was 1.0)
     prior_strength: float = 2.0     # n0: pseudo-support added to the local support
     min_confidence: Optional[float] = None   # archetype reading below this asks (None: the locator setting)
     archetype_gap: float = 0.15     # two alternatives this close in plausibility ask
-    max_questions: Optional[int] = 6      # v3.6: a question budget per call, most useful first (None: every necessary one)
-    pool: bool = True               # v3.6: thin local support borrows the population rate before asking
+    max_questions: Optional[int] = 6      # a question budget per call, most useful first (None: every necessary one)
+    pool: bool = True               # thin local support borrows the population rate before asking
     pool_thin: float = 4.0          # local support below this is thin enough to borrow
     pool_support_cap: float = 30.0  # the borrowed support counts at most this much
     pool_z: float = 1.0             # the population rate must clear this z (same side) to stand in
@@ -52,7 +52,7 @@ class CautionConfig:
     consensus_share: float = 0.8    # ... agreeing at least this share
     consensus_weight: float = 0.25  # scale of a consensus worth note (a review note has 1)
     consensus_jaccard: float = 0.9  # archetype consensus: builds this alike count as the same
-    max_want: int = 2               # "do you want X?" for at most this many held adds (least sure first; v3.2: was 3)
+    max_want: int = 2               # "do you want X?" for at most this many held adds (least sure first)
     ask_weapon: bool = True         # ask the weapon class when the focus had to guess it
 
 
@@ -147,7 +147,7 @@ def assess(tri, build, alts: Sequence, answers=None, mode: str = "review",
             pop = None
 
     def pooled(it, q, n) -> bool:
-        """v3.6 (math §14.1): an archetype with few builds or reviews has thin local
+        """(math §14.1) An archetype with few builds or reviews has thin local
         support everywhere. There the population rate stands in when it sits clearly
         on the same side of 1/2 as the local rate, instead of asking."""
         if pop is None or n >= cc.pool_thin:
@@ -213,12 +213,12 @@ def assess(tri, build, alts: Sequence, answers=None, mode: str = "review",
     for it, (sc, why) in sorted(cand.items(), key=lambda kv: -kv[1][0]):
         qs.append(Question(f"central:{it}", "central", f"Is {it} central to your concept?",
                            ["yes", "no", "not sure"], it, why, sc))
-    # want: the held adds, least sure first (v3.1.3)
+    # want: the held adds, least sure first
     wq = sorted((h for h in held if h["action"] == "add" and h["item"] not in ans.want), key=lambda h: h["z"])
     for h in wq[:max(int(cc.max_want), 0)]:
         qs.append(Question(f"want:{h['item']}", "want", f"Do you want {h['item']}?", ["yes", "no"], h["item"],
                            "about to be added on thin evidence", 1.0 / (1.0 + h["z"])))
-    # weapon (v3.2): the build records no weapon, so the weapon rules (Speed Demon,
+    # weapon: the build records no weapon, so the weapon rules (Speed Demon,
     # Turtle Shell, Flaming Flourish) cannot be read; a weapon name or a class answers
     foc = getattr(s, "focus", None) or {}
     from tri.game.weapon_rules import ITEMS, needs_weapon
@@ -229,8 +229,8 @@ def assess(tri, build, alts: Sequence, answers=None, mode: str = "review",
         if foc.get("source") in ("prior", "worth"):
             why += f"; the class was guessed ({', '.join(foc.get('classes') or [])})"
         qs.append(Question("weapon", "weapon", "What weapon does this build use?", opts, None, why, 1.5))
-    rank = {"archetype": 0, "weapon": 1}                # v3.2: the weapon right after the archetype
-    qs.sort(key=lambda q: (rank.get(q.kind, 2), -float(q.score)))   # v3.6: then the least sure first
+    rank = {"archetype": 0, "weapon": 1}                # the weapon right after the archetype
+    qs.sort(key=lambda q: (rank.get(q.kind, 2), -float(q.score)))   # then the least sure first
     if cc.max_questions is not None:
         qs = qs[:max(int(cc.max_questions), 0)]
     return Caution(not held and not qs, held, qs, dict(mode=mode, region=top.mode, name=top.name))

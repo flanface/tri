@@ -1,4 +1,4 @@
-"""Small numeric shortcuts shared by the hot paths (v3.1).
+"""Small numeric shortcuts shared by the hot paths.
 
 sqdist: pairwise squared distances. Above a small size it expands
 |a - b|^2 = |a|^2 + |b|^2 - 2 a.b so the work is one matrix product (BLAS)

@@ -1,4 +1,4 @@
-"""dwt.sh API client (v2.22): read builds, save tri's proposals.
+"""dwt.sh API client: read builds, save tri's proposals.
 
 Reads (GET /builds/{id}) need no key for public and unlisted builds; the key
 (DWT_API_KEY, sent as the `api-key` header) is needed to create builds and

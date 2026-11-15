@@ -50,7 +50,7 @@ class Claim:
 
     @property
     def weapons(self) -> Tuple[str, ...]:
-        """v3.3: related weapons ("weapon:<name>"): the claim holds only on builds
+        """related weapons ("weapon:<name>"): the claim holds only on builds
         wielding one of them, whatever its reason."""
         return tuple(y for y in self.related if isinstance(y, str) and y.startswith("weapon:"))
 
@@ -63,7 +63,7 @@ class Claim:
         """True when the claim is relative to other picks (its related items):
         redundant with / works against / synergy with y need y present;
         needs a, b (NW) holds only where one of a, b is missing; a related
-        weapon (v3.3) needs that weapon equipped."""
+        weapon needs that weapon equipped."""
         return bool(self.weapons) or (bool(self.item_related) and self.reason in _CONDITIONAL)
 
     @property
@@ -128,12 +128,12 @@ class LedgerConfig:
     stat_scale: float = 100.0     # fallback similarity only (no concept space)
     patch_factor: float = 0.25    # weight of a pre-patch claim about a changed item
     bind_sim: float = 0.95        # a strong item claim from another build binds only at sim >= bind_sim
-    # v2.25.1: unmarked items of a build tri made (a completion / proposal saved
+    # unmarked items of a build tri made (a completion / proposal saved
     # to dwt.sh, then reviewed) are tri's own picks echoed back, not a reviewer's
     # choice: their endorsement counts this much, never binds, and never hides an
     # older explicit claim on the item. Explicit operations keep full weight.
     echo_keep: float = 0.25
-    # v3.3 family reach (math §5.8): reviews of builds located in the query's own
+    # family reach (math §5.8): reviews of builds located in the query's own
     # family, at any distance inside it, pool their claims per item. A pooled
     # claim needs fam_min distinct reviewed builds behind one side and a weighted
     # share >= fam_share; it nudges, and binds only with fam_bind strong
@@ -198,7 +198,7 @@ class Tell:
 class LocatorConfig:
     """Locator knobs."""
     bandwidth: Optional[float] = None       # h of the review barrier and reach decay (None = the space's bandwidth)
-    read_bandwidth: Optional[float] = None  # v3.9: h of the archetype reading (None = chosen from read_grid)
+    read_bandwidth: Optional[float] = None  # h of the archetype reading (None = chosen from read_grid)
     read_grid: tuple = (0.08, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6)
     read_tie: float = 0.01                  # nats a narrower bandwidth must gain over a wider one
     reach: Optional[float] = None           # located only within this distance of a locator (None = ledger reach)
@@ -220,19 +220,19 @@ class LocatorConfig:
     twin_clip: float = 4.0                    # largest log-likelihood ratio (nats) the tells may add
     twin_min_gain: int = 1                    # a pair is split only if held-out locators corrected - broken >= this
     # indicator notes ("# a: x, y, z" in a review, math §6.7): local, bounded lifts
-    indicator_lift: float = 6.0               # nats added to the odds of the noted archetype (v2.18: own cap)
+    indicator_lift: float = 6.0               # nats added to the odds of the noted archetype (own cap)
     indicator_floor: float = 0.05             # ...only where the kernel already gives it this much
-    anchor_mass: float = 1.0                  # v3.9: a reviewed build noted "is a" joins a's locator mean with this weight
-    tell_z: float = 1.64                      # v3.9: Wilson z of a tell's balanced precision among the locators
+    anchor_mass: float = 1.0                  # a reviewed build noted "is a" joins a's locator mean with this weight
+    tell_z: float = 1.64                      # Wilson z of a tell's balanced precision among the locators
     anchor_veto: float = 0.9                  # "not a": k_a is scaled by 1 - veto * K at the noted build
-    # v2.19 chasm (math §5.4): borders between archetype families are chasms
+    # chasm (math §5.4): borders between archetype families are chasms
     chasm_power: float = 6.0                  # gamma: chi = 1 - barrier a(u) a(v) (1 - (1 - TV)^gamma)
     chasm_hard: bool = True                   # both builds located in different families -> chi = 1 - barrier
     chasm_corpus: bool = True                 # the chasm also gates corpus neighbours and the cross ring
     chasm_rules: bool = True                  # mined central take rules fire only in their home families
     chasm_rule_min: float = 5.0               # ...a family is home with this much covered weight and rate >= theta_take
     chasm_rule_sample: int = 30000            # reference builds used to find the homes
-    # v2.19 reviewer consensus (math §8.5a): repeated notes / edits become family tells
+    # reviewer consensus (math §8.5a): repeated notes / edits become family tells
     consensus: bool = True
     consensus_kappa: float = 1.5              # c = net / (net + kappa)
     consensus_min_reviewers: int = 2          # distinct (reviewer, build) units before a tell is promoted

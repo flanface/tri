@@ -10,7 +10,7 @@ from tri.core.types import Build, Kind
 
 
 class _Slots:
-    """Catalog methods (Catalog methods: mantra slots and the talent cap.)."""
+    """Catalog methods: mantra slots and the talent cap."""
 
     def mantra_type(self, item_id: str) -> Optional[str]:
         """Mantra type from the "type:<T>" tag (None if absent or not a mantra)."""
@@ -85,7 +85,7 @@ class _Slots:
         ms = [i for i in set(items) if i in self.items and self.items[i].kind == Kind.MANTRA]
         used, over = fit_mantra_slots([self.mantra_slot(i) for i in ms], slots, self.slots_typed())
         need = dict(used)
-        need["Wildcard"] = used.get("Wildcard", 0) + over      # v3.0.3: overflow is wildcard demand
+        need["Wildcard"] = used.get("Wildcard", 0) + over      # overflow is wildcard demand
         return dict(slots=slots, used=used, need=need, over=over,
                     free=sum(slots.values()) - sum(used.values()))
 
