@@ -37,7 +37,7 @@ import numpy as np
 @dataclass
 class CautionConfig:
     enabled: bool = True
-    z_min: float = 0.6              # hold a worth change below this z (was 1.0)
+    z_min: float = 0.75             # hold a worth change below this z (was 0.6)
     prior_strength: float = 2.0     # n0: pseudo-support added to the local support
     min_confidence: Optional[float] = None   # archetype reading below this asks (None: the locator setting)
     archetype_gap: float = 0.15     # two alternatives this close in plausibility ask

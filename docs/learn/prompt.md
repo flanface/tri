@@ -138,7 +138,7 @@ Teach these first; every later module relies on them.
 
 ### Module 11b. Caution
 
-- The hold rule $z<z_{\min}$ on worth marks (eq. in §14.1); why rule and review marks are never held.
+- The hold rule $z<z_{\min}$ ($z_{\min}=0.75$) on worth marks (eq. in §14.1); why rule and review marks are never held.
 - Questions and their local effect (§14.3); consensus thresholds (§14.4).
 - Code: `tri/infer/caution.py`, `Tri.caution`.
 

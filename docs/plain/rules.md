@@ -37,7 +37,7 @@ Both are written in symbols, so they are short and you can compare them at a gla
 
 **Holes and gems.** A hole is a pick almost every build of an archetype takes but reviewers almost always remove (Endurance Runner on a low-Agility build). A gem is the reverse: rarely taken, almost always added by reviewers.
 
-**Weapons.** Some talents depend on the weapon: Speed Demon is pointless when the weapon already bleeds, and Turtle Shell needs a two-handed weapon. tri reads the build's weapons. A build that carries several is only locked out when none of them allows the talent; Speed Demon with one bleeding and one plain weapon is kept but counts half as much.
+**Weapons.** Some talents depend on the weapon: Speed Demon is pointless when the weapon already bleeds, and Turtle Shell needs a two-handed weapon. tri reads the build's weapons. A build that carries several is only locked out when none of them allows the talent; Speed Demon with one bleeding and one plain weapon is kept but counts half as much. Destructive Recovery and Unstoppable Force are used without their weapon, so they are never locked out by it. Monster mantras count for 35% less, since they also bring their own talents and do not take a talent slot.
 
   Since v3.2, three weapon rules are fixed from the game data, because the builds rarely record a weapon. They hold even over reviews.
 

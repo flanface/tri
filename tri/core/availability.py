@@ -116,6 +116,8 @@ class _Availability:
         F = self.enforced_lock_fields()
         own = [list(cl) for cl in self.items[item_id].context]
         own += [cl for cl in W.item_clauses(item_id) if cl not in own]
+        if W.unlocked(item_id):                         # weapon lock ignored (W.UNLOCKED)
+            own = [cl for cl in own if {_field(t) for t in cl} != {W.FIELD}]
         return [cl for cl in own if cl and {_field(t) for t in cl} <= F]
 
     def _ctx(self):

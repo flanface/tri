@@ -9,6 +9,9 @@ fitted, so they never move the space:
   - weapon redundancy (tri/weapons.py scale): worth is multiplied by the share
     c of equipped weapons that leave the item useful,
         L' = logit(c * sigma(L))        (c = 0 is a lock, Catalog context)
+  - monster mantras: c is further multiplied by MONSTER_SCALE; a Monster
+    mantra is cap-exempt and brings its derived talents' worth with it, so
+    its own worth is lowered to keep completions from favouring it
 """
 from __future__ import annotations
 
@@ -56,6 +59,27 @@ def stat_offsets(catalog, pre: np.ndarray, fin: np.ndarray) -> np.ndarray:
     return out
 
 
+MONSTER_SCALE = 0.65           # Monster mantras: worth x 0.65 (at least 30% lower)
+
+
+def type_scale(catalog) -> np.ndarray:
+    """[N] worth multipliers by mantra type: MONSTER_SCALE for Monster mantras, else 1."""
+    hit = getattr(catalog, "_type_scale", None)
+    if hit is not None and hit[0] == MONSTER_SCALE and len(hit[1]) == len(catalog.ids):
+        return hit[1]
+    c = np.ones(len(catalog.ids))
+    mt = getattr(catalog, "mantra_type", None)
+    if mt is not None:
+        for t, i in enumerate(catalog.ids):
+            if mt(i) == "Monster":
+                c[t] = MONSTER_SCALE
+    try:
+        object.__setattr__(catalog, "_type_scale", (MONSTER_SCALE, c))
+    except (AttributeError, TypeError):
+        pass
+    return c
+
+
 def weapon_scale(catalog, weapons: Sequence[str]) -> np.ndarray:
     """[N] worth multipliers c_t from the equipped weapons (1 where no rule)."""
     from tri.game import weapons as W
@@ -73,7 +97,7 @@ def apply(L: np.ndarray, catalog, pre, fin, weapons: Sequence[str] = ()) -> np.n
     """Logits with both priors: L + Delta, then logit(c sigma(.))."""
     L = np.asarray(L, float) + (stat_offsets(catalog, pre, fin)[0] if np.ndim(L) == 1
                                 else stat_offsets(catalog, pre, fin))
-    c = weapon_scale(catalog, weapons)
+    c = weapon_scale(catalog, weapons) * type_scale(catalog)
     if (c < 1).any():
         p = np.clip(c * _sig(L), 1e-9, 1 - 1e-9)
         L = np.log(p) - np.log1p(-p)
@@ -102,7 +126,7 @@ def adjust_q(q: np.ndarray, catalog, build) -> np.ndarray:
     from tri.game import weapons as W
     pre, fin = stat_rows(catalog, [build])
     d = stat_offsets(catalog, pre, fin)[0]
-    c = weapon_scale(catalog, W.equipped(build))
+    c = weapon_scale(catalog, W.equipped(build)) * type_scale(catalog)
     if not d.any() and (c >= 1).all():
         return q
     p = np.clip(np.asarray(q, float), 1e-6, 1 - 1e-6)

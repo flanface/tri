@@ -280,6 +280,12 @@ $$
 q'(x) = c_x\, q(x), \qquad c_x = \frac{|\{w \in W(B): \text{no bleed} \in \omega(w)\}|}{|W(B)|}.
 $$
 
+**Monster mantras.** A Monster mantra is cap-exempt and comes with its derived talents, so its worth would count those talents on top of its own. Its worth is scaled down wherever worth is read:
+
+$$
+q'(x) = \lambda_M\, q(x)\ \ \text{if}\ \tau_{\text{type}}(x) = \text{Monster}, \qquad \lambda_M = 0.65. \tag{2.8m}
+$$
+
 The `# weapons:` review note is deprecated, since the build's own weapons now decide; review claims are scoped by the weapons the reviewed build records.
 
 **Waivers.** Weapon clauses describe the planner record, and the record can be wrong about the build: a build may carry a weapon it did not select (a shield it is implied to wield), equip several, or use a talent that works without its weapon. Let $V(B)\subseteq\mathcal I$ be the items whose weapon locks are waived on $B$. Availability then reads
@@ -292,6 +298,12 @@ and `meta.wield_free` drops the field for every item. A review waives a lock on 
 
 $$
 x\in V(B). \tag{2.9a}
+$$
+
+Two talents ignore their weapon lock everywhere (`weapons.UNLOCKED`):
+
+$$
+x \in U = \{\text{Destructive Recovery},\ \text{Unstoppable Force}\} \;\Rightarrow\; \kappa_i(x) = \varnothing\ \ \forall i.
 $$
 
 A strong generally-good claim on $x$ waives the lock at any similarity (v3.1.3): such talents (Turtle Shell, Unstoppable Force) are used without their weapon class,
