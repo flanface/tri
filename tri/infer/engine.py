@@ -67,6 +67,8 @@ class PassEngine(_Situations, _Constraints, _Completion, _Reviewing):
         self.ledger = ledger
         self.cfg = cfg or InferConfig()
         self.manual: Dict[str, str] = {}               # item -> foundational | central | luxury (admin)
+        self.released: Set[str] = set()                # own picks answered "not central": may be replaced
+        self.refused: Set[str] = set()                 # own picks answered "do not want": removed
         self.unrated_items: Set[str] = set()           # items added after the corpus (Tri.extend_catalog)
         self.sidegrades: list = []                     # [Sidegrade] (tri.sidegrades)
         self.note_worth: List[dict] = []               # indicator / core / avoid notes (Tri._sync_indicators)

@@ -160,6 +160,9 @@ class _Answering:
         e, archetype, _ = self._answered(build, archetype, (), answers)
         e.withheld = set(withheld) | Answers.of(answers).unwanted
         e.wanted = Answers.of(answers).wanted
+        a, own = Answers.of(answers), set(build.items())
+        e.released = {i for i, v in a.central.items() if v is False} & own
+        e.refused = a.unwanted & own
         return e.complete(build, capacity, region, force=self.force(archetype))
 
     def _answered(self, build: Build, archetype, locked, answers):
