@@ -27,6 +27,8 @@
 | | compute device, device memory, smallest device solve | `SpaceConfig.device` (`"auto"`), `device_budget_gb` (2.0), `device_min_rows` (256) |
 | | rule mining processes | `PassConfig.n_jobs` (0 = auto) |
 | | talent cap base, talents per counted mantra, exempt types | `Catalog.talent_cap_base` (76), `cap_per_mantra` (2), `cap_exempt` (Oath, Origin, Monster) |
+| $\lambda_M$, $U$ | Monster mantra worth scale (2.8m), weapon-unlocked items | `priors.MONSTER_SCALE` (0.65), `weapons.UNLOCKED` |
+| $z_{\min}$ | caution hold threshold | `CautionConfig.z_min` (0.75) |
 | $\omega$ | metric weights | `SpaceConfig.metric` (`"worth_variance_dedup"`, `"worth_variance"` or `"uniform"`) |
 | $\tau$ | redundancy threshold | `dedup_tau` (0.9) |
 | $\gamma$ | tempering exponent | `metric_power` (0.5) |

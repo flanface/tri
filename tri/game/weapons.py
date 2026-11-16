@@ -18,6 +18,8 @@ tri/data/weapons.json (game data, never statistics):
   - scale(item, weapons): the share of equipped weapons that leave the item
     useful (Speed Demon: weapons without bleed); worth is multiplied by it.
 
+  - UNLOCKED: items whose weapon lock is ignored (used without the weapon).
+
 A build that records no weapon, or none tri knows, records no "wield" field:
 no weapon clause is checked and nothing is scaled.
 """
@@ -101,7 +103,16 @@ def tokens_of(weapons: Sequence[str]) -> List[str]:
     return sorted(out)
 
 
+UNLOCKED = frozenset(("Destructive Recovery", "Unstoppable Force"))   # weapon lock ignored
+
+
+def unlocked(item: str) -> bool:
+    return _loose(item) in {_loose(x) for x in UNLOCKED}
+
+
 def item_clauses(item: str) -> List[List[str]]:
+    if unlocked(item):
+        return []
     return [list(c) for c in table()["clauses"].get(_loose(item), [])]
 
 

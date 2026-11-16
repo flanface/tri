@@ -77,7 +77,7 @@ Then the talents are filled as usual. A Silentheart build gets no mantras. Each 
 
 $$a_0=\mathcal C(b;\,M(b)),\qquad a_{k+1}=\mathcal C\big(b;\,M(b)\cup E_k\big),\qquad E_k=\bigcup_{j\le k}\{(x,v)\in M(a_j):\ v=\text{add},\,x\notin a_j\ \ \lor\ \ v=\text{remove},\,x\in a_j\setminus b\}$$
 
-stopping when $E_k$ gains nothing, $a_{k+1}\in\{a_0,\dots,a_k\}$, or $k=$ `review_rounds` (3). Claims on $b$ itself win over carried ones, and $b$'s own picks stay. Each $a_k$ is a completion, so the guarantees below hold for it.
+stopping when $E_k$ gains nothing, $a_{k+1}\in\{a_0,\dots,a_k\}$, or $k=$ `review_rounds` (3). Claims on $b$ itself win over carried ones, and $b$'s own picks stay except those a caution answer releases: with $N^-$ the picks answered not central and $D^-$ those answered not wanted, $x\in D^-\Rightarrow x\notin a_k$, and $x\in N^-$ is unpinned and kept only if $q(x)$ still earns its slot. Neither applies to a pick another pick needs or a rule requires. Each $a_k$ is a completion, so the guarantees below hold for it.
 
 ## 7.7 The strictness theorem
 

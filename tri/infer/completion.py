@@ -92,7 +92,8 @@ class _Completion:
         a binding claim on the result (add an item it lacks, remove an item the
         completion added) is carried back and b is completed again, until no new
         claim binds or the result repeats (at most review_rounds rounds). The
-        input's own picks stay."""
+        input's own picks stay, except those a caution answer released
+        (released: "not central", refused: "do not want")."""
         own0 = set(b.items())
         self._ban_set = set()
         try:
@@ -112,7 +113,7 @@ class _Completion:
             return self._through_review(b, alt, capacity, region, force)
         extra: Dict[str, tuple] = {}
         seen = {frozenset(alt.items())}
-        own = set(b.items())
+        own = set(b.items()) - self.released - self.refused
         for _ in range(int(getattr(self.cfg, "review_rounds", 3))):
             res = replace(b, talents=list(alt.talents), mantras=list(alt.mantras))
             mem = self.situations(res, 1, region, force=force)[0].memory
@@ -140,7 +141,7 @@ class _Completion:
         rounds = int(getattr(self.cfg, "review_pass_rounds", 2))
         if rounds <= 0:
             return alt
-        own = [i for i in b.items() if i in self.c.index]
+        own = [i for i in b.items() if i in self.c.index and i not in self.released | self.refused]
         own += [c.item for c in alt.changes if c.action == "add" and c.source == "review"]   # bound on the input
         seen = {frozenset(alt.items())}
         for _ in range(rounds):
@@ -305,6 +306,22 @@ class _Completion:
         needed = lambda x: any(x in self.c.items[y].prerequisites or
                                any(x in g for g in self.c.items[y].prerequisites_any) for y in sel - {x}) \
             or self._slot_needed(x, sel, s)
+        # caution answers on the input's own picks (math §14.3): "not central"
+        # releases the pick (a worthier pick may take its slot), "do not want"
+        # removes it; neither touches a pick another pick needs or a rule requires
+        freed: Set[str] = set()
+        req_a = self._required(s, sel, blocked) if (self.released or self.refused) & sel else {}
+        for it in sorted((self.released | self.refused) & sel):
+            if self.manual.get(it) in (FOUNDATIONAL, CENTRAL) or it in req_a or needed(it):
+                continue
+            sel.discard(it)
+            if it in self.refused:
+                blocked.add(it)
+                changes.append(Change(it, "remove", Reason.LUXURY_LESS.value, [], float(s.q[self.c.index[it]]),
+                                      "answer", None, LUXURY, "you do not want it (your answer)"))
+            else:
+                freed.add(it)
+        have = [i for i in have if i in sel]
         # the talent cap and the mantra slots are strict: an input above them
         # loses its lowest-worth picks that no other pick needs and no rule requires
         if self.cap_excess(sel) > 0 or not self.fits(sel, s):
@@ -438,6 +455,19 @@ class _Completion:
                         take(it, LUXURY, "worth", worth_why(it) + f"; no luxury talent fits ({self.tier(it)} "
                                                   "talent, not required by a rule here)", cold_ok=cold_ok)
             fallback[0] = False
+        for it in sorted(freed, key=lambda x: -s.q[self.c.index[x]]):
+            k = self._kind(it)
+            if it not in sel and (limit[k] is None or count(k) < limit[k]) and self.cap_excess(sel | {it}) <= 0 \
+                    and self.fits(sel | {it}, s) and self._feasible(it, sel, s, cap=False) \
+                    and not self._rule_block(it, sel, s):
+                sel.add(it)                                  # nothing took its slot: it stays
+            if it in sel:
+                changes[:] = [c for c in changes if not (c.item == it and c.action == "add")]
+                have.append(it)
+            else:
+                changes.append(Change(it, "remove", Reason.LUXURY_LESS.value, [], float(s.q[self.c.index[it]]),
+                                      "answer", None, LUXURY, "not central to your concept (your answer); "
+                                      "a worthier pick took its slot"))
         for it in have:
             passes.setdefault(it, self._pass_here(it, s, sel))
         cap_out = (self.talent_cap(sel) if limit["t"] is None else min(limit["t"], self.talent_cap(sel)),
