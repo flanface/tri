@@ -295,9 +295,15 @@ class ReviewLedger:
         """Two claims on one item with different labels conflict unless one of
         them is conditional on items the other build does not have: "remove x,
         works against y" and "keep x" on a build without y both stand."""
-        ia = self._context(self.by_id[a.review_id].original)
-        ib = self._context(self.by_id[b.review_id].original)
-        return a.holds_in(ib) and b.holds_in(ia)
+        if not (a.conditional or b.conditional):
+            return True
+        return a.holds_in(self._ctx_of(b.review_id)) and b.holds_in(self._ctx_of(a.review_id))
+
+    def _ctx_of(self, review_id: str) -> set:
+        memo = self.__dict__.setdefault("_ctx", {})
+        if review_id not in memo:
+            memo[review_id] = self._context(self.by_id[review_id].original)
+        return memo[review_id]
 
     @staticmethod
     def _context(b: Build) -> set:
