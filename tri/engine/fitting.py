@@ -21,7 +21,7 @@ from tri.model.worth import FieldWorth
 from tri.rules.induction import context_features
 from tri.rules.passes import Rulebook
 
-COORDS_DEFAULT = "float32"     # TRI_COORDS
+COORDS_DEFAULT = "float32"     # SpaceConfig.coords
 
 
 class _Fitting:
@@ -557,12 +557,11 @@ class _Fitting:
         return rep
 
     def _coord_dtype(self):
-        """Storage type of the corpus coordinates _Zdata: TRI_COORDS=float32
-        halves the largest array the engine holds (B x D' x 8 bytes, 830 MB at
-        300k builds); every distance is still computed in float64."""
-        import os
-        return np.float32 if os.environ.get("TRI_COORDS", COORDS_DEFAULT).strip().lower() in ("float32", "f4", "32") \
-            else np.float64
+        """Storage type of the corpus coordinates _Zdata (cfg.space.coords):
+        float32 halves the largest array the engine holds (B x D' x 8 bytes,
+        830 MB at 300k builds); every distance is still computed in float64."""
+        c = str(getattr(self.cfg.space, "coords", COORDS_DEFAULT) or COORDS_DEFAULT).strip().lower()
+        return np.float32 if c in ("float32", "f4", "32") else np.float64
 
     def _kind_prior(self) -> Dict[Kind, float]:
         """Median corpus pick rate per item kind: the constant worth of an unrated item."""

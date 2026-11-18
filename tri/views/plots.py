@@ -24,6 +24,7 @@ inside `with theme(name):`.
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Union
 
@@ -40,8 +41,8 @@ Builds = Union[BuildMatrix, Sequence[Build], None]
 def _plt():
     try:
         import matplotlib
-        if os.environ.get("MPLBACKEND") is None and not os.environ.get("DISPLAY"):
-            matplotlib.use("Agg")
+        if "matplotlib.pyplot" not in sys.modules:
+            matplotlib.use("Agg")                               # files and bytes only; no window
         import matplotlib.pyplot as plt
     except ImportError as e:                                    # pragma: no cover
         raise ImportError("tri.views plots need matplotlib: pip install matplotlib") from e

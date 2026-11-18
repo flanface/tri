@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict
 import discord
 from discord import app_commands
 
-from tri.reviews.locators import archetype_key
+from tri.api import archetype_key
 
 from ..db import StoreError
 from ..embeds import clip, locator_text, quality_lines, suggest_text

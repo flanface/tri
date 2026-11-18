@@ -333,7 +333,7 @@ def warm(run: str, log: Callable[[str], None] = print) -> List[str]:
     sidegrades. A host that downloads them starts in seconds; without them it
     rebuilds them on its first load (minutes on one CPU), and commands answer
     "still loading" meanwhile. Returns the cache files present afterwards."""
-    from tri.runtime import release
+    from tri.api import release
     t0 = time.time()
     log(f"warming caches of {os.path.basename(run.rstrip('/'))} (one model load) ...")
     from .service import ModelService

@@ -66,11 +66,9 @@ def _dense_bool(X) -> np.ndarray:
 
 def _n_jobs(f: "PassConfig", n_items: int, n_rows: int) -> int:
     """Processes for Rulebook.mine: n_jobs if set, else all cores (up to 8) once
-    the corpus is big enough for start-up costs (a few seconds) to pay off.
-    TRI_JOBS (environment) overrides."""
+    the corpus is big enough for start-up costs (a few seconds) to pay off."""
     import os
-    env = os.environ.get("TRI_JOBS")
-    j = int(env) if env not in (None, "") else int(getattr(f, "n_jobs", 0) or 0)
+    j = int(getattr(f, "n_jobs", 0) or 0)
     if j == 0:
         if n_items < 64 or n_rows < 5000:
             return 1

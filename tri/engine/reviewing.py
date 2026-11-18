@@ -244,6 +244,36 @@ class _Reviewing:
         if self.space is not None:
             self._ledger_and_rules(); self._refresh_worth()
 
+    # ------------------------------------------------------------ non-mutating variants
+    def fork(self):
+        """A copy that shares the fitted model (catalog, space, field, corpus)
+        but owns its review state: set_reviews / set_memory on the copy leave
+        this Tri unchanged, so a caller may answer on this one meanwhile."""
+        import copy
+        t = copy.copy(self)
+        for k, v in list(vars(self).items()):
+            if isinstance(v, (dict, list, set)) and not k.startswith("__"):
+                setattr(t, k, copy.copy(v))
+        if getattr(self, "locset", None) is not None:
+            ls = copy.copy(self.locset)
+            for k, v in list(vars(self.locset).items()):
+                if isinstance(v, (dict, list, set)):
+                    setattr(ls, k, copy.copy(v))
+            t.locset = ls
+        return t
+
+    def with_reviews(self, reviews: Sequence[Review]):
+        """A new Tri with this review log (set_reviews on a fork)."""
+        t = self.fork()
+        t.set_reviews(reviews)
+        return t
+
+    def with_memory(self, reviews: Sequence[Review], locators: Sequence[Locator]):
+        """A new Tri with these reviews and locators (set_memory on a fork)."""
+        t = self.fork()
+        t.set_memory(reviews, locators)
+        return t
+
     def add_reviews(self, reviews: Sequence[Review], validate: bool = True) -> dict:
         """Add reviews. Takes effect at once (memory, review rules, worth
         neighbours); pass rules and the space change at the next refit()."""
@@ -286,29 +316,27 @@ class _Reviewing:
     def dry_insert(self, review: Review, probe_builds: Sequence[Build] = ()) -> dict:
         """What one review would change, without keeping it: answers on its own
         build and on probe builds before and after, plus the overrides it causes.
-        Not thread-safe (temporarily swaps the review log)."""
+        Non-mutating: the review is inserted into a fork (this Tri is never
+        changed, so concurrent callers are safe)."""
         self._need()
-        keep = list(self.reviews)
         builds = [review.original] + list(probe_builds)
 
-        def snap():
+        def snap(t):
             out = []
             for b in builds:
-                a = self.review(b, 1, keep_size=True)[0]
+                a = t.review(b, 1, keep_size=True)[0]
                 out.append(dict(build=b.build_id, changes=[f"{c.action} {c.item}" for c in a.changes],
                                 iffy=list(a.iffy)))
             return out
-        before = snap()
-        before_super = len(self.ledger.superseded) if self.ledger else 0
-        try:
-            self.set_reviews(keep + [review])
-            after = snap()
-            overrides = [s.__dict__ for s in (self.ledger.superseded[before_super:] if self.ledger else [])]
-            rules = [r.describe() for r in self.review_rules if r.status != "proposed"
-                     and any(x.review_id == review.review_id for x in r.support + r.counter)]
-            agree = self.review(review.original, 1, keep_size=True)[0]
-        finally:
-            self.set_reviews(keep)
+        before = snap(self)
+        old = {(s.item, s.older, s.newer) for s in (self.ledger.superseded if self.ledger else [])}
+        t = self.with_reviews([r for r in self.reviews if r.review_id != review.review_id] + [review])
+        after = snap(t)
+        overrides = [dict(s.__dict__) for s in (t.ledger.superseded if t.ledger else [])
+                     if (s.item, s.older, s.newer) not in old]
+        rules = [r.describe() for r in t.review_rules if r.status != "proposed"
+                 and any(x.review_id == review.review_id for x in r.support + r.counter)]
+        agree = t.review(review.original, 1, keep_size=True)[0]
         return dict(before=before, after=after, overrides=overrides, rules_touched=rules,
                     reproduced=sorted(set(agree.items())), validation=self.validate(review))
     # ------------------------------------------------------------ review queue

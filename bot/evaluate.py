@@ -57,7 +57,7 @@ def load_service(data: dict, run_dir: str):
 
 
 def _run(path: str, run_dir: str, workers: int, save) -> None:
-    from tri import evaluation as E
+    from tri.api import evaluation as E
     svc = load_service(json.load(open(path)), run_dir)
     t0 = time.time()
     rows = E.lobo(svc.tri, workers=workers)

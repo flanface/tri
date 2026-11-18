@@ -3,13 +3,12 @@
 Two sources are supported and can be merged (merge_gamedata):
 
   * deepwoken.co  - the build planner's own database, served publicly at
-                    https://api.deepwoken.co/get?type=all (load_deepwokenco /
-                    fetch_deepwokenco). Its names are exactly the planner's, it
+                    https://api.deepwoken.co/get?type=all (load_deepwokenco). Its names are exactly the planner's, it
                     carries structured requirements, prerequisites, exclusions
                     and countTowardsTalentTotal, and it is the default primary.
   * pocamind/data - https://github.com/pocamind/data, a flat JSON database (one
                     file per talent / mantra) with requirement strings
-                    (load_gamedata / fetch_gamedata). Used to fill names the
+                    (load_gamedata). Used to fill names the
                     primary does not know.
 
 Both give, per entry, the requirements, prerequisites, mutual exclusions and
@@ -21,10 +20,9 @@ whether the talent takes a talent slot. tri uses them for
                       equipment, outfit, weapon, memento, ... talents)
   * prerequisites and exclusions, enforced by Tri.review
 
-    gd = fetch_all("runs/gamedata")              # deepwoken.co + pocamind, merged (cached; --gamedata all)
     gd = load_any("deepwokenco.json")            # either source from a local file / dir / zip
     gd = load_gamedata("path/to/data")          # pocamind: a clone, an extracted zip, or the .zip itself
-    gd = fetch_gamedata("runs/gamedata")         # pocamind main, downloaded once (cached)
+    gd = cached_gamedata("runs/gamedata")        # the download the bot side keeps there
     cat = gd.catalog()                           # every slot-taking talent + every mantra
     gd.granted()                                 # {talent name: group} that take no slot
 
@@ -52,7 +50,6 @@ import os
 import re
 import time
 import unicodedata
-import urllib.request
 import zipfile
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
@@ -470,34 +467,6 @@ def load_gamedata(path: str) -> GameData:
     return GameData(items, src, errors)
 
 
-def fetch_gamedata(dest: str, ref: str = "main", refresh: bool = False, timeout: float = 60.0) -> GameData:
-    """Download pocamind/data (branch/tag/commit `ref`) to dest/pocamind-data.zip
-    once, record the commit sha when the GitHub API answers, and load it.
-    Reuses the download unless refresh=True."""
-    os.makedirs(dest, exist_ok=True)
-    zp = os.path.join(dest, "pocamind-data.zip")
-    if refresh or not os.path.exists(zp):
-        is_sha = len(ref) == 40 and all(ch in "0123456789abcdef" for ch in ref.lower())
-        url = ZIP_SHA_URL.format(sha=ref) if is_sha else ZIP_URL.format(ref=ref)
-        req = urllib.request.Request(url, headers={"User-Agent": "tri"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            data = r.read()
-        zipfile.ZipFile(io.BytesIO(data))                      # validate before writing
-        with open(zp + ".tmp", "wb") as f:
-            f.write(data)
-        os.replace(zp + ".tmp", zp)
-        meta = dict(repo=REPO, ref=ref, fetched=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
-        try:
-            req = urllib.request.Request(API_URL.format(ref=ref),
-                                         headers={"User-Agent": "tri", "Accept": "application/vnd.github+json"})
-            with urllib.request.urlopen(req, timeout=15) as r:
-                c = json.load(r)
-            meta.update(sha=c.get("sha"), commit_date=(c.get("commit") or {}).get("committer", {}).get("date"))
-        except Exception as e:                                  # rate limits etc.: sha is optional
-            meta["sha_error"] = str(e)[:200]
-        with open(os.path.join(dest, "pocamind-data.json"), "w") as f:
-            json.dump(meta, f, indent=1)
-    return load_gamedata(zp)
 
 
 # ------------------------------------------------------------------ deepwoken.co
@@ -655,25 +624,6 @@ def load_deepwokenco(path: str) -> GameData:
     return GameData(items, src, errors)
 
 
-def fetch_deepwokenco(dest: str, refresh: bool = False, timeout: float = 60.0) -> GameData:
-    """Download DWCO_URL once to dest/deepwokenco.json (reused unless refresh)."""
-    os.makedirs(dest, exist_ok=True)
-    fp = os.path.join(dest, "deepwokenco.json")
-    if refresh or not os.path.exists(fp):
-        req = urllib.request.Request(DWCO_URL, headers={"User-Agent": "Mozilla/5.0 (tri)"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            data = r.read()
-        d = json.loads(data)
-        if not isinstance(d, dict) or not d.get("talents"):
-            raise ValueError(f"{DWCO_URL}: unexpected response {str(d)[:200]}")
-        with open(fp + ".tmp", "wb") as f:
-            f.write(data)
-        os.replace(fp + ".tmp", fp)
-        with open(os.path.join(dest, "deepwokenco.meta.json"), "w") as f:
-            json.dump(dict(url=DWCO_URL, fetched=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                           updated_max=max((x.get("_updatedAt") or "" for x in d["talents"]), default=None)),
-                      f, indent=1)
-    return load_deepwokenco(fp)
 
 
 def load_any(path: str) -> GameData:
@@ -736,24 +686,6 @@ def replace_item(it: GameItem, **kw) -> GameItem:
     return _r(it, **kw)
 
 
-def fetch_all(dest: str, refresh: bool = False, ref: str = "main", log=None) -> GameData:
-    """deepwoken.co (primary) merged with pocamind/data (fills gaps). Either
-    may fail (network, rate limits); the other is then used alone."""
-    got, errs = [], []
-    for name, fn in (("deepwoken.co", lambda: fetch_deepwokenco(dest, refresh=refresh)),
-                     ("pocamind/data", lambda: fetch_gamedata(dest, ref=ref, refresh=refresh))):
-        try:
-            got.append(fn())
-        except Exception as e:
-            errs.append(f"{name}: {e}")
-            if log:
-                log(f"game data: {name} unavailable ({str(e)[:160]})")
-    if not got:
-        raise RuntimeError("no game data source available: " + "; ".join(errs))
-    gd = merge_gamedata(*got) if len(got) > 1 else got[0]
-    if errs:
-        gd.source["unavailable"] = errs
-    return gd
 
 
 def coverage(source, gd: GameData, limit: Optional[int] = None, top: int = 50) -> dict:
@@ -789,23 +721,40 @@ def coverage(source, gd: GameData, limit: Optional[int] = None, top: int = 50) -
                 unknown_kinds=[k[0] for k, _ in unk.most_common(top)])
 
 
-def resolve_gamedata(specs: Sequence[str], dest: str, refresh: bool = False, ref: str = "main", log=None):
-    """specs: ["auto"] -> pocamind/data (every requirement, prerequisite,
-    exclusion and lock tri reads is in pocamind/data); "all" -> fetch_all
-    (deepwoken.co merged with pocamind/data, the pre-v3.7 auto); ["none"] ->
-    None; paths -> load_any, merged in order (first wins); "auto" may be mixed
-    with paths."""
+def cached_gamedata(dest: str) -> GameData:
+    """The pocamind/data download kept in dest (written by the bot's game data
+    adapter, bot.gamesource.fetch_gamedata). tri itself never downloads."""
+    zp = os.path.join(dest, "pocamind-data.zip")
+    if not os.path.exists(zp):
+        raise FileNotFoundError(f"no pocamind/data download in {dest}; fetch it with "
+                                f"`python -m bot.gamesource fetch {dest}` or pass a local path")
+    return load_gamedata(zp)
+
+
+def cached_deepwokenco(dest: str) -> GameData:
+    fp = os.path.join(dest, "deepwokenco.json")
+    if not os.path.exists(fp):
+        raise FileNotFoundError(f"no deepwoken.co download in {dest}; fetch it with "
+                                f"`python -m bot.gamesource fetch {dest} --source deepwoken.co`")
+    return load_deepwokenco(fp)
+
+
+def resolve_gamedata(specs: Sequence[str], dest: str, log=None):
+    """specs: ["auto"] -> the pocamind/data download cached in dest; "all" ->
+    deepwoken.co merged with pocamind/data (both cached in dest); ["none"] ->
+    None; paths -> load_any, merged in order (first wins). No network: the
+    downloads are made by the bot side (bot.gamesource)."""
     specs = [s for s in specs if s]
     if not specs or specs == ["none"]:
         return None
     parts = []
     for sp in specs:
         if sp in ("auto", "pocamind"):
-            parts.append(fetch_gamedata(dest, ref=ref, refresh=refresh))
+            parts.append(cached_gamedata(dest))
         elif sp == "all":
-            parts.append(fetch_all(dest, refresh=refresh, ref=ref, log=log))
+            parts.append(merge_gamedata(cached_deepwokenco(dest), cached_gamedata(dest)))
         elif sp in ("deepwoken.co", "dwco"):
-            parts.append(fetch_deepwokenco(dest, refresh=refresh))
+            parts.append(cached_deepwokenco(dest))
         else:
             if not os.path.exists(sp):
                 raise FileNotFoundError(f"game data {sp} not found")
