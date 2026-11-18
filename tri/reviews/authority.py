@@ -280,6 +280,9 @@ class ReviewLedger:
                     # "generally good" one competes with local claims by build similarity,
                     # so a removal on a different archetype stands
                     sim = 1.0 if (new.broken or old.broken) else self.similarity(old.review_id, new.review_id)
+                    if new.label == "keep" and old.label in ("add", "remove") and \
+                            self.similarity(old.review_id, new.review_id) < self.cfg.sim_same:
+                        continue                          # an unmarked pick overrides an operation on the same build only
                     f = self._factor(sim)
                     if f < f_min:
                         f_min, hit = f, (new, sim)
