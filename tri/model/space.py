@@ -1,6 +1,6 @@
 """Concept space: a logistic worth field whose coordinates measure worth differences.
 
-Model (math §3). For build b and item t:
+Model. For build b and item t:
 
     logit_bt = beta_t + Gamma_t . s_b + Omega_t . c_b + V_t . z_b
     P(b takes t | t available) = sigmoid(logit_bt)
@@ -143,7 +143,7 @@ class ConceptSpace:
         its coordinates; the same protocol on training builds gives the gap. The
         check is reported (space.validation), never used to choose parameters: on
         the playstyle benchmark, held-out deviance prefers fields that erase weak
-        archetype signals (math §4.4)."""
+        archetype signals."""
         f = self.cfg
         rng = np.random.default_rng(f.seed)
         if f.sample is not None and len(bm) > f.sample:
@@ -612,7 +612,7 @@ class ConceptSpace:
         return out
 
     def logits_rows(self, bm: BuildMatrix, rows=None, partial: bool = False, prior: bool = False) -> np.ndarray:
-        """prior: add the fixed stat-benchmark prior (tri/priors.py; math §2.9)."""
+        """prior: add the fixed stat-benchmark prior (tri/game/priors.py)."""
         rows = np.arange(len(bm)) if rows is None else np.asarray(rows)
         Y = self._y_rows(bm, rows, self.solve_latent(bm, rows, partial))
         L = self.beta + Y @ self._A().T
@@ -656,7 +656,7 @@ class ConceptSpace:
             L = self.beta + self._A() @ y
         elif loo:
             L = self._loo(bm, L, partial)
-        if getattr(self, "priors", True):              # fixed priors the pretrain cannot learn (math §2.9)
+        if getattr(self, "priors", True):              # fixed priors the pretrain cannot learn
             from tri.game import priors, weapons as W
             pre, fin = priors.stat_rows(self.c, [b])
             L = priors.apply(L, self.c, pre, fin, W.equipped(b))

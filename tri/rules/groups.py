@@ -1,4 +1,4 @@
-"""Known talent groups and the context a selection rule can see (math §6.12).
+"""Known talent groups and the context a selection rule can see.
 
 Groups come from game data only. Nothing here is fitted or inferred.
 

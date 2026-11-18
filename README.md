@@ -5,7 +5,7 @@
   <a href="https://github.com/flanface/tri"> <img src="assets/atlas_export1.png" width="75%"> </a>
 </div>
 
-tri is a backend learning engine for Deepwoken talent and mantra selection. It can analyse a build , completes a partial build, and learns from expert reviews.
+tri is a backend learning engine for Deepwoken talent and mantra selection. It analyses a build, completes a partial build and learns from expert reviews.
 
 This is part of a larger project to mathematically understand the practice of Deepwoken building. This is a varied discipline, but the largest centralized generally accepted notion of "building" breaks the art into the **selection of mantras and talents**, **optimization of character stats**, and the **development of a concept**. Stat allocation is a solved problem, but talent/mantra selection has historically been understood as unsolvable.
 
@@ -13,9 +13,13 @@ There is some valid dogma behind this. Automatic talent selection is a problem t
 
 tri (the human one) hypothesizes, from experience, that talent selection is actually a highly structured procedure that rigorously follows a set of rules that builders will have internalized after some time building. the problem is that there are 700+ talents to take, and each talent naturally has many builds leading into it. it is difficult for builders to conjure this ruleset intuitively much less to articulate it.
 
-while a builder might memorize a rule like "overworld ganking builds always take replenishing knockout", the quantification of the archetype of the build, in this case being overworld ganking, is very difficult to automatically determine. common approaches to this solution discretizes the archetype, which we feel is enforcing too much structure onto conceptual building. the main point of interest tri raises is the concept space, which is used as additional context in ruleset reconstruction.
+while a builder might memorize a rule like "overworld ganking builds always take replenishing knockout", the quantification of the archetype of the build, in this case being overworld ganking, is very difficult to automatically determine. common approaches to this solution discretizes the archetype, which we feel is enforcing too much structure onto conceptual building. the main point of interest tri raises is the concept space, a continuous map of builds in which an expert review reaches only the builds near the one it was made on, and never crosses into another archetype family.
 
 another issue is that while the selection of foundational and conceptuall central talents is formulaic, the worth of luxury talents is volatile and highly build dependent, which is why tri uses a second space, the worth space, which encodes the "worth" of cards in reference to the build that it is on as additional context in filling out talent slots.
+
+## How it works
+
+Hard game constraints (requirements, prerequisites, exclusions, the talent cap and mantra slots) and hand-authored rules filter or force items. Every other item gets one score that combines the fitted field, the pick rate of nearby builds and the reviews in reach. Slots are then filled by score. A review acts as soon as it is stored, with no refit, and reproduces on its own build; when two reviews of near-identical builds disagree, the newer one wins.
 
 ## Interpretability
 
@@ -35,7 +39,10 @@ For the concept space projection:
 
 ## Docs
 
-Start at [docs/Home.md](docs/Home.md): [plain words](docs/plain/README.md), [code](docs/code/layout.md), [math](docs/math/README.md), [learning prompt](docs/learn/prompt.md).
+- [Public API](docs/api.md)
+- [The scorer and how reviews act](docs/scorer.md)
+- [Evaluation and measured numbers](docs/evaluation.md)
+- [Bot setup](docs/bot.md)
 
 ## Acknowledgements
 

@@ -1,6 +1,6 @@
 """Worth: how strongly builds with this archetype take each item.
 
-worth_t(b) combines the worth field with the builds around b (math §4.8):
+worth_t(b) combines the worth field with the builds around b:
 
     q_t = ( m sigmoid(logit_t(b)) + sum_n k_n rho_nt x_nt ) / ( m + sum_n k_n rho_nt a_nt )
 
@@ -193,7 +193,7 @@ class FieldWorth:
         X = self.ref.X[nb].toarray()
         A = self.ref.masks[self.ref.gid[nb]].astype(np.float64)
         chi = None
-        if self.chasm_corpus:                                   # borders are chasms (math §5.4)
+        if self.chasm_corpus:                                   # borders are chasms
             chi = np.asarray(self.barrier(u, self.U[nb]), float)
             kw = kw * np.where(self.is_review[nb], 1.0, chi)
         fac = None
@@ -234,7 +234,7 @@ class FieldWorth:
         return LocalRates(q, base, den, nb, kw, _wmedian(self.ref.n_tal[nb], kw), _wmedian(self.ref.n_man[nb], kw))
 
     def _cross(self, d2: np.ndarray, nb: np.ndarray, num: np.ndarray, den: np.ndarray, u=None):
-        """Add the cross-archetype ring to the kernel sums (docs/math eq. 5.4)."""
+        """Add the cross-archetype ring to the kernel sums."""
         f = self.cfg
         k2 = min(int(f.k_cross) + len(nb), len(d2))
         ring = smallest(d2, k2)

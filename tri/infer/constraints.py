@@ -59,7 +59,7 @@ class _Constraints:
         return fallback and getattr(self.cfg, "tier_fallback", False)
 
     def tier_here(self, item: str, s: _Sit) -> str:
-        """The tier of item on this build (math §6.12): its category, else
+        """The tier of item on this build: its category, else
         the pass of a take rule that fires here, else luxury. A talent that is
         foundational or central elsewhere but has no rule firing here is luxury
         here: worth ranks it like any other luxury talent."""
@@ -107,7 +107,7 @@ class _Constraints:
         return out
 
     def _firing(self, s: _Sit, pass_: Optional[str] = None) -> List[PassRule]:
-        """Take rules that fire for s, across the chasm (math §5.4): a mined
+        """Take rules that fire for s, across the chasm: a mined
         central rule whose covered builds lie in other families (its home) does not
         fire on a build located in a family outside its home. Foundational rules
         (spread over the corpus by construction) and category rules are unchanged."""
@@ -193,7 +193,7 @@ class _Constraints:
                f"{self._cap_base} - {self._cap_per} x {len(self._lowers & set(sel))} non-exempt mantras)"
 
     def fits(self, sel, s: _Sit) -> bool:
-        """Every mantra of sel has a mantra slot of a type it fits (math §2.6)."""
+        """Every mantra of sel has a mantra slot of a type it fits."""
         return self.c.mantras_fit(set(sel) | s.outside, s.oath)
 
     def slot_free(self, sel, s: _Sit) -> int:

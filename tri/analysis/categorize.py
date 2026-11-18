@@ -1,11 +1,11 @@
-"""Build categorization (math §12.1).
+"""Build categorization.
 
 Every build gets three labels and a soft reading:
 
   - frame: oath, top two attunements, weapon class (game context, no model);
-  - archetype: the located archetype of the build (math §4.7), or the name of
+  - archetype: the located archetype of the build, or the name of
     its region when no locator exists;
-  - variant: the side it takes of each sidegrade of its archetype (math §4.9);
+  - variant: the side it takes of each sidegrade of its archetype;
   - reading: pure (pi_1 >= 0.8), leaning (0.5 <= pi_1 < 0.8), hybrid (pi_1 < 0.5
     and pi_1 + pi_2 >= 0.8) or unplaced (otherwise, or nearest locator beyond
     reach).
@@ -59,7 +59,7 @@ def _rows(tri, bm):
 
 def read_coords(tri, U: np.ndarray, X=None, A=None, ctx=None) -> Tuple[np.ndarray, np.ndarray, List[str], str, float]:
     """(P [n, A], dmin [n], names, source, reach) for coordinates U. With the rows'
-    picks X and availability A, the locator reading is the fine one (math §6.6)."""
+    picks X and availability A, the locator reading is the fine one."""
     U = np.atleast_2d(U)
     ls = tri.locset
     if ls is not None and len(ls.keys) >= 1:

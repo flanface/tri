@@ -4,7 +4,7 @@
     [X] oath = Silentheart ⇒ ¬Prediction
     [F] ⊤ ⇒ Speed Demon
 
-Grammar (math §6.13; ASCII forms in brackets):
+Grammar (ASCII forms in brackets):
 
     rule  ::= [tag] lhs ⇒ rhs [stats]          ⇒ [=>, ->]
     tag   ::= [F] | [C] | [X]                  foundational, central, exclusion;

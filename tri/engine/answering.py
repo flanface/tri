@@ -52,7 +52,7 @@ class _Answering:
 
     def _prereq_solo(self):
         """item -> share of the corpus builds with the prerequisite item that
-        take none of the talents it unlocks (math §2.8d). Prerequisites seen in
+        take none of the talents it unlocks. Prerequisites seen in
         fewer than 5 builds are left out. Cached per corpus."""
         if self.data is None:
             return {}
@@ -84,8 +84,7 @@ class _Answering:
         return out
 
     def _class_prior(self):
-        """Weapon-class prior from the corpus's weapon context (tri.focus,
-        math §2.10). Built from the stored corpus on load or (re)fit; no
+        """Weapon-class prior from the corpus's weapon context (tri.infer.focus). Built from the stored corpus on load or (re)fit; no
         refit. Cached per (corpus, coordinates)."""
         if not self.cfg.infer.focus or self.data is None or self._Zdata is None:
             return None
@@ -102,7 +101,7 @@ class _Answering:
         return cp
 
     def _rule_homes(self) -> Dict[str, set]:
-        """Home families of the mined central take rules (math §5.4): on a
+        """Home families of the mined central take rules: on a
         reference sample, the families whose located builds the rule covers with at
         least rule_home_min weight and among which the item is still taken at rate
         theta_take. A build located elsewhere is across the chasm: the rule does not
@@ -169,7 +168,7 @@ class _Answering:
                  region: Optional[int] = None, archetype: Optional[str] = None, answers=None,
                  withheld: Sequence[str] = ()) -> Alternative:
         """Fill a partial build in pass order up to the talent cap and the
-        mantra slots (math §2.6). capacity=(talents, mantras) only lowers
+        mantra slots. capacity=(talents, mantras) only lowers
         them; either may be None. archetype: complete it as this archetype."""
         e, archetype, _ = self._answered(build, archetype, (), answers)
         e.withheld = set(withheld) | Answers.of(answers).unwanted
@@ -180,7 +179,7 @@ class _Answering:
         return e.complete(build, capacity, region, force=self.force(archetype))
 
     def _answered(self, build: Build, archetype, locked, answers):
-        """(engine, archetype, locked) with the caution answers applied locally (math §14.3):
+        """(engine, archetype, locked) with the caution answers applied locally:
         an archetype answer forces it; "central" locks the pick and reads it as central here."""
         from tri.infer.caution import Answers
         a = Answers.of(answers)
@@ -204,7 +203,7 @@ class _Answering:
 
     def caution(self, build: Build, result=None, answers=None, archetype: Optional[str] = None,
                 mode: str = "review"):
-        """Caution on an answer (math §14): which worth marks to hold back and which
+        """Caution on an answer: which worth marks to hold back and which
         questions to ask. result: review alternatives or a completion (computed if None)."""
         from tri.infer.caution import assess
         if result is None:
@@ -216,7 +215,7 @@ class _Answering:
     def settle(self, build: Build, mode: str = "review", archetype: Optional[str] = None, answers=None,
                max_alternatives: int = 3, capacity: Optional[Tuple[int, int]] = None, rounds: int = 4,
                result=None):
-        """(result, Caution) with held marks settled (math §14.1). A held
+        """(result, Caution) with held marks settled. A held
         change is not just hidden: a held removal keeps the pick (locked) and a
         held add is not taken (withheld), and the answer is solved again, so the
         slot goes to the next pick and the answer still fills the cap and the

@@ -36,7 +36,7 @@ class SpaceConfig:
     metric_k: int = 10             # k for that calibration
     sample: Optional[int] = 200_000   # builds used to fit (None = all)
     seed: int = 0
-    # held-out check of the field (math §6.4); diagnostic, never used to choose parameters
+    # held-out check of the field; diagnostic, never used to choose parameters
     val_frac: float = 0.05         # share of corpus builds held out of training (0 = none)
     val_min: int = 50              # at least this many held-out builds; needs >= 5x as many corpus builds
     val_max: int = 2000            # at most this many
