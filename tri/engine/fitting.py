@@ -20,7 +20,11 @@ from tri.model.space import ConceptSpace
 from tri.model.worth import FieldWorth
 from tri.rules.passes import Rulebook
 
+<<<<<<< HEAD
 COORDS_DEFAULT = "float32"     # SpaceConfig.coords
+=======
+COORDS_DEFAULT = "float32"     # TRI_COORDS
+>>>>>>> main
 
 
 class _Fitting:
@@ -293,6 +297,34 @@ class _Fitting:
             out += [fam[int(i)] if o else None for i, o in zip(k, ok)]
         return out
 
+<<<<<<< HEAD
+=======
+    def mine_rules(self, items=None, reset_config: bool = True, verbose: bool = False) -> dict:
+        """Re-mine the rulebook on the stored corpus without touching the concept
+        space (picks up group, archetype and weapon literals and the
+        stricter certification in a run saved before them). reset_config:
+        mine with today's PassConfig defaults (keeping seed, sample, n_jobs and item_rows)."""
+        self._need()
+        t0 = time.time()
+        if reset_config:
+            from tri.rules.defs import PassConfig
+            old = self.cfg.passes
+            self.cfg.passes = PassConfig(seed=old.seed, sample=old.sample, n_jobs=old.n_jobs, item_rows=old.item_rows)
+        if items is None:
+            self.rulebook = Rulebook(self.catalog, self.cfg.passes)
+        else:
+            self.rulebook.cfg = self.cfg.passes
+        self.rulebook.reader = self._archetype_reader
+        self.rulebook.mine(self.data, None, self.space.region_names,
+                           changed_since=self.patches.change_times(), items=items)
+        self._ledger_and_rules(); self._refresh_worth()
+        rep = dict(rules=self.rulebook.summary(), selection=self.selection_report(),
+                   seconds=round(time.time() - t0, 2))
+        if verbose:
+            print(json.dumps(rep, indent=1))
+        return rep
+
+>>>>>>> main
     def _review_matrix(self, touched: Optional[list] = None, rids: Optional[list] = None) -> Optional[BuildMatrix]:
         """Corrected builds of active reviews, weighted by their ledger weight.
         touched (if given) receives, per row, the catalog indices the review
@@ -518,11 +550,20 @@ class _Fitting:
         return rep
 
     def _coord_dtype(self):
+<<<<<<< HEAD
         """Storage type of the corpus coordinates _Zdata (cfg.space.coords):
         float32 halves the largest array the engine holds (B x D' x 8 bytes,
         830 MB at 300k builds); every distance is still computed in float64."""
         c = str(getattr(self.cfg.space, "coords", COORDS_DEFAULT) or COORDS_DEFAULT).strip().lower()
         return np.float32 if c in ("float32", "f4", "32") else np.float64
+=======
+        """Storage type of the corpus coordinates _Zdata: TRI_COORDS=float32
+        halves the largest array the engine holds (B x D' x 8 bytes, 830 MB at
+        300k builds); every distance is still computed in float64."""
+        import os
+        return np.float32 if os.environ.get("TRI_COORDS", COORDS_DEFAULT).strip().lower() in ("float32", "f4", "32") \
+            else np.float64
+>>>>>>> main
 
     def _kind_prior(self) -> Dict[Kind, float]:
         """Median corpus pick rate per item kind: the constant worth of an unrated item."""

@@ -20,7 +20,11 @@ class _Completion:
         """Items the passes require for this build: item -> (pass, source, why, review_id).
         Central anchors are re-read as picks are added (up to central_rounds)."""
         req: "OrderedDict[str, tuple]" = OrderedDict()
+<<<<<<< HEAD
         for it, why in (s.weapon or {}).get("require", {}).items():   # weapon rules
+=======
+        for it, why in (s.weapon or {}).get("require", {}).items():   # weapon rules (math §2.8c)
+>>>>>>> main
             t = self.c.index.get(it)
             if t is not None and (it in sel or s.ctx.avail[t]):
                 req[it] = (FOUNDATIONAL, "weapon", f"{it}: {why} (weapon rule)", None)
@@ -174,8 +178,13 @@ class _Completion:
     def _merge_extra(self, memory: Dict[str, tuple], extra: Optional[Dict[str, tuple]]) -> None:
         """Carry the claims of the reviews of the result into the input's memory.
         such a claim outranks a generally-good claim made on another
+<<<<<<< HEAD
         build and any claim from a less similar build (the nearest review wins);
         before, a binding generally-good add kept a review's removal
+=======
+        build and any claim from a less similar build (the nearest review wins,
+        math §5); before, a binding generally-good add kept a review's removal
+>>>>>>> main
         of the very result from taking effect."""
         for k, v in (extra or {}).items():
             old = memory.get(k)
@@ -302,7 +311,11 @@ class _Completion:
         needed = lambda x: any(x in self.c.items[y].prerequisites or
                                any(x in g for g in self.c.items[y].prerequisites_any) for y in sel - {x}) \
             or self._slot_needed(x, sel, s)
+<<<<<<< HEAD
         # caution answers on the input's own picks: "not central"
+=======
+        # caution answers on the input's own picks (math §14.3): "not central"
+>>>>>>> main
         # releases the pick (a worthier pick may take its slot), "do not want"
         # removes it; neither touches a pick another pick needs or a rule requires
         freed: Set[str] = set()
@@ -363,6 +376,11 @@ class _Completion:
                 return False
             if source == "worth" and ((self._cold(it, s) and not cold_ok) or self._side_block(it, sel | intent, s)):
                 return False
+<<<<<<< HEAD
+=======
+            if source == "worth" and self._depends_unmet(it, sel, s):
+                return False                         # x NW > y (review rule): never x without y
+>>>>>>> main
             if source == "worth" and follow and self._prereq_only(it, sel):
                 # a talent taken almost only to unlock another is taken with it
                 # (the dependant pulls it in as a prerequisite), never alone
@@ -376,7 +394,11 @@ class _Completion:
             chain: List[str] = []
             if not self._feasible(it, sel, s, rules=rules):
                 # addition order: a pick whose prerequisites are missing brings
+<<<<<<< HEAD
                 # them in first, when the whole chain fits
+=======
+                # them in first, when the whole chain fits (math §2.8d)
+>>>>>>> main
                 chain = self._missing_chain(it, sel, s, blocked) or []
                 after = sel | set(chain) | {it}
                 if not chain or any(limit[self._kind(y)] is not None and
@@ -464,7 +486,12 @@ class _Completion:
         for it in sorted(freed, key=lambda x: -s.q[self.c.index[x]]):
             k = self._kind(it)
             if it not in sel and (limit[k] is None or count(k) < limit[k]) and self.cap_excess(sel | {it}) <= 0 \
+<<<<<<< HEAD
                     and self.fits(sel | {it}, s) and self._feasible(it, sel, s, cap=False):
+=======
+                    and self.fits(sel | {it}, s) and self._feasible(it, sel, s, cap=False) \
+                    and not self._rule_block(it, sel, s):
+>>>>>>> main
                 sel.add(it)                                  # nothing took its slot: it stays
             if it in sel:
                 changes[:] = [c for c in changes if not (c.item == it and c.action == "add")]

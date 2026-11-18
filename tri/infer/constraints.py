@@ -59,7 +59,11 @@ class _Constraints:
         return fallback and getattr(self.cfg, "tier_fallback", False)
 
     def tier_here(self, item: str, s: _Sit) -> str:
+<<<<<<< HEAD
         """The tier of item on this build: its category, else
+=======
+        """The tier of item on this build (math §6.12): its category, else
+>>>>>>> main
         the pass of a take rule that fires here, else luxury. A talent that is
         foundational or central elsewhere but has no rule firing here is luxury
         here: worth ranks it like any other luxury talent."""
@@ -107,7 +111,11 @@ class _Constraints:
         return out
 
     def _firing(self, s: _Sit, pass_: Optional[str] = None) -> List[PassRule]:
+<<<<<<< HEAD
         """Take rules that fire for s, across the chasm: a mined
+=======
+        """Take rules that fire for s, across the chasm (math §5.4): a mined
+>>>>>>> main
         central rule whose covered builds lie in other families (its home) does not
         fire on a build located in a family outside its home. Foundational rules
         (spread over the corpus by construction) and category rules are unchanged."""
@@ -179,6 +187,26 @@ class _Constraints:
                 return f'; note: "{t[:80] + ("..." if len(t) > 80 else "")}"'
         return ""
 
+<<<<<<< HEAD
+=======
+    def _depends_unmet(self, it: str, sel, s=None) -> Optional[List[str]]:
+        """(math §2.8e) The components a supported DEPENDS review rule says `it`
+        does not work without (x NW > a, b) that sel lacks, or None. A worth pick
+        is never taken without them; they are not pulled in for it (that is the
+        dependant's job when they are worth it)."""
+        b = getattr(s, "build", None)
+        feats = getattr(s, "feats", None)
+        for r in getattr(self, "review_rules", None) or ():
+            if r.kind != "DEPENDS" or r.subject != it or not r.other:
+                continue
+            if b is not None and not r.applies(b, feats):
+                continue
+            miss = [y for y in r.other.split(" + ") if y not in sel]
+            if miss:
+                return miss
+        return None
+
+>>>>>>> main
     def talent_cap(self, sel) -> int:
         """76 - 2m: m = selected mantras that are not Oath / Origin (faction) / Monster mantras."""
         return self._cap_base - self._cap_per * len(self._lowers & set(sel))
@@ -277,6 +305,32 @@ class _Constraints:
             return Reason.SCENARIO_MISMATCH.value, []
         return Reason.NO_SYNERGY.value, []
 
+<<<<<<< HEAD
+=======
+    def _rule_block(self, item: str, sel: Set[str], s: _Sit):
+        """(reason, related, why) if a review rule rejects item next to sel, else None."""
+        if item in (s.weapon or {}).get("guard", ()):
+            return None                                    # weapon rules hold over review rules
+        from tri.game.weapons import build_weapon_tokens
+        have = set(sel) | build_weapon_tokens(s.build)      # a related weapon counts where it is wielded
+        for r in self.review_rules:
+            if r.subject != item or not r.applies(s.build, s.feats):
+                continue
+            if r.kind == "BROKEN":
+                return Reason.BROKEN.value, [], r.describe()
+            if r.kind == "NO_FIT":
+                return Reason.NO_SYNERGY.value, [], r.describe()
+            if r.kind == "OFF_ARCHETYPE":                   # strong SM: not on this archetype
+                return Reason.SCENARIO_MISMATCH.value, [], r.describe()
+            if r.kind == "REDUNDANT" and r.other in have:
+                return Reason.REDUNDANT_WITH.value, [r.other], r.describe()
+            if r.kind == "CONFLICT" and r.other in have:
+                return Reason.WORKS_AGAINST.value, [r.other], r.describe()
+            if r.kind == "PREFER" and r.other in have:
+                return Reason.LESS_NECESSARY_SPACE.value, [], r.describe()
+        return None
+
+>>>>>>> main
     def _binds(self, v: tuple) -> bool:
         if self.ledger is None:
             return v[1] >= self.cfg.memory_hard
@@ -298,7 +352,15 @@ class _Constraints:
 
     @staticmethod
     def _memory_why(verb: str, v: tuple) -> str:
+<<<<<<< HEAD
         """"added by review X (similarity s)"."""
+=======
+        """"added by review X (similarity s)", or for a pooled family claim
+        "added by the reviews of n builds of this family (newest X)"."""
+        if len(v) > 6 and v[6] == "family":
+            n = v[8] if len(v) > 8 else "several"
+            return f"{verb} by the reviews of {n} builds of this family (newest {v[2]})"
+>>>>>>> main
         return f"{verb} by review {v[2]} (similarity {v[3]:.2f})"
 
     @staticmethod

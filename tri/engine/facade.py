@@ -60,6 +60,11 @@ class Tri(_Fitting, _Archetypes, _Reviewing, _Answering, _Persist):
         self.reviews: List[Review] = []
         self.patches = PatchLog()
         self.ledger: Optional[ReviewLedger] = None
+<<<<<<< HEAD
+=======
+        self.review_rules: list = []
+        self.review_rules_all: list = []            # before drop_rule's rv: ids
+>>>>>>> main
         self.sidegrades_dropped: set = set()
         self._worth: Optional[FieldWorth] = None
         self._Zdata: Optional[np.ndarray] = None

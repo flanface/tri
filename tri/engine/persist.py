@@ -100,9 +100,12 @@ class _Persist:
         if meta["ids"] != list(catalog.ids):
             raise ValueError("saved for a different catalog: load with the old catalog, then migrate()")
         tri = cls(catalog, TriConfig.from_dict(meta["cfg"]))
+<<<<<<< HEAD
         for sec, kv in (overrides or {}).items():
             for k, v in kv.items():
                 setattr(getattr(tri.cfg, sec), k, v)
+=======
+>>>>>>> main
         tri._run_path = path                           # content caches (availability, sidegrades)
         tri.space = ConceptSpace.load(os.path.join(path, "space"), catalog)
         tri.cfg.space.metric = tri.space.cfg.metric        # runs before v2.3 load with the uniform metric

@@ -152,6 +152,14 @@ def main(argv=None):
     ap.add_argument("--device", help="compute device for training and latent solves: auto (cuda > mps > "
                     "torch cpu > numpy), cuda, cuda:N, mps (Apple Metal), cpu (torch), numpy. Needs torch "
                     "except numpy. Default: the config's (auto), or TRI_DEVICE")
+<<<<<<< HEAD
+=======
+    ap.add_argument("--jobs", type=int, help="processes for rule mining (0 auto, -1 all cores, 1 off); "
+                    "default: the config's (auto), or TRI_JOBS")
+    ap.add_argument("--rules-only", metavar="RUN",
+                    help="re-mine the rules of a saved run (RUN/model + RUN/catalog.json) with today's "
+                         "rule language and certification; the concept space is not touched")
+>>>>>>> main
     a = ap.parse_args(argv)
 
     np.random.seed(a.seed)

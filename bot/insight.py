@@ -254,13 +254,22 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
                         new=len(cf.book_update.get("new", [])), retired=len(cf.book_update.get("retired", [])))
             text = f"{n_c} certified · {len(cf.facts) - n_c} candidates"
         elif kind == "rules":                   # how the model answers
+<<<<<<< HEAD
             from tri.api import statements as ST
+=======
+            from tri.rules import statements as ST
+>>>>>>> main
             it = _item(svc, item) if item else None
             data = ST.model_rules(tri, it, limit=limit if limit else 25)
             text = f"{data['total']} rules" + (f" · {data['trivial']} trivial dropped" if data["trivial"] else "")
         elif kind == "lookup":                  # /talent, /mantra
+<<<<<<< HEAD
             from tri.api import facts as F
             from tri.api import statements as ST
+=======
+            from tri.analysis import facts as F
+            from tri.rules import statements as ST
+>>>>>>> main
             it = _item(svc, item)
             cf = _facts(svc)
             if getattr(c, "miner", None) is None:
@@ -314,7 +323,11 @@ def intersect(svc, names: List[str], k: int = 3, exclude=(), picks: int = 8) -> 
     """k representative builds where the named archetypes meet
     (tri.analysis.categorize.intersection); each with its archetype shares
     and its picks with the highest field worth."""
+<<<<<<< HEAD
     from tri.api import categorize as C
+=======
+    from tri.analysis import categorize as C
+>>>>>>> main
 
     from .links import canonical_link, parse_build_link
     from .plotting import PLOT_LOCK
