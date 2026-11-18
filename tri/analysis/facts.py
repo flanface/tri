@@ -1,4 +1,4 @@
-"""Nontrivial facts (math §12.2).
+"""Nontrivial facts.
 
 A fact is a short, local, certified sentence about the meta. The pipeline:
 

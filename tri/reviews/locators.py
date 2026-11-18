@@ -18,8 +18,7 @@ the corpus the field is trained on. They only
            conflicts), honest because no locator trained the field.
   select   the metric power gamma from a small grid by leave-one-out
            log-likelihood, moving from the default only when the paired gain
-           exceeds select_z (2) standard errors and select_min_gain (0.01 nats)
-           (math §6.5).
+           exceeds select_z (2) standard errors and select_min_gain (0.01 nats).
   separate review influence: the ledger kernel and the worth boost of reviewed
            builds are multiplied by
                1 - barrier * a(u) a(v) * TV(p(.|u), p(.|v))
@@ -93,7 +92,7 @@ class LocatorSet:
             if self.K is not None:
                 self._fine.clear(); self.pairs = []; self._find_pairs()
 
-    # ------------------------------------------------------------ twin split (math §6.6)
+    # ------------------------------------------------------------ twin split
     def set_background(self, rate: Optional[np.ndarray]) -> None:
         """Background pick rate b_t (corpus rate given availability; default: the
         locators pooled, one pick in two pseudo-builds). Rebuilds the twin pairs."""
@@ -189,7 +188,7 @@ class LocatorSet:
     def refining(self) -> bool:
         return bool(self.active_pairs) or bool(self.indicators)
 
-    # ------------------------------------------------------------ indicator notes (math §6.7)
+    # ------------------------------------------------------------ indicator notes
     def set_indicators(self, indicators: Sequence[dict]) -> None:
         """Reviewers' notes "components C indicate archetype a": dicts with key (archetype
         key), items (column indices), tokens (oath:/murmur: context), u (where the
@@ -203,7 +202,7 @@ class LocatorSet:
         """Reviewed builds whose reviewer said "this build is a" (sign +1) or "is not
         a" (sign -1): dicts with key, u, sign, review_id. A positive anchor joins
         a's locator mean as a pseudo-locator of weight anchor_mass, a
-        negative one scales k_a by 1 - anchor_veto * K there (math §6.7). Far from
+        negative one scales k_a by 1 - anchor_veto * K there. Far from
         the noted build K -> 0 and the reading is unchanged."""
         rows = [dict(a) for a in anchors if a.get("key") in self.kix and a.get("u") is not None]
         self.anchors = rows
@@ -611,8 +610,7 @@ class LocatorSet:
 
     # ------------------------------------------------------------ review barrier
     def barrier_factor(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
-        """[m] the chasm: multiplier for the influence of builds at V on a build at u
-        (math §5.4),
+        """[m] the chasm: multiplier for the influence of builds at V on a build at u:
             chi = 1 - barrier a(u) a(v) (1 - (1 - TV(p(.|u), p(.|v)))^gamma),
         and chi = 1 - barrier when both are located in different families
         (chasm_hard). In [1 - barrier, 1]; 1 for builds of the same family."""
@@ -644,7 +642,7 @@ class LocatorSet:
         return chi
 
     def family_overlap(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
-        """[m] family reach (math §5.8): 1 - TV of the family posteriors of
+        """[m] family reach: 1 - TV of the family posteriors of
         a build at u and builds at V when both are located in the same family
         (nearest locator within reach, top family probability >= min_confidence),
         else 0. Never crosses the chasm: different or unlocated families give 0."""

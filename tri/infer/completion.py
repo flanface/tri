@@ -20,7 +20,7 @@ class _Completion:
         """Items the passes require for this build: item -> (pass, source, why, review_id).
         Central anchors are re-read as picks are added (up to central_rounds)."""
         req: "OrderedDict[str, tuple]" = OrderedDict()
-        for it, why in (s.weapon or {}).get("require", {}).items():   # weapon rules (math §2.8c)
+        for it, why in (s.weapon or {}).get("require", {}).items():   # weapon rules
             t = self.c.index.get(it)
             if t is not None and (it in sel or s.ctx.avail[t]):
                 req[it] = (FOUNDATIONAL, "weapon", f"{it}: {why} (weapon rule)", None)
@@ -174,8 +174,8 @@ class _Completion:
     def _merge_extra(self, memory: Dict[str, tuple], extra: Optional[Dict[str, tuple]]) -> None:
         """Carry the claims of the reviews of the result into the input's memory.
         such a claim outranks a generally-good claim made on another
-        build and any claim from a less similar build (the nearest review wins,
-        math §5); before, a binding generally-good add kept a review's removal
+        build and any claim from a less similar build (the nearest review wins);
+        before, a binding generally-good add kept a review's removal
         of the very result from taking effect."""
         for k, v in (extra or {}).items():
             old = memory.get(k)
@@ -255,7 +255,7 @@ class _Completion:
         the talent cap 76 - 2m (m = mantras that are not Oath, Origin or
         Monster mantras), mantras up to the mantra slots of the result (base 3
         Combat, 1 Mobility, 1 Support, 1 Wildcard, plus what its oath and
-        talents grant), each mantra in a slot of its type (math §2.6).
+        talents grant), each mantra in a slot of its type.
         capacity=(talents, mantras) only lowers them. Mantras are filled
         before talents, and an empty mantra slot left by a late slot talent is
         filled by giving up the least worthy talents this completion added.
@@ -302,7 +302,7 @@ class _Completion:
         needed = lambda x: any(x in self.c.items[y].prerequisites or
                                any(x in g for g in self.c.items[y].prerequisites_any) for y in sel - {x}) \
             or self._slot_needed(x, sel, s)
-        # caution answers on the input's own picks (math §14.3): "not central"
+        # caution answers on the input's own picks: "not central"
         # releases the pick (a worthier pick may take its slot), "do not want"
         # removes it; neither touches a pick another pick needs or a rule requires
         freed: Set[str] = set()
@@ -376,7 +376,7 @@ class _Completion:
             chain: List[str] = []
             if not self._feasible(it, sel, s, rules=rules):
                 # addition order: a pick whose prerequisites are missing brings
-                # them in first, when the whole chain fits (math §2.8d)
+                # them in first, when the whole chain fits
                 chain = self._missing_chain(it, sel, s, blocked) or []
                 after = sel | set(chain) | {it}
                 if not chain or any(limit[self._kind(y)] is not None and

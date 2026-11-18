@@ -340,7 +340,7 @@ class _Reviewing:
           central       defines the build's playstyle (an attunement path, a
                         signature talent such as Blighted Song): taken whenever its
                         requirements are met and respected once picked, removed
-                        only for a clash (math §7.10). Few talents are central.
+                        only for a clash. Few talents are central.
           luxury        never required; taken when a slot is free; never
                         dropped or swapped out for worth
         A category replaces the mined pass of the item and outranks its never
@@ -362,8 +362,8 @@ class _Reviewing:
         return dict(self.manual)
 
     def set_values(self, values: Dict[str, Optional[float]], replace: bool = False) -> Dict[str, float]:
-        """Admin flat value offsets: delta added to an item's worth on every build
-        (math §5.6), within +-cfg.infer.value_cap. None or 0 clears an item.
+        """Admin flat value offsets: delta added to an item's worth on every build,
+        within +-cfg.infer.value_cap. None or 0 clears an item.
         replace=True drops every value not in `values`. Instant."""
         cap = float(self.cfg.infer.value_cap)
         new = {} if replace else dict(self.values)

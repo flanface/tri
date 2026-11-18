@@ -1,4 +1,4 @@
-"""Every rule that bears on a pick, other than worth (math §2.11).
+"""Every rule that bears on a pick, other than worth.
 
 tri.all_rules(item=None, build=None) lists them in one shape:
 
@@ -108,7 +108,7 @@ def collect(tri, item: Optional[str] = None, build=None) -> List[dict]:
     else:
         for it in ITEMS:
             if on([it]):
-                out.append(_e(f"wp:{it}", "weapon", f"weapon rules on {it} (math §2.8c)", "take", [it], "active", False,
+                out.append(_e(f"wp:{it}", "weapon", f"weapon rules on {it}", "take", [it], "active", False,
                               "hardcoded (tri/game/weapon_rules.py)", None))
     # game data
     c = tri.catalog

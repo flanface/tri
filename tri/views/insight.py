@@ -1,4 +1,4 @@
-"""Graphics of the categorization, the facts and the stream (math §12).
+"""Graphics of the categorization, the facts and the stream.
 Same themes and conventions as tri.views.plots: draw inside
 `with render.theme(name):`; every function returns a matplotlib figure.
 
@@ -580,7 +580,7 @@ def stat_curves(tri, at: Atlas, item: str, stat: Optional[str] = None, rows: int
     from tri.game import priors
     bmk = priors.benchmark_of(item)
     bmk = bmk if bmk and bmk["stat"] == stat else None
-    if bmk:                                            # resolve the steep step (math §2.9)
+    if bmk:                                            # resolve the steep step
         k = int(bmk.get("at", 77))
         values = sorted(set(values) | set(range(k - 3, k + 5)))
     curves = []

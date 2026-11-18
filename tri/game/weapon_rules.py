@@ -1,4 +1,4 @@
-"""Hardcoded weapon rules (math §2.8c).
+"""Hardcoded weapon rules.
 
 The corpus records weapons too rarely to learn these, so they are stated from
 the game data (tri/data/weapons.json: deepwoken.co bleed tags, pocamind weight

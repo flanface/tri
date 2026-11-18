@@ -16,7 +16,7 @@
     tri.sidegrades                      # mined either/or clusters per archetype (tri.sidegrades)
     tri.save(path) / Tri.load(path, catalog)
 
-Three parts (docs/Home.md): the worth field (tri.space, a logistic
+Three parts: the worth field (tri.space, a logistic
 factorisation trained by gradient descent; its coordinates measure worth
 differences), certified rules (tri.passes, conjunctions mined by shallow trees
 and certified on held-out halves), and pass-ordered inference with constraint

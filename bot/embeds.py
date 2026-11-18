@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .service import ModelService
 
 SEP = " · "                                  # separator in /plot captions
-#: One-line key to the symbols in facts and rules (docs/plain, "Reading the symbols").
+#: One-line key to the symbols in facts and rules.
 SYMBOLS = "⇒ then · ∧ and · ¬ not · ⊥ works against · P share taking · w worth · Δ change · p fluke chance"
 #: /rules and /facts each carry their own key (tri.statements).
 from tri.api import FACT_SYMBOLS, RULE_SYMBOLS  # noqa: E402

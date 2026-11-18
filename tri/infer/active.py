@@ -78,7 +78,7 @@ class ReviewQueue:
             if len(chosen) >= k - n_rand:
                 break
         return chosen + rand
-# ------------------------------------------------------------------ coverage (math §12.3)
+# ------------------------------------------------------------------ coverage
 
 
 def coverage(U_pool: np.ndarray, U_reviewed: np.ndarray) -> dict:

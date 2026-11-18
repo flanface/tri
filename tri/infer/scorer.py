@@ -5,8 +5,8 @@ One per-item logit on each situation (docs/scorer.md):
     z_t = b + a_f L_t + a_n logit(q_t) + a_d D_t + a_p P_t
 
     L_t   field logit at the build's point (tri.model.space)
-    q_t   corpus-only neighbour pick rate (no reviewed rows), with the game
-          priors, admin values and reviewer notes applied (tri.game.priors)
+    q_t   neighbour pick rate (reviewed rows included when sc_nbr_reviews),
+          with the game priors, admin values and reviewer notes applied
     D_t   direct review evidence: sum over active claims c on t within reach
           of sign(c) w_c K_c(b), keep claims scaled by keep_weight
     P_t   propagated review evidence on similar unclaimed items (tri.reviews.reach)

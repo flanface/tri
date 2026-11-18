@@ -15,7 +15,7 @@ class _Archetypes:
     """Tri methods: archetypes: locators, regions, metrics and concept readings."""
 
     def _sync_indicators(self) -> None:
-        """Indicator notes ("# a: x, y, z") of the reviews -> the locator set (math §6.7).
+        """Indicator notes ("# a: x, y, z") of the reviews -> the locator set.
         The newest note per component set wins; components are catalog items or
         oath:/murmur: tokens."""
         ls = getattr(self, "locset", None)
@@ -128,7 +128,7 @@ class _Archetypes:
         raise ValueError(f"unknown archetype {name!r}; known: {known}")
 
     def _chasm(self, u, V):
-        """The chasm of the current locator set (math §5.4); 1 without one."""
+        """The chasm of the current locator set; 1 without one."""
         ls = self.locset
         if ls is None or len(ls.keys) < 2:
             return np.ones(len(np.atleast_2d(V)))

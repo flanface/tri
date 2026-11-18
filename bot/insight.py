@@ -1,5 +1,4 @@
-"""Categorization, facts and stream views for the bot
-(math §12).
+"""Categorization, facts and stream views for the bot.
 
 One entry point, ModelService.insight(kind, **kw) -> dict(files, text, data):
 
@@ -137,7 +136,7 @@ def _diverse(facts):
 
 def _tells(tri, name: str, k: int = 2) -> List[dict]:
     """The picks that tell a locator archetype from its twins: the archetypes the map
-    confuses it with whose split passed the held-out check (math §6.6).
+    confuses it with whose split passed the held-out check.
     [{name, items: [{item, sign}], symbol}]."""
     ls = tri.locset
     if ls is None or not ls.refining:

@@ -1,4 +1,4 @@
-"""Weapon-class focus (math §2.10, docs/record/changelog.md 22.32).
+"""Weapon-class focus.
 
 A build usually commits to one weapon class: its weapon talents are those of
 one weapon type (Rapier, Pistol, Fist, ...). Worth is a pick rate among the

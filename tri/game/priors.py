@@ -1,4 +1,4 @@
-"""Fixed logit priors the pretrain cannot learn (math §2.9).
+"""Fixed logit priors the pretrain cannot learn.
 
 Two known effects are added to the field's logits at inference; neither is
 fitted, so they never move the space:

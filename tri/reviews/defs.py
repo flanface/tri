@@ -151,7 +151,7 @@ class LocatorConfig:
     select_min_gain: float = 0.01           # ... and at least this many nats per locator (practical size)
     select_min_per_archetype: int = 3         # selection needs this many locators in each of
     select_min_archetypes: int = 2            # ...at least this many archetypes
-    # twin split: archetypes the map confuses told apart by the few picks that differ (math §6.6)
+    # twin split: archetypes the map confuses told apart by the few picks that differ
     refine: bool = True                       # off = the kernel reading alone
     refine_prior: float = 4.0                 # kappa: pseudo-locators at the pair's pooled rate
     refine_min_logodds: float = 1.5           # an item is a tell at |log odds ratio| >= this between the twins (log 4.5)
@@ -160,13 +160,13 @@ class LocatorConfig:
     twin_mass: float = 0.5                    # split only where the pair holds this much of the kernel reading
     twin_clip: float = 4.0                    # largest log-likelihood ratio (nats) the tells may add
     twin_min_gain: int = 1                    # a pair is split only if held-out locators corrected - broken >= this
-    # indicator notes ("# a: x, y, z" in a review, math §6.7): local, bounded lifts
+    # indicator notes ("# a: x, y, z" in a review): local, bounded lifts
     indicator_lift: float = 6.0               # nats added to the odds of the noted archetype (own cap)
     indicator_floor: float = 0.05             # ...only where the kernel already gives it this much
     anchor_mass: float = 1.0                  # a reviewed build noted "is a" joins a's locator mean with this weight
     tell_z: float = 1.64                      # Wilson z of a tell's balanced precision among the locators
     anchor_veto: float = 0.9                  # "not a": k_a is scaled by 1 - veto * K at the noted build
-    # chasm (math §5.4): borders between archetype families are chasms
+    # chasm: borders between archetype families are chasms
     chasm_power: float = 6.0                  # gamma: chi = 1 - barrier a(u) a(v) (1 - (1 - TV)^gamma)
     chasm_hard: bool = True                   # both builds located in different families -> chi = 1 - barrier
     chasm_corpus: bool = True                 # the chasm also gates corpus neighbours and the cross ring

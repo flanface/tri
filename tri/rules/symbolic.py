@@ -1,8 +1,7 @@
 """Symbolic notation for rules and facts.
 
-One notation for every rule and fact the model states, so the bot
-and the docs show the same thing. Read it with docs/plain ("Reading the
-symbols") or docs/math (Appendix C).
+One notation for every rule and fact the model states, so every
+front end shows the same thing.
 
     lhs ⇒ rhs        if the left holds, then the right
     ∧  ¬  ⊤          and, not / without, always (no condition)

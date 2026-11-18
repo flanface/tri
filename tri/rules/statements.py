@@ -1,4 +1,4 @@
-"""Rules and facts as two kinds of nontrivial statement (math §12.6).
+"""Rules and facts as two kinds of nontrivial statement.
 
   rules   how the model generates completions and answers: the hard rules
           (cap, slots, capacity, requirements, locks, weapons, benchmarks,

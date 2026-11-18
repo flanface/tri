@@ -1,4 +1,4 @@
-"""Finer archetypes: families, variants and build styles (math §6.11).
+"""Finer archetypes: families, variants and build styles.
 
 An archetype name may carry a variant after a slash: "Gank / Frost Mage" is the
 variant "Frost Mage" of the family "Gank". Every reading that existed before

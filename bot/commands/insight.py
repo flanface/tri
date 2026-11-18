@@ -41,7 +41,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         head = f"**{d['name']}**{SEP}{d['builds']} builds ({100 * d['share']:.0f}%)"
         tells = "".join(f"\n`{t['symbol']}`" for t in d.get("tells") or [])
         cons = d.get("consensus") or []
-        if cons:                                            # reviewer consensus (math §8.5a)
+        if cons:                                            # reviewer consensus
             tells += "\n`consensus: " + " ".join(f"{'+' if c['sign'] > 0 else '−'}{c['item']} ({c['reviewers']}, "
                                                   f"{c['confidence']:.2f})" for c in cons[:6]) + "`"
         msg = head + tells + ("\n" + facts_text(d["facts"]) if d.get("facts") else "")

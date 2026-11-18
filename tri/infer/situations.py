@@ -45,7 +45,7 @@ class _Situations:
             ls.note(uq, xa=xa, force=(force or {}).get("key"), transient=True)
         memory = self.ledger.claims_for(b, vec=fv) if self.ledger is not None else {}
         b = self._waive(b, memory)
-        b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules (math §2.8c)
+        b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules
         if fpt is not None:                    # placed again with the waived build, as before
             fpt = self.space.point(b, partial, latent=force["latent"])
         avail = self.c.availability_in(b)      # met at pre-shrine or final stats
@@ -119,7 +119,7 @@ class _Situations:
         return out
 
     def _same_family(self, memory: dict, arch) -> dict:
-        """(math §5) A claim from a review whose reviewer states the build's
+        """ A claim from a review whose reviewer states the build's
         archetype ("is" note) does not cross into another family: borders are
         chasms. Generally-good claims and claims on the same build are kept."""
         st = getattr(self, "stated", None) or {}
@@ -136,7 +136,7 @@ class _Situations:
         return out
 
     def _notes_q(self, q: np.ndarray, u: np.ndarray, fine: Optional[np.ndarray]) -> Dict[str, dict]:
-        """Review notes and admin values on worth, in place (math §5.6):
+        """Review notes and admin values on worth, in place:
           indicator / core   q_t += note_worth * w,   w = K(u, u_r) * p(a | u)
           avoid              q_t -= note_worth * w
           value              q_t += clip(delta_t, -value_cap, value_cap)   (every build)
@@ -193,7 +193,7 @@ class _Situations:
 
     def _focus(self, b: Build, memory: Dict[str, tuple], avail: np.ndarray, q: np.ndarray, u) -> Tuple[np.ndarray, dict]:
         """(availability with the other classes' weapon talents switched off,
-        focus) for one situation (tri.focus, math §2.10). The build's own
+        focus) for one situation (tri.focus). The build's own
         picks and items a binding review adds or keeps stay available."""
         if not self.cfg.focus:
             return avail, {}
@@ -205,7 +205,7 @@ class _Situations:
         share: Dict[str, float] = {}
         cand: Dict[str, List[float]] = {}
         wa = getattr(self, "weapon_answer", None)
-        if not allowed and wa:                          # the asker named the class (math §14.3)
+        if not allowed and wa:                          # the asker named the class
             allowed, src = {wa}, "answer"
         if not allowed:
             for it, cs in tab.items():
@@ -240,7 +240,7 @@ class _Situations:
 
     def _answer_weapon(self, b: Build) -> Build:
         """The weapon the asker named (Answers.weapon, a weapon name) when the build
-        records none: it is read as equipped (math §14.3)."""
+        records none: it is read as equipped."""
         w = getattr(self, "weapon_name", None)
         if main_weapons(b):
             return b
@@ -253,7 +253,7 @@ class _Situations:
 
     def _weapon_base(self, b: Build, memory: Dict[str, tuple]):
         """(build with the rules' lock waivers, the archetype-free rules, memory
-        without claims that keep or add a forbidden pick). math §2.8c."""
+        without claims that keep or add a forbidden pick)."""
         wr = self._forbid_chain(weapon_rules(b))
         if wr.waive:                                  # the waiver covers the prerequisite chain (Knight's Rally > Turtle Shell)
             waive = set(wr.waive) | {x for w in wr.waive for x in self.c.prereq_closure(w)}
@@ -290,7 +290,7 @@ class _Situations:
     def _weapon_guard(self, wr, avail) -> set:
         """the weapon-required picks whose stats are met, with their hard
         prerequisite chain (Knight's Rally for Turtle Shell). Only game data
-        (stats, exclusive_with, the cap) can keep them out (math §2.8c)."""
+        (stats, exclusive_with, the cap) can keep them out."""
         out: set = set()
         for it in wr.require:
             t = self.c.index.get(it)
@@ -307,7 +307,7 @@ class _Situations:
 
     def _waive(self, b: Build, memory: Dict[str, tuple]) -> Build:
         """A review of this very build that adds or keeps an item blocked only by
-        a weapon lock waives that lock here (math §2.8, 2.9a): the build carries
+        a weapon lock waives that lock here: the build carries
         another weapon, wields one it did not select, or the talent works
         without it. Only the reviewed build itself (sim >= sim_same)."""
         if self.ledger is None or not memory:
