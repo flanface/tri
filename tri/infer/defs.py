@@ -63,7 +63,7 @@ class InferConfig:
     sc_remove: float = -4.0        # a pick scoring below this is removed
     sc_fill: float = 1.0           # a review fills an empty slot with the best item scoring at least this (completions fill every slot)
     sc_swap: float = 6.0           # an outside item scoring this much more replaces the weakest pick
-    sc_directed: bool = False      # explicit item-level claims reach along / across the item direction
+    sc_directed: bool = True       # explicit item-level claims reach along / across the item direction
     sc_h_par: float = 1.797        # along: the ledger's reach bandwidth, reach / sqrt(-2 ln sim_min)
     sc_h_perp: float = 4.49        # across: 2.5 x
     sc_propagate: bool = False     # archetype-fit claims nudge similar unclaimed items
