@@ -36,13 +36,13 @@ class InferConfig:
     review_rounds: int = 3         # completions re-asked of the reviews on their own result
     review_pass_rounds: int = 2    # completions reviewed as full builds before they are returned
     prereq_solo_min: float = 0.3   # a prerequisite the corpus takes without its dependants less often is
-                                   #   taken only with one (math §2.8d)
+                                   #   taken only with one
     package_min_q: float = 0.2     # ... and only with a dependant at this worth or more
     memory_nudge: float = 0.3      # worth nudge per unit of soft claim strength
     note_worth: float = 0.35       # worth added to indicator / core components near the noted build
     note_floor: float = 0.02       # ...only where kernel x archetype weight reaches this
     value_cap: float = 0.5         # largest admin flat value offset, either way
-    emit_margin: float = 0.0       # Tri.as_review emits a change only at evidence margin >= this (math §11.4)
+    emit_margin: float = 0.0       # Tri.as_review emits a change only at evidence margin >= this
     strong_margin: float = 0.5     # ... and marks it strong at margin >= this
     fill_capacity: bool = True     # analysis fills empty mantra slots, then talents to the cap, before swaps
     emit_iffy: bool = False        # ... and writes iffy marks (reviewers rarely do: 1 in 150 real marks)
@@ -57,7 +57,7 @@ class InferConfig:
     sc_bias: float = 0.0
     sc_field: float = 0.0
     sc_nbr: float = 1.0
-    sc_direct: float = 3.0
+    sc_direct: float = 2.0          # fitted on the real LOBO F1 (docs/evaluation.md)
     sc_prop: float = 1.0
     sc_keep: float = 0.5           # keep (unmarked) claims count this much of an explicit operation
     sc_remove: float = -4.0        # a pick scoring below this is removed
