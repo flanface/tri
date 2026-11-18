@@ -66,7 +66,7 @@ class InferConfig:
     sc_directed: bool = True       # explicit item-level claims reach along / across the item direction
     sc_h_par: float = 1.797        # along: the ledger's reach bandwidth, reach / sqrt(-2 ln sim_min)
     sc_h_perp: float = 4.49        # across: 2.5 x
-    sc_propagate: bool = False     # archetype-fit claims nudge similar unclaimed items
+    sc_propagate: bool = False     # archetype-fit claims nudge similar unclaimed items (off: no measured gain)
     sc_nbr_reviews: bool = True    # neighbour rates include reviewed builds (review_weight on touched items)
     sc_tau: float = 0.5            # ... with mean-centred worth cosine above this
 
