@@ -90,7 +90,7 @@ def get_gamedata(a):
     from tri.game.gamedata import resolve_gamedata
     dest = os.path.join(a.out, "gamedata")
     try:
-        return resolve_gamedata(a.gamedata or ["auto"], dest, a.refresh_gamedata, a.gamedata_ref, log=log)
+        return resolve_gamedata(a.gamedata or ["auto"], dest, log=log)
     except Exception as e:
         raise SystemExit(f"game data: {e}; pass --gamedata PATH to a local copy or --gamedata none")
 
@@ -150,10 +150,9 @@ def main(argv=None):
     ap.add_argument("--reprepare", action="store_true", help="ignore the parse cache")
     # game data
     ap.add_argument("--gamedata", action="append", default=[], metavar="auto|PATH|none",
-                    help="auto (default) = pocamind/data, downloaded once to <out>/gamedata/; "
-                         "all = deepwoken.co + pocamind/data; or local paths (repeat to merge, first wins)")
-    ap.add_argument("--gamedata-ref", default="main", help="branch, tag or commit for --gamedata auto")
-    ap.add_argument("--refresh-gamedata", action="store_true", help="download the game data again")
+                    help="auto (default) = the pocamind/data download in <out>/gamedata/ "
+                         "(python -m bot.gamesource fetch <out>/gamedata); all = deepwoken.co + pocamind/data "
+                         "from the same folder; or local paths (repeat to merge, first wins)")
     ap.add_argument("--keep-group", action="append", default=[], metavar="GROUP",
                     help="granted group to treat as choices, e.g. faction (repeatable)")
     # exclusion

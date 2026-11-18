@@ -24,9 +24,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from tri.core.codec import build_from_dict, build_to_dict, exclusion_message, review_to_dict, validate_review
-from tri.core.types import (ADD_REASONS, IFFY_REASONS, PRESENT_CONDITION, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build,
-                            Kind, Operation, Reason, Review, ReviewError, Strength)
+from tri.api import build_from_dict, build_to_dict, exclusion_message, review_to_dict, validate_review
+from tri.api import ADD_REASONS, IFFY_REASONS, PRESENT_CONDITION, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build, Kind, Operation, Reason, Review, ReviewError, Strength
 
 SCHEMA = "tri.review/1"
 REMOVE_REASONS = [r for r in Reason if r not in ADD_REASONS and r not in IFFY_REASONS]
@@ -45,7 +44,7 @@ def _with_draft_waivers(b: Build, d) -> Build:
     if not w:
         return b
     import dataclasses
-    from tri.core.context import wield_waived
+    from tri.api import wield_waived
     meta = dict(b.meta or {})
     meta["wield_waived"] = sorted(wield_waived(b) | set(w))
     return dataclasses.replace(b, meta=meta)
@@ -114,7 +113,7 @@ class Draft:
     def stranded(self, catalog) -> List[tuple]:
         """[(pick, missing prerequisites text)]: picks still in the draft whose
         prerequisite a removal took away (submission is refused until they go)."""
-        from tri.core.codec import prereq_text
+        from tri.api import prereq_text
         cur = self.current()
         full = cur | set(self.build.get("talents", [])) | set(self.build.get("mantras", []))
         return [(z, prereq_text(catalog, z)) for z in sorted(cur) if z in catalog.items
@@ -139,7 +138,7 @@ class ReviewDesk:
             return
         with open(self.path) as f:
             d = json.load(f)
-        from tri.core.codec import legacy_names
+        from tri.api import legacy_names
         fields = set(Draft.__dataclass_fields__)
         self.drafts = {int(k): Draft(**{f: x for f, x in legacy_names(v).items() if f in fields})
                        for k, v in d.get("drafts", {}).items()       # drafts saved before v2.5 say "purpose"
@@ -316,7 +315,7 @@ class ReviewDesk:
             if not x:
                 continue
             if str(x).startswith("weapon:"):            # the claim holds where this weapon is wielded
-                from tri.game.weapons import weapon_token
+                from tri.api import weapon_token
                 wt = weapon_token(x)
                 if wt is None:
                     raise DraftError(f"'{x[7:]}' is not a known weapon.")
@@ -346,7 +345,7 @@ class ReviewDesk:
         if note:
             op["note"] = note
         if r in PRESENT_CONDITION:                       # + x SY > weapon: the build wields it
-            from tri.game.weapons import equipped
+            from tri.api import equipped
             have_w = set(equipped(b)) | {w for n in d.notes if n.get("kind") == "weapon" for w in n.get("weapons") or []}
             new_w = [y[7:] for y in rel if y.startswith("weapon:") and y[7:] not in have_w]
             if new_w:
@@ -430,7 +429,7 @@ class ReviewDesk:
         r = Review(review_id=rid, original=d.build_obj(), operations=ops,
                    reviewer_id=f"discord:{d.user_id}", ruleset=getattr(catalog, "ruleset", None) or d.build.get("ruleset"),
                    timestamp=now, notes=[dict(n) for n in d.notes])
-        from tri.game.weapons import is_weapon_token, weapon_token
+        from tri.api import is_weapon_token, weapon_token
         here = r.original.item_set() | {a.item_id for a in r.added()}
         for o in ops:
             if o.reason in (Reason.NEEDS, Reason.SIDEGRADE):
@@ -498,7 +497,7 @@ def parse_numbers(spec: str, total: int, what: str = "item") -> List[int]:
 
 def describe_op(o: dict, labels: Optional[Dict[str, str]] = None) -> str:
     """One line for a draft listing."""
-    from tri.game.weapons import label as wlabel
+    from tri.api import weapon_label as wlabel
     from .wire import REASON_LABELS
     labels = labels or REASON_LABELS
     tail = f"  // {o['note']}" if o.get("note") else ""

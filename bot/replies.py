@@ -369,7 +369,7 @@ def _apply_note(desk: ReviewDesk, user_id: int, ln: Line, svc) -> str:
         hit = _archetype_name(svc, n["archetype"])
         n = dict(kind="comment", text=n["text"]) if hit is None else dict(n, archetype=hit)
     elif n["kind"] == "weapon":
-        from tri.game.weapons import resolve
+        from tri.api import resolve_weapon as resolve
         got, bad = [], []
         for x in n["weapons"]:
             hit = resolve(x)
@@ -403,7 +403,7 @@ def _item_ref(svc, x: str, numbered, pool, weapons: bool = False) -> str:
     """A related item: a number from the sheet or a name. weapons: a weapon
     name (not an item) gives "weapon:<name>"."""
     if weapons and not x.isdigit() and svc.resolve(x) is None:
-        from tri.game.weapons import weapon_token
+        from tri.api import weapon_token
         w = weapon_token(x)
         if w is not None:
             return w

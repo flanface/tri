@@ -179,7 +179,7 @@ async def run(bot: "TriBot", c: Call, hide: bool) -> Answer:
                     ws = PL.worth_space(bot.svc)
                 if hi[0] not in ws["items"]:
                     raise ValueError(f"{hi[0]}: rarely taken (mean worth under 0.5%), no worth vector")
-                from tri.views import figure as F
+                from tri.api import figure as F
                 X = PL.worth_vectors(ws, hi[:1])
                 C = F.cosines(X["X"] - X["origin"])[X["idx"][0]]
                 order = [t for t in C.argsort()[::-1] if t != X["idx"][0]][:8]

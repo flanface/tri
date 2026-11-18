@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict
+from typing import Optional, Dict
 
 import numpy as np
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from tri.engine.facade import Tri
 
 
-COMPATIBLE_MAJOR = ("2", "3")                  # model formats this tri loads
+COMPATIBLE_MAJOR = ("2", "3", "4")                # model formats this tri loads
 
 
 def saved_major(meta: dict) -> str:
@@ -86,8 +86,10 @@ class _Persist:
         return self.space.remember(self.data, np.array(r), key=meta.get("key"))
 
     @classmethod
-    def load(cls, path: str, catalog: Catalog) -> "Tri":
-        """A saved run. Reviews, locators and answers come from the database (set_memory)."""
+    def load(cls, path: str, catalog: Catalog, overrides: Optional[dict] = None) -> "Tri":
+        """A saved run. Reviews, locators and answers are passed in afterwards
+        (set_memory). overrides: {section: {field: value}} applied to the saved
+        TriConfig before anything is built, e.g. {"space": {"coords": "float64"}}."""
         with open(os.path.join(path, "tri.json")) as f:
             meta = json.load(f)
         # v3.0 kept the v2 model format (space, corpus, rulebook); a v2 run loads and
@@ -98,6 +100,9 @@ class _Persist:
         if meta["ids"] != list(catalog.ids):
             raise ValueError("saved for a different catalog: load with the old catalog, then migrate()")
         tri = cls(catalog, TriConfig.from_dict(meta["cfg"]))
+        for sec, kv in (overrides or {}).items():
+            for k, v in kv.items():
+                setattr(getattr(tri.cfg, sec), k, v)
         tri._run_path = path                           # content caches (availability, sidegrades)
         tri.space = ConceptSpace.load(os.path.join(path, "space"), catalog)
         tri.cfg.space.metric = tri.space.cfg.metric        # runs before v2.3 load with the uniform metric

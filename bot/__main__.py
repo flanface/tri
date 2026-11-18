@@ -1,4 +1,4 @@
-from tri.runtime import cap_threads
+from .runtime import cap_threads
 
 cap_threads()            # BLAS pools sized to the CPU quota, before numpy loads
 

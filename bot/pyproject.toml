@@ -1,0 +1,14 @@
+[project]
+name = "tri-bot"
+version = "4.0.0"
+description = "Discord bot and database front end for tri (all network, Supabase, Discord and dwt.sh access)"
+requires-python = ">=3.10"
+dependencies = ["tri[render]==4.0.0", "discord.py>=2.4", "aiohttp>=3.9"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"bot" = "."}
+packages = ["bot", "bot.commands", "bot.ui"]

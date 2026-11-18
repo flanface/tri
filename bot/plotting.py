@@ -36,9 +36,9 @@ FIELD_CORE = 0.8            # atlas: share of those builds (nearest the median) 
 
 
 def _out(sc, name: str, view, interactive: bool, title: str, axes) -> tuple:
-    from tri.views import figure as F
+    from tri.api import figure as F
     if interactive:
-        from tri.views.interactive import page
+        from tri.api import interactive_page as page
         return f"{name}.html", page(sc, title, axes, view).encode("utf-8")
     return f"{name}.png", F.png(F.draw(sc, view))
 
@@ -47,7 +47,7 @@ def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ",
                norms: Optional[Sequence[float]] = None) -> List[str]:
     """Per pair: cosine, angle, orthogonality |sin theta| and, given the norms,
     each vector's projection length on the other (|a| cos theta on b, |b| cos theta on a)."""
-    from tri.views import figure as F
+    from tri.api import figure as F
     C = np.asarray(C, float)
     out = []
     for a in range(len(names)):
@@ -64,7 +64,7 @@ def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ",
 def png_bytes(fig, dpi: int = 110) -> bytes:
     """Transparent PNG of a matplotlib figure with depth cues and trimmed
     margins (for the /archetype, /facts and graphic views); closes the figure."""
-    from tri.views.depth import export
+    from tri.api import export_depth as export
     return export(fig, dpi, 0.06)
 
 
@@ -75,7 +75,7 @@ def _style(style: str) -> str:
 
 
 def _concept_map(svc: "ModelService", sample: int) -> dict:
-    from tri.views import plots as render
+    from tri.api import plots as render
     key = ("pca", id(svc.tri.space))
     cache = getattr(svc, "_plot_cm", None)
     if not isinstance(cache, dict):
@@ -98,7 +98,7 @@ def _mark_lines(svc: "ModelService", marks: Sequence[tuple], U: np.ndarray) -> L
 
 def place_lines(svc: "ModelService", marks: Sequence[tuple], sample: int = 3000) -> List[str]:
     """Per mark (label, Build): its regions and archetype."""
-    from tri.views import plots as render
+    from tri.api import plots as render
     with svc.lock:
         cm = _concept_map(svc, sample)
         bs = [replace(b, build_id=str(lbl)[:40]) for lbl, b in marks]
@@ -111,8 +111,8 @@ def plot_concept(svc: "ModelService", marks: Sequence[tuple] = (), locators: boo
     """The concept space on PCA axes 1-2-3: builds as dots (or region
     polytopes), region centres, locators as diamonds, marks [(label, Build)] as
     stars. text: each mark's regions and archetype."""
-    from tri.views import figure as F
-    from tri.views import plots as render
+    from tri.api import figure as F
+    from tri.api import plots as render
     style = _style(style)
     d = list(CONCEPT_DIMS)
     with PLOT_LOCK:
@@ -140,8 +140,8 @@ def plot_atlas(svc: "ModelService", style: str = "fields", candidates: bool = Tr
     (margin >= FIELD_MARGIN) grouped by archetype (polytopes or dots),
     archetype centres, locators, candidate archetypes and marks as stars.
     text: archetypes, located share, candidates."""
-    from tri.views import figure as F
-    from tri.views import plots as render
+    from tri.api import figure as F
+    from tri.api import plots as render
 
     from .insight import _atlas
     style = _style(style)
@@ -174,7 +174,7 @@ def plot_atlas(svc: "ModelService", style: str = "fields", candidates: bool = Tr
 
 def worth_space(svc: "ModelService", relative: bool = False, sample: int = 2000) -> dict:
     """The worth space (k = WORTH_K axes), cached until reviews, locators or the space change."""
-    from tri.views import plots as render
+    from tri.api import plots as render
     key = (bool(relative), len(svc.tri.reviews), len(svc.tri.locators), id(svc.tri.space))
     cache = getattr(svc, "_plot_ws", None)
     if cache is None or cache[0] != key:
@@ -187,7 +187,7 @@ def worth_vectors(ws: dict, items: Sequence[str], dims: Sequence[int] = WORTH_DI
     """origin: centre of the dense cluster of item points on `dims`; per
     requested item its vector from the origin; cos: their pairwise cosines;
     nearest: per item the three items whose vectors point most alike."""
-    from tri.views import figure as F
+    from tri.api import figure as F
     X = np.asarray(ws["xy"])[:, list(dims)]
     o = F.dense_origin(X)
     V = X - o
@@ -206,7 +206,7 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
     """Items on worth axes 4-5-6 (talents and mantras in two muted colours). Requested items are
     arrows from the origin (the dense cluster); text: cosine, angle and
     orthogonality of every pair of them and each one's closest items by cosine."""
-    from tri.views import figure as F
+    from tri.api import figure as F
     with PLOT_LOCK:
         with svc.lock:
             ws = worth_space(svc, relative, sample)
@@ -238,7 +238,7 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
 
 def worth_pair(svc: "ModelService", a: str, b: str, relative: bool = False, sample: int = 2000) -> dict:
     """Cosine, angle and orthogonality of two items' worth vectors (axes 4-5-6, from the dense origin)."""
-    from tri.views import figure as F
+    from tri.api import figure as F
     with svc.lock:
         ws = worth_space(svc, relative, sample)
     miss = [i for i in (a, b) if i not in ws["items"]]

@@ -42,8 +42,9 @@ class SpaceConfig:
     val_max: int = 2000            # at most this many
     val_mask: float = 0.2          # share of each held-out build's available entries that is scored
     val_points: int = 10           # held-out deviance is recorded this many times along training
-    # hardware (tri.accel): "auto" = cuda > mps (Apple Metal) > torch cpu > numpy; TRI_DEVICE overrides
+    # hardware (tri.accel): "auto" = cuda > mps (Apple Metal) > torch cpu > numpy
     device: str = "auto"
+    coords: str = "float32"        # storage of the corpus coordinates (float32 halves the largest array; float64)
     device_budget_gb: float = 2.0  # corpus picks kept on the device as uint8 up to this size, else copied per batch
     device_min_rows: int = 256     # latent solves of fewer builds stay on NumPy float64 (single-build answers)
 

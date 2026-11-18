@@ -30,9 +30,8 @@ def _mps_ok(torch) -> bool:
 
 
 def resolve(name: Optional[str] = "auto"):
-    """The torch.device to compute on, or None for the NumPy path.
-    TRI_DEVICE (environment) overrides `name`."""
-    return _resolve((os.environ.get("TRI_DEVICE") or name or "auto").strip().lower())
+    """The torch.device to compute on, or None for the NumPy path."""
+    return _resolve((name or "auto").strip().lower())
 
 
 def _resolve(name: str):
@@ -70,7 +69,7 @@ def describe(name: Optional[str] = "auto") -> dict:
     """What `name` resolves to here, for logs and fit reports."""
     dev = resolve(name)
     torch = _torch()
-    out = dict(requested=os.environ.get("TRI_DEVICE") or name or "auto",
+    out = dict(requested=name or "auto",
                device="numpy" if dev is None else str(dev), dtype="float64" if dev is None else "float32",
                torch=getattr(torch, "__version__", None))
     if dev is not None and dev.type == "cuda":
