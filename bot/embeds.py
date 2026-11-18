@@ -17,7 +17,7 @@ from .wire import ParsedBuild
 if TYPE_CHECKING:
     from .service import ModelService
 
-SEP = " · "                                  # separator in /plot captions
+SEP = " · "                                  # separator in one-line answers
 #: One-line key to the symbols in facts and rules.
 SYMBOLS = "⇒ then · ∧ and · ¬ not · ⊥ works against · P share taking · w worth · Δ change · p fluke chance"
 #: /rules and /facts each carry their own key (tri.statements).
@@ -520,7 +520,7 @@ def config_embed(g: GuildConfig, guild: Optional[discord.Guild]) -> discord.Embe
     e.add_field(name="Analysis (/settings)", value=(
         f"caution {g.caution} · questions {g.max_questions or 'all needed'} · {g.question_timeout} s per sheet · "
         f"replies {'private' if g.private_replies else 'public'} · verbose {onoff(g.verbose_default)} · "
-        f"inset {onoff(g.placement_inset)} · record answers {onoff(g.record_answers)}"), inline=False)
+        f"archetype line {onoff(g.placement_inset)} · record answers {onoff(g.record_answers)}"), inline=False)
     e.set_footer(text="status: " + ("set up" if g.configured else "not set up: reviewing closed"))
     return e
 
@@ -623,9 +623,8 @@ def lookup_fields(d: dict) -> List[tuple]:
     return out
 
 
-def lookup_embed(d: dict, image: Optional[str] = "lookup.png") -> discord.Embed:
-    """/talent, /mantra: the item as title, each section a code-block field,
-    the lookup graph as the image."""
+def lookup_embed(d: dict, image: Optional[str] = None) -> discord.Embed:
+    """/talent, /mantra: the item as title, each section a code-block field."""
     e = discord.Embed(title=clip(str(d["item"]), 256))
     for name, lines in lookup_fields(d)[:25]:
         e.add_field(name=name, value=_cb(lines), inline=False)

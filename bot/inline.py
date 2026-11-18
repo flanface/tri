@@ -1,7 +1,6 @@
 """Inline functions: square brackets in a server message call tri.
 
     [A ^ B ^ C]                 3 representative builds where the archetypes meet
-    [worth of a, b, c > build]  the worth plot of the items (the build adds its own; optional)
     [a ⟂ b]  [a perp b]         cosine, angle and orthogonality of two worth vectors
     [a ~ b]                     the same, read as similarity
     [a proj b]                  projection lengths of the two worth vectors on each other
@@ -38,7 +37,6 @@ _PROJ = re.compile(r"\s*\bproj(?:ect)?\b\s*", re.I)
 
 HELP = """inline functions (square brackets anywhere in a message):
 [A ^ B ^ C]  three representative builds where the archetypes meet
-[worth of a, b, c > build]  worth plot of the items; the build (optional) adds its own
 [a ⟂ b]  or [a perp b]  cosine, angle and orthogonality of two worth vectors
 [a ~ b]  the same, read as similarity
 [a proj b]  projection length of each worth vector on the other
@@ -49,17 +47,10 @@ HELP = """inline functions (square brackets anywhere in a message):
 
 @dataclass
 class Call:
-    kind: str                                   # intersect | worth | perp | sim | proj | like | place | help
+    kind: str                                   # intersect | perp | sim | proj | like | place | help
     args: List[str] = field(default_factory=list)
     build: Optional[str] = None
     raw: str = ""
-
-
-def _split_build(s: str) -> Tuple[str, Optional[str]]:
-    head, sep, tail = s.rpartition(">")
-    if sep and tail.strip():
-        return head.strip(), tail.strip().split()[0]
-    return s.strip(), None
 
 
 def parse(s: str) -> Optional[Call]:
@@ -75,13 +66,6 @@ def parse(s: str) -> Optional[Call]:
         names = [x.strip() for x in s.split("^")]
         if len(names) >= 2 and all(names):
             return Call("intersect", names, raw=raw)
-        return None
-    m = re.match(r"worth(?:\s+of)?\s*(.*)$", s, re.I)
-    if m:
-        body, build = _split_build(m.group(1))
-        items = [x.strip() for x in body.split(",") if x.strip()]
-        if items or build:
-            return Call("worth", items, build, raw=raw)
         return None
     m = re.match(r"place\s*>?\s*(\S+)$", s, re.I)
     if m:
@@ -137,7 +121,7 @@ async def _build(bot: "TriBot", hide: bool, ref: str):
 async def run(bot: "TriBot", c: Call, hide: bool) -> Answer:
     """One call's answer. Errors come back as text."""
     from . import insight as I
-    from . import plotting as PL
+    from . import worth as PL
     from .links import BuildLinkError
     try:
         if c.kind == "help":
@@ -146,17 +130,6 @@ async def run(bot: "TriBot", c: Call, hide: bool) -> Answer:
             ex = await bot.pending_ids() if hide else set()
             r = await bot.model_call(I.intersect, bot.svc, c.args, 3, ex)
             return Answer(r["text"])
-        if c.kind == "worth":
-            hi, miss = _items(bot, c.args)
-            if c.build:
-                _, parsed = await _build(bot, hide, c.build)
-                hi += [x for x in parsed.build.items() if x not in hi]
-            if not hi:
-                return Answer("Not found: " + ", ".join(miss[:10]) if miss else "name some talents or mantras")
-            files, text = await asyncio.to_thread(bot.svc.plot_worth, hi, False, 2000)
-            if miss:
-                text = f"Not found: {', '.join(miss[:10])}\n" + text
-            return Answer(text, list(files))
         if c.kind in ("perp", "sim", "proj"):
             hi, miss = _items(bot, c.args)
             if miss or len(hi) != 2:

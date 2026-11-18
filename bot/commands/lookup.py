@@ -18,8 +18,7 @@ if TYPE_CHECKING:                                   # pragma: no cover
 def register(bot: TriBot, c: SimpleNamespace) -> None:
     tree = bot.tree
     insight = c.insight
-    plot_fail = c.plot_fail
-    plot_files = c.plot_files
+    insight_fail = c.insight_fail
 
     def _kind_ac(want: str):
         async def ac(inter: discord.Interaction, current: str):
@@ -50,10 +49,8 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         try:
             r = await insight("lookup", item=name)
         except Exception as e:
-            return await plot_fail(inter, e, "lookup")
-        files = plot_files(r["files"])
-        img = files[0].filename if files else None
-        await say(inter, embed=lookup_embed(r["data"], img), files=files, ephemeral=False)
+            return await insight_fail(inter, e, "lookup")
+        await say(inter, embed=lookup_embed(r["data"]), ephemeral=False)
 
     @tree.command(name="talent", description="Talent lookup (substring search)")
     @app_commands.allowed_installs(**USER_APP_INSTALLS)

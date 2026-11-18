@@ -25,8 +25,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     admin = c.admin
     insight = c.insight
     item_name_ac = c.item_name_ac
-    plot_fail = c.plot_fail
-    plot_files = c.plot_files
+    insight_fail = c.insight_fail
     reviewer = c.reviewer
 
     model = app_commands.Group(name="model", description="The tri model run", guild_only=True)
@@ -158,7 +157,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         try:
             r = await insight("replay")
         except Exception as e:
-            return await plot_fail(inter, e, "replay")
+            return await insight_fail(inter, e, "replay")
         d = r["data"]
         f = d.get("final") or {}
         bits = [f"{d['reviews']} reviews"]
@@ -170,6 +169,6 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         msg = SEP.join(bits)
         if d.get("queue"):
             msg += "\nreview next: " + ", ".join(f"<{canonical_link(str(q['build']))}>" for q in d["queue"][:5])
-        await say(inter, clip(msg, 1990), files=plot_files(r["files"]))
+        await say(inter, clip(msg, 1990))
 
     tree.add_command(model)

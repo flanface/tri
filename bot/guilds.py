@@ -38,7 +38,7 @@ class GuildConfig:
     question_timeout: int = 300          # seconds to answer a question sheet before tri posts anyway
     private_replies: bool = False        # analysis replies only the invoker sees
     verbose_default: bool = False        # /analyze opens the full page by default
-    placement_inset: bool = True         # attach the small concept-space inset
+    placement_inset: bool = True         # the archetype line above /analyze and /complete
     record_answers: bool = True          # store answers (only a consensus of many users reaches the model)
     updated_by: Optional[int] = None
     updated_at: float = 0.0

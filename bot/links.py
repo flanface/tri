@@ -42,8 +42,8 @@ def parse_build_link(link: str) -> str:
     (-> "dwt.ID", also accepted bare). Raises BuildLinkError otherwise."""
     s = (link or "").strip().strip("<>")
     if _dwt.parse_drive_link(s):
-        raise BuildLinkError("that is a dwt.sh drive (folder) link; /pool add, /locator add and "
-                             "/plot concept builds accept folders")
+        raise BuildLinkError("that is a dwt.sh drive (folder) link; /pool add and /locator add "
+                             "accept folders")
     try:
         d = _dwt.parse_link(s)
     except ValueError as e:

@@ -1,24 +1,18 @@
 """Categorization, facts and stream views for the bot.
 
-One entry point, ModelService.insight(kind, **kw) -> dict(files, text, data):
+One entry point, ModelService.insight(kind, **kw) -> dict(text, data). The bot
+draws nothing: the graphs are on the GitHub Pages site (bot.site).
 
-  atlas                 B1 archetype atlas (the /plot atlas figure, bot.plotting)
-  tree                  B2 archetype dendrogram
-  card      archetype   B3 archetype card (+ its top facts)
-  item      item        B5 worth landscape of an item
-  stats     item, stat  B6 worth against a stat, per archetype
-  meta                  B7 archetype shares over time
-  facts     archetype   C  certified facts (and the fact book: new / retired)
-  suggest               A4 candidate archetypes among unplaced builds
-  quality               A5 categorization quality
-  replay                D  prequential replay, variogram, coverage, low-rank test
-  place     build       B4 placement inset of one build
-  categorize build      A1/A2 labels of one build (no image)
-  digest    since       C8 facts certified / retired since a time
-  worth     build       worth bars of a build's picks (central / indicative marks, flat values)
-  variants              archetype families and variants among the locators
-  reviews               review reasons and note kinds
-  metrics               leave-one-out locator accuracy per archetype
+  atlas                 archetype names, shares and located share
+  card      archetype   archetype card (+ its top facts)
+  facts     archetype   certified facts (and the fact book: new / retired)
+  rules     item        model rules in symbols
+  lookup    item        /talent and /mantra
+  suggest               candidate archetypes among unplaced builds
+  quality               categorization quality
+  replay                prequential replay, variogram, coverage, low-rank test
+  categorize build      labels of one build
+  digest    since       facts certified / retired since a time
 
 The atlas (a corpus sample read as archetypes), its projection, the discovered
 candidates and the mined facts are cached per field, review count and locator
@@ -27,17 +21,17 @@ set. Nothing is refitted.
 from __future__ import annotations
 
 import os
+import threading
 import time
 from typing import List, Optional
 
 import numpy as np
 
-KINDS = ("atlas", "card", "item", "stats", "facts", "rules", "suggest", "quality", "replay", "place",
-         "categorize", "digest", "lookup")
-#: v2.21 deprecated the tree, meta, worth, variants, reviews and metrics charts.
-DEPRECATED = ("tree", "meta", "worth", "variants", "reviews", "metrics")
+KINDS = ("atlas", "card", "facts", "rules", "suggest", "quality", "replay", "categorize", "digest", "lookup")
+#: graphics only, removed with the bot's plots in 4.0.2 (the graphs are on the Pages site)
+REMOVED = ("tree", "meta", "worth", "variants", "reviews", "metrics", "item", "stats", "place")
 ATLAS_SAMPLE = int(os.environ.get("TRI_ATLAS_SAMPLE", "3000"))
-MIN_PLACE_TALENTS = int(os.environ.get("TRI_MIN_PLACE_TALENTS", "15"))   # fewer talents: no placement graphic
+LOCK = threading.Lock()                 # the atlas and fact caches; taken before svc.lock
 
 
 def _key(svc) -> tuple:
@@ -112,15 +106,6 @@ def _item(svc, name: str) -> str:
     return it
 
 
-def _draw(theme: str, fn, *a, **kw) -> bytes:
-    """Draw under the theme (the caller holds the plot lock)."""
-    from tri.api import plots as render
-
-    from .plotting import png_bytes as _png
-    with render.theme(theme):
-        return _png(fn(*a, **kw))
-
-
 def _diverse(facts):
     """Ranked facts, each family's best first (round robin), so a short list
     is not all one kind of fact."""
@@ -172,79 +157,54 @@ def _fact_rows(facts, archetype: Optional[str] = None, status: str = "certified"
     return out
 
 
-def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None, item: Optional[str] = None,
+def insight(svc, kind: str, archetype: Optional[str] = None, item: Optional[str] = None,
             stat: Optional[str] = None, build=None, limit: int = 10, since: Optional[float] = None,
             status: str = "certified") -> dict:
-    """See the module docstring. Returns dict(files=[(name, png)], text, data)."""
+    """See the module docstring. Returns dict(text, data)."""
     from tri.api import categorize as C, stream as S
     from tri.api import active
     from tri.api import insight as V
-    if kind in DEPRECATED:
-        raise ValueError(f"the {kind} chart is deprecated")
+    if kind in REMOVED:
+        raise ValueError(f"the {kind} chart is gone: the graphs are on the GitHub Pages site")
     if kind not in KINDS:
         raise ValueError(f"kind is one of {', '.join(KINDS)}")
     tri = svc.tri
-    files, data, text = [], {}, ""
-    if kind == "place" and build is not None and len(build.talents) < MIN_PLACE_TALENTS:
-        return dict(files=[], text=f"placement not shown: {len(build.talents)} talents, fewer than "
-                                   f"{MIN_PLACE_TALENTS}", data=dict(hidden=True, talents=len(build.talents)))
+    data, text = {}, ""
     if kind == "categorize":
         with svc.lock:
             cat = C.categorize(tri, build)
         cat.pop("u", None)
-        return dict(files=[], text=cat["text"], data=cat)
+        return dict(text=cat["text"], data=cat)
     if kind == "digest":
         with svc.lock:
             c = _facts(svc)
         book = fact_book(svc)
         d = book.digest(float(since if since is not None else time.time() - 7 * 86400))
-        return dict(files=[], text=f"{len(d['new'])} new · {len(d['retired'])} retired", data=d)
-    if kind == "atlas":                         # the /plot atlas figure
-        from .plotting import plot_atlas
-        files, _ = plot_atlas(svc)
-        with svc.lock:
+        return dict(text=f"{len(d['new'])} new · {len(d['retired'])} retired", data=d)
+    if kind == "atlas":
+        with LOCK, svc.lock:
             c = _atlas(svc)
             at = c.atlas
             data = dict(names=at.names, shares=[round(float(s), 4) for s in at.share],
                         located=round(float(at.w[at.placed].sum() / max(at.w.sum(), 1e-12)), 4),
                         readings={k: int((at.kind == k).sum()) for k in C.READINGS}, candidates=len(c.cands),
                         source=at.source)
-        return dict(files=files, text=f"{len(at.names)} archetypes · {100 * data['located']:.0f}% located", data=data)
-    from .plotting import PLOT_LOCK
-    with PLOT_LOCK, svc.lock:                  # same order as the /plot views
+        return dict(text=f"{len(at.names)} archetypes · {100 * data['located']:.0f}% located", data=data)
+    with LOCK, svc.lock:
         c = _atlas(svc)
-        at, av = c.atlas, c.view
+        at = c.atlas
         if kind == "card":
             a = _arch_index(at, archetype)
             cf = _facts(svc)
             nm = at.names[a]
             traps = [dict(item=f.items[0], **f.numbers) for f in cf.facts if f.family in ("hole", "trap") and f.archetype == nm]
             card = V.archetype_card(tri, at, a, traps)
-            files.append(("archetype.png", _draw(theme, V.plot_card, card)))
             data = dict(name=nm, builds=card["builds"], share=card["share"], readings=card["readings"],
                         facts=_fact_rows(cf.facts, nm, limit=3),
                         neighbours=[dict(name=n["name"], distance=round(n["distance"], 3),
                                          items=[s["item"] for s in n["items"]]) for n in card["neighbours"]],
                         tells=_tells(tri, nm), consensus=card.get("consensus", []))
             text = nm
-        elif kind == "item":
-            it = _item(svc, item)
-            il = V.item_landscape(tri, at, av, it)
-            files.append(("item.png", _draw(theme, V.plot_item, il, av, at)))
-            data = dict(item=it, kept=sum(m["sign"] > 0 for m in il["marks"]),
-                        removed=sum(m["sign"] < 0 for m in il["marks"]), in_plane=round(il["in_plane"], 3))
-            text = it
-        elif kind == "stats":
-            it = _item(svc, item)
-            if stat:
-                st = {s.lower(): s for s in at.bm.catalog.stats}.get(stat.lower().replace(" ", ""), stat)
-            else:
-                st = None
-            sc = V.stat_curves(tri, at, it, st)
-            files.append(("stats.png", _draw(theme, V.plot_stats, sc, None, len(at.names))))
-            data = dict(item=it, stat=sc["stat"], requirement=sc["requirement"],
-                        crosses={cv["archetype"]: cv["crosses"] for cv in sc["curves"]})
-            text = f"{it} · {sc['stat']}"
         elif kind == "facts":
             cf = _facts(svc)
             nm = at.names[_arch_index(at, archetype)] if archetype else None
@@ -266,11 +226,6 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
             if getattr(c, "miner", None) is None:
                 c.miner = F.FactMiner(tri, at)
             data = ST.lookup(tri, it, at, c.miner, cf.facts)
-            files.append(("lookup.png", _draw(theme, V.plot_lookup, data, len(at.names), at.names)))
-            if data.get("requires") or any(r["kind"] == "benchmark" for r in data["rules"]):
-                sc = V.stat_curves(tri, at, it, None)
-                if sc["curves"]:
-                    files.append(("stats.png", _draw(theme, V.plot_stats, sc, None, len(at.names))))
             text = it
         elif kind == "suggest":
             rows = []
@@ -279,34 +234,23 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
                                  signature=[s["item"] for s in cd["signature"]],
                                  nearest=[dict(name=n["name"], distance=round(n["distance"], 3)) for n in cd["nearest"]],
                                  growth=cd["growth"]))
-            if rows:
-                files.append(("suggest.png", _draw(theme, V.plot_atlas, av, at, ((0, 1),), 1500,
-                                                   f"Candidate archetypes · {len(rows)} among unplaced builds")))
             data = dict(candidates=rows, unplaced=int((~at.placed).sum()))
             text = f"{len(rows)} candidates"
         elif kind == "quality":
             data = C.quality(tri, at)
             text = f"located {100 * data['located_share']:.0f}%"
         elif kind == "replay":
-            pq, vg, lr = S.prequential(tri), S.variogram(tri), S.lowrank(tri, 100)
+            pq, lr = S.prequential(tri), S.lowrank(tri, 100)
             led = tri.ledger
             Ur = np.array([led.vector(r) for r in led.by_id]) if led is not None and led.by_id else np.zeros((0, 1))
             cov = active.coverage(at.U, Ur)
             q = active.kcenter_queue(at.U, Ur, 5)
-            files.append(("replay.png", _draw(theme, V.plot_replay, pq, vg, cov, lr)))
             data = dict(final=pq.get("final"), reviews=pq.get("reviews", 0), memory_share=pq.get("memory_share"),
                         lowrank=dict(p=lr.get("p"), direction=lr.get("direction")),
                         coverage=dict(radius=cov["radius"], median=cov["median"], p90=cov["p90"]),
                         queue=[dict(build=at.ids[x["row"]], distance=round(x["distance"], 3)) for x in q])
             text = "replay"
-        elif kind == "place":
-            pl = V.placement(tri, at, av, build)
-            files.append(("placement.png", _draw(theme, V.plot_placement, pl, av, at, None, "map")))
-            files.append(("reading.png", _draw(theme, V.plot_placement, pl, av, at, None, "pi")))
-            cat = dict(pl["category"]); cat.pop("u", None)
-            data = cat
-            text = cat["text"]
-    return dict(files=files, text=text, data=data)
+    return dict(text=text, data=data)
 
 
 # ------------------------------------------------------------------ intersections (inline [A ^ B ^ C])
@@ -317,8 +261,7 @@ def intersect(svc, names: List[str], k: int = 3, exclude=(), picks: int = 8) -> 
     from tri.api import categorize as C
 
     from .links import canonical_link, parse_build_link
-    from .plotting import PLOT_LOCK
-    with PLOT_LOCK, svc.lock:
+    with LOCK, svc.lock:
         at = _atlas(svc).atlas
         S = [_arch_index(at, n) for n in names]
         res = C.intersection(at, S, k=k, exclude=set(exclude))

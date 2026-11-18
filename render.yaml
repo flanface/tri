@@ -13,7 +13,7 @@ services:
     runtime: python
     region: oregon
     plan: 1c-2g                 # a full 300k-build run peaks near 1.4 GB; 0.5c-512mb is enough only for small runs
-    buildCommand: pip install ".[render]" ./bot
+    buildCommand: pip install . ./bot
     startCommand: python -m bot
     autoDeployTrigger: commit
     disk:
@@ -38,10 +38,6 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: GITHUB_TOKEN        # optional: raises the GitHub API limit for game data syncs
-        sync: false
-      - key: PAGES_REPO          # interactive plots on GitHub Pages (empty: attach the HTML)
-        value: flanface/tri
-      - key: PAGES_TOKEN         # Contents read/write on PAGES_REPO
         sync: false
       - key: STATE_PATH
         value: /var/data/bot_state.json

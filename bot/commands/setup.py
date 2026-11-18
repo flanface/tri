@@ -35,7 +35,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                            question_timeout="seconds to answer a question sheet before tri posts anyway",
                            private_replies="analysis replies only the invoker sees",
                            verbose_default="/analyze opens the full page by default",
-                           placement_inset="attach the concept-space inset",
+                           placement_inset="show the archetype line above /analyze and /complete",
                            record_answers="store answers (only a consensus of many users reaches the model)",
                            open_analysis="anyone may analyze, complete and plot")
     @app_commands.choices(caution=[app_commands.Choice(name="ask", value="ask"),

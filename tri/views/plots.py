@@ -17,7 +17,7 @@ Projections (Projection, fit_projection)
                view of two chosen items' worth, not distance-preserving
 
 Every Projection reports `distance_kept`: the correlation between true concept
-distances and distances in the picture on a sample of pairs. The /plot figures
+distances and distances in the picture on a sample of pairs. The graph site figures
 are drawn by tri.views.figure; the archetype graphics by tri.views.insight,
 inside `with theme(name):`.
 """

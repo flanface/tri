@@ -608,18 +608,6 @@ class ModelService(CatalogHelpers):
         s = self.sync_info or {}
         return f"{self.run_id}:{len(self.catalog)}:{s.get('sha') or ''}:{id(self.catalog)}"
 
-    def plot_concept(self, *a, **kw) -> tuple:
-        from .plotting import plot_concept
-        return plot_concept(self, *a, **kw)
-
-    def plot_worth(self, *a, **kw) -> tuple:
-        from .plotting import plot_worth
-        return plot_worth(self, *a, **kw)
-
-    def plot_atlas(self, *a, **kw) -> tuple:
-        from .plotting import plot_atlas
-        return plot_atlas(self, *a, **kw)
-
     def insight(self, kind: str, **kw) -> dict:
         """Archetypes, facts and stream views (bot.insight)."""
         from .insight import insight

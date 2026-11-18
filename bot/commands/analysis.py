@@ -1,10 +1,9 @@
 """/analyze and /complete: the model applied to a build."""
 from __future__ import annotations
 
-import io
 import logging
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import discord
 from discord import app_commands
@@ -64,24 +63,18 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         n = few_talents(build)
         return res if n is None else hide_placement(res, n, int(bot.settings.min_place_talents))
 
-    async def placement_inset(emb: discord.Embed, build) -> List[discord.File]:
-        """Archetype line and placement image under /analyze and /complete
-        (PLACEMENT_INSET). Never fails the answer. None for builds under
-        MIN_PLACE_TALENTS talents."""
+    async def placement_inset(emb: discord.Embed, build) -> None:
+        """The archetype line above /analyze and /complete (PLACEMENT_INSET).
+        Never fails the answer. None for builds under MIN_PLACE_TALENTS talents."""
         if not getattr(bot.settings, "placement_inset", True) or build is None or few_talents(build) is not None:
-            return []
+            return
         try:
-            r = await bot.model_call(bot.svc.insight, "place", build=build, theme=bot.settings.plot_theme)
+            r = await bot.model_call(bot.svc.insight, "categorize", build=build)
         except Exception:
-            log.warning("placement inset failed", exc_info=True)
-            return []
+            log.warning("archetype line failed", exc_info=True)
+            return
         if r.get("text"):
             emb.set_author(name=clip(r["text"], 256))
-        if not r.get("files"):
-            return []
-        name, png = r["files"][0]                      # the map in the embed, the reading bar beside it
-        emb.set_image(url=f"attachment://{name}")
-        return [discord.File(io.BytesIO(p_), n_) for n_, p_ in r["files"][:2]]
 
     @tree.command(name="analyze", description="Analyze a build")
     @app_commands.allowed_installs(**USER_APP_INSTALLS)
@@ -125,8 +118,9 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         elif gc.caution == "ask":
             res = await rerun(None, "hold")
         emb = analysis_embed(parsed, placed(res, parsed.build), bot.svc, url, verbose=verbose)
-        await say(inter, embed=emb, files=(await placement_inset(emb, parsed.build) if gc.placement_inset else []),
-                  ephemeral=gc.private_replies)
+        if gc.placement_inset:
+            await placement_inset(emb, parsed.build)
+        await say(inter, embed=emb, ephemeral=gc.private_replies)
         if dwt and res.get("alternatives"):
             await save_dwt(inter, parsed, res["alternatives"][0], "analysis", url)
 
@@ -170,8 +164,9 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         elif gc.caution == "ask":
             res = await rerun(None, "hold")
         emb = complete_embed(parsed, placed(res, parsed.build), bot.svc, canonical_link(bid))
-        await say(inter, embed=emb, files=(await placement_inset(emb, parsed.build) if gc.placement_inset else []),
-                  ephemeral=gc.private_replies)
+        if gc.placement_inset:
+            await placement_inset(emb, parsed.build)
+        await say(inter, embed=emb, ephemeral=gc.private_replies)
         if dwt:
             await save_dwt(inter, parsed, res, "completion", canonical_link(bid))
 

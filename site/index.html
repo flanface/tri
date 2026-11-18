@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tri · interactive graphs</title>
+<style>
+:root{--bg:#0e1015;--fg:#e6e6e6;--mut:#8b93a1;--line:#232733;--acc:#5aa9ff}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
+font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.02em}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent;color:var(--mut);padding:6px 12px;border-radius:6px;
+cursor:pointer;font:inherit}
+nav button:hover{color:var(--fg)}nav button[aria-selected=true]{color:var(--fg);border-color:var(--line);
+background:#161a22}
+#desc{color:var(--mut);font-size:13px;flex:1;min-width:200px}
+main{flex:1;position:relative;min-height:0}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none}
+iframe.on{display:block}
+footer{color:var(--mut);font-size:12px;padding:4px 14px;border-top:1px solid var(--line)}
+</style></head><body>
+<header><h1>tri</h1><nav role="tablist"><button data-tab="concept" title="PC1-2-3: builds coloured by region, region centres and locators">Concept space</button><button data-tab="atlas" title="PC1-2-3: archetype fields from decisively placed builds, centres, locators and candidate archetypes">Archetype atlas</button><button data-tab="worth" title="PC4-5-6: talents and mantras; type an item to draw its vector from the origin">Worth space</button><button data-tab="relative" title="PC4-5-6 by which builds value an item more than usual, not by pick rate">Relative worth</button></nav><div id="desc"></div></header>
+<main><iframe id="f-concept" data-src="concept.html" title="Concept space"></iframe><iframe id="f-atlas" data-src="atlas.html" title="Archetype atlas"></iframe><iframe id="f-worth" data-src="worth.html" title="Worth space"></iframe><iframe id="f-relative" data-src="relative.html" title="Relative worth"></iframe></main>
+<footer>drag to turn · right or shift-drag to pan · wheel to zoom · type a name in a graph's command box · run: run · reviews: 198 · locators: 114 · built: 2026-11-18 15:28 UTC</footer>
+<script>
+const D={"concept": "PC1-2-3: builds coloured by region, region centres and locators", "atlas": "PC1-2-3: archetype fields from decisively placed builds, centres, locators and candidate archetypes", "worth": "PC4-5-6: talents and mantras; type an item to draw its vector from the origin", "relative": "PC4-5-6 by which builds value an item more than usual, not by pick rate"};
+const tabs=[...document.querySelectorAll('nav button')];
+function show(k){
+  if(!D[k])k=tabs[0].dataset.tab;
+  for(const b of tabs)b.setAttribute('aria-selected',b.dataset.tab===k);
+  for(const f of document.querySelectorAll('iframe')){
+    const on=f.id==='f-'+k;
+    if(on&&!f.src)f.src=f.dataset.src;      // each graph loads the first time its tab opens
+    f.classList.toggle('on',on);
+  }
+  document.getElementById('desc').textContent=D[k];
+  if(location.hash.slice(1)!==k)history.replaceState(null,'','#'+k);
+}
+for(const b of tabs)b.onclick=()=>show(b.dataset.tab);
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script></body></html>

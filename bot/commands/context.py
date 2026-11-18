@@ -1,16 +1,14 @@
-"""Shared helpers of the slash commands: permission checks, autocompletes, plot replies."""
+"""Shared helpers of the slash commands: permission checks, autocompletes, insight replies."""
 from __future__ import annotations
 
-import io
 import logging
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import discord
 from discord import app_commands
 
 from tri.api import archetype_key
-from tri.api import parse_drive_link as _dwt_drive
 
 from ..embeds import clip
 from ..guilds import GuildConfig
@@ -92,45 +90,16 @@ def make_context(bot: TriBot) -> SimpleNamespace:
         d = bot.desk.draft(inter.user.id)
         return choices(bot.svc.search(current, list(d.items_in_ops()))) if d else []
 
-    async def plot_builds(inter, g, links: str) -> List[tuple]:
-        marks = []
-        toks = (links or "").replace(",", " ").split()[:6]
-        cap = 6 + 24 * any(_dwt_drive(t) for t in toks)    # a dwt.sh drive folder may mark up to 30
-        for bid in (await bot.fetcher.expand(" ".join(toks), limit=cap))[:cap]:
-            if g.hide and bid in await bot.pending_ids():
-                raise BuildLinkError(f"{bid} is waiting for review; its place is held back until it is reviewed")
-            bid, parsed = await bot.load_build(bid)
-            marks.append((parsed.name or bid, parsed.build))
-        return marks
-
-    def plot_files(files) -> List[discord.File]:
-        return [discord.File(io.BytesIO(png), name) for name, png in files[:10]]
-
-    async def plot_pages(files, text: str):
-        """HTML pages go to GitHub Pages when configured: (files left to attach, text with the links)."""
-        from ..pages import split_pages
-        keep, urls, errs = await split_pages(getattr(bot, "pages", None), files)
-        if urls:
-            links = "\n".join(f"Interactive plot: <{u}>" for u in urls)
-            text = links + " (live within about a minute)\n" + (text or "")
-        elif errs:
-            text = "Could not post the page to GitHub Pages; it is attached instead.\n" + (text or "")
-        return keep, text
-
-    async def plot_fail(inter, e: Exception, what: str):
+    async def insight_fail(inter, e: Exception, what: str):
         if isinstance(e, BuildLinkError):
             return await say(inter, f"Could not read that build: {e}", ephemeral=False)
         if isinstance(e, ValueError):
-            return await say(inter, clip(f"Could not draw the plot: {e}", 1990), ephemeral=False)
-        if isinstance(e, ImportError):
-            return await say(inter, "Plots need matplotlib on the bot's machine (pip install matplotlib).",
-                             ephemeral=False)
-        log.exception("plot %s", what)
-        return await say(inter, f"Could not draw the plot ({type(e).__name__}).", ephemeral=False)
+            return await say(inter, clip(f"Could not answer: {e}", 1990), ephemeral=False)
+        log.exception("insight %s", what)
+        return await say(inter, f"Could not answer ({type(e).__name__}).", ephemeral=False)
 
-    # ------------------------------------------------------------ archetypes, facts, graphics
+    # ------------------------------------------------------------ archetypes and facts
     async def insight(kind: str, **kw) -> dict:
-        kw.setdefault("theme", bot.settings.plot_theme)
         r = await bot.model_call(bot.svc.insight, kind, **kw)
         if kind == "atlas" and (r.get("data") or {}).get("names"):
             bot.atlas_names = list(r["data"]["names"])      # autocomplete when no locator names exist
@@ -140,9 +109,8 @@ def make_context(bot: TriBot) -> SimpleNamespace:
         try:
             r = await insight(kind, **kw)
         except Exception as e:
-            return await plot_fail(inter, e, kind)
-        await say(inter, clip(msg if msg is not None else r.get("text", ""), 1990), files=plot_files(r["files"]),
-                  ephemeral=False)
+            return await insight_fail(inter, e, kind)
+        await say(inter, clip(msg if msg is not None else r.get("text", ""), 1990), ephemeral=False)
 
     async def archetype_name_ac(inter: discord.Interaction, current: str):
         cur = archetype_key(current)
@@ -169,11 +137,8 @@ def make_context(bot: TriBot) -> SimpleNamespace:
         analyst=analyst,
         archetype_name_ac=archetype_name_ac,
         insight=insight,
+        insight_fail=insight_fail,
         item_name_ac=item_name_ac,
-        plot_builds=plot_builds,
-        plot_fail=plot_fail,
-        plot_pages=plot_pages,
-        plot_files=plot_files,
         reviewer=reviewer,
         send_insight=send_insight,
         stat_name_ac=stat_name_ac,

@@ -26,8 +26,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     tree = bot.tree
     admin = c.admin
     insight = c.insight
-    plot_fail = c.plot_fail
-    plot_files = c.plot_files
+    insight_fail = c.insight_fail
 
     locator = app_commands.Group(name="locator", description="Archetype locators",
                                  guild_only=True)
@@ -146,10 +145,10 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
         try:
             r = await insight("suggest")
         except Exception as e:
-            return await plot_fail(inter, e, "suggest")
+            return await insight_fail(inter, e, "suggest")
         rows = r["data"]["candidates"]
         if not rows:
             return await say(inter, f"No candidates among {r['data']['unplaced']} unplaced builds.")
-        await say(inter, clip(suggest_text(rows), 1990), files=plot_files(r["files"]))
+        await say(inter, clip(suggest_text(rows), 1990))
 
     tree.add_command(locator)

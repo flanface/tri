@@ -1,4 +1,4 @@
-"""One transparent 3-D figure with no external annotations (the /plot style).
+"""One transparent 3-D figure with no external annotations (the style of the graph site).
 
 Everything sits inside the scene: three thin axis lines through the origin
 (x red, y green, z blue) lettered at their ends, translucent group polytopes
