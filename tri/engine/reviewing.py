@@ -14,11 +14,7 @@ from tri.rules.passes import FOUNDATIONAL, LUXURY
 
 
 class _Reviewing:
-<<<<<<< HEAD
     """Tri methods: taking reviews: the ledger, memory, categories and value overrides."""
-=======
-    """Tri methods: taking reviews: the ledger, induced rules, memory, categories and value overrides."""
->>>>>>> main
 
     def _ledger_and_rules(self) -> None:
         from tri.game.weapons import with_weapon_notes
@@ -42,36 +38,6 @@ class _Reviewing:
         self._sync_indicators()
         self._select()
 
-<<<<<<< HEAD
-=======
-    def _family_many(self):
-        """(u, V) -> [m] family overlap for the ledger's family reach (math §5.8):
-        the locators' family posteriors where both builds are located in one
-        family; for two builds no locator places, cfg.ledger.fam_region when they
-        share a concept region; else 0 (never across a located border)."""
-        ls, sp_, w = self.locset, self.space, float(self.cfg.ledger.fam_region)
-        has_loc = ls is not None and len(getattr(ls, "locators", []) or [])
-        if sp_ is None:
-            return None
-        memo: dict = {}
-
-        def fam(u, V):
-            u = np.asarray(u, float); V = np.atleast_2d(V)
-            O = ls.family_overlap(u, V) if has_loc else np.zeros(len(V))
-            if w > 0:
-                key = (V.shape, hash(V.tobytes()))
-                if key not in memo:
-                    memo.clear()
-                    memo[key] = (np.asarray(sp_.region_of(V)), ls.located_many(V) if has_loc else np.zeros(len(V), bool))
-                rv, lv = memo[key]
-                lu = bool(ls.located_many(u[None])[0]) if has_loc else False
-                if not lu:
-                    ru = int(sp_.region_of(u[None])[0])
-                    O = np.where((O <= 0) & ~lv & (rv == ru), w, O)
-            return O
-        return fam
-
->>>>>>> main
     # ------------------------------------------------------------ selection rules
     @property
     def rules(self):
@@ -124,13 +90,8 @@ class _Reviewing:
 
     def drop_rule(self, rule_id: str, author: str = "", note: str = "") -> dict:
         """Remove an authored rule, suppress a mined one, or lift a suppression, by id.
-<<<<<<< HEAD
         also sidegrades (sg:...), switched off and on the same way (a
         suppression of a 3.x review rule id, rv:..., can still be lifted)."""
-=======
-        also review rules (rv:...) and sidegrades (sg:...), switched off
-        and on the same way."""
->>>>>>> main
         from tri.rules.registry import PREFIXES
         e = self.authored.get(rule_id)
         if rule_id.startswith(PREFIXES):

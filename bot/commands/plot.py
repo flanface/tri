@@ -22,6 +22,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     plot_builds = c.plot_builds
     plot_fail = c.plot_fail
     plot_files = c.plot_files
+    plot_pages = c.plot_pages
     send_insight = c.send_insight
     stat_name_ac = c.stat_name_ac
 
@@ -31,7 +32,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                               allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True,
                                                                                private_channel=True))
 
-    INTERACTIVE = "send an HTML page instead of the PNG: drag to turn, wheel to zoom, hover for names"
+    INTERACTIVE = "link an interactive page instead of the PNG: drag to turn, wheel to zoom, hover for names"
     STYLE_CHOICES = [app_commands.Choice(name="dots: one per build", value="dots"),
                      app_commands.Choice(name="fields: translucent polytopes", value="fields")]
 
@@ -56,6 +57,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                                                   (elevation, azimuth), interactive)
         except Exception as e:
             return await plot_fail(inter, e, "concept")
+        files, text = await plot_pages(files, text)
         await say(inter, clip(text, 1990), files=plot_files(files), ephemeral=False)
 
     @plot.command(name="worth", description="Worth space, axes 4-5-6")
@@ -86,6 +88,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                                                   interactive)
         except Exception as e:
             return await plot_fail(inter, e, "worth")
+        files, text = await plot_pages(files, text)
         if unknown:
             text = f"Not found: {', '.join(unknown[:10])}\n" + text
         await say_long(inter, text, "worth.txt", files=plot_files(files), ephemeral=False)
@@ -120,6 +123,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
                                                   (elevation, azimuth), interactive)
         except Exception as e:
             return await plot_fail(inter, e, "atlas")
+        files, text = await plot_pages(files, text)
         await say(inter, clip(text, 1990), files=plot_files(files), ephemeral=False)
 
     @plot.command(name="item", description="Where an item is worth taking")

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 """Every rule that bears on a pick, other than worth.
-=======
-"""Every rule that bears on a pick, other than worth (math §2.11).
->>>>>>> main
 
 tri.all_rules(item=None, build=None) lists them in one shape:
 
@@ -32,13 +28,6 @@ import hashlib
 from typing import List, Optional
 
 PREFIXES = ("rv:", "sg:")      # sc: (standing corrections from audits) is gone
-<<<<<<< HEAD
-=======
-
-
-def review_rule_id(r) -> str:
-    return f"rv:{r.kind}:{r.subject}" + (f":{r.other}" if r.other else "")
->>>>>>> main
 
 
 def sidegrade_id(g) -> str:

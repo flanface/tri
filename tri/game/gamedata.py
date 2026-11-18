@@ -721,7 +721,6 @@ def coverage(source, gd: GameData, limit: Optional[int] = None, top: int = 50) -
                 unknown_kinds=[k[0] for k, _ in unk.most_common(top)])
 
 
-<<<<<<< HEAD
 def cached_gamedata(dest: str) -> GameData:
     """The pocamind/data download kept in dest (written by the bot's game data
     adapter, bot.gamesource.fetch_gamedata). tri itself never downloads."""
@@ -745,14 +744,6 @@ def resolve_gamedata(specs: Sequence[str], dest: str, log=None):
     deepwoken.co merged with pocamind/data (both cached in dest); ["none"] ->
     None; paths -> load_any, merged in order (first wins). No network: the
     downloads are made by the bot side (bot.gamesource)."""
-=======
-def resolve_gamedata(specs: Sequence[str], dest: str, refresh: bool = False, ref: str = "main", log=None):
-    """specs: ["auto"] -> pocamind/data (every requirement, prerequisite,
-    exclusion and lock tri reads is in pocamind/data); "all" -> fetch_all
-    (deepwoken.co merged with pocamind/data, the pre-v3.7 auto); ["none"] ->
-    None; paths -> load_any, merged in order (first wins); "auto" may be mixed
-    with paths."""
->>>>>>> main
     specs = [s for s in specs if s]
     if not specs or specs == ["none"]:
         return None

@@ -101,11 +101,7 @@ class _Answering:
         return cp
 
     def _rule_homes(self) -> Dict[str, set]:
-<<<<<<< HEAD
         """Home families of the mined central take rules: on a
-=======
-        """Home families of the mined central take rules (math §5.4): on a
->>>>>>> main
         reference sample, the families whose located builds the rule covers with at
         least rule_home_min weight and among which the item is still taken at rate
         theta_take. A build located elsewhere is across the chasm: the rule does not
@@ -219,11 +215,7 @@ class _Answering:
     def settle(self, build: Build, mode: str = "review", archetype: Optional[str] = None, answers=None,
                max_alternatives: int = 3, capacity: Optional[Tuple[int, int]] = None, rounds: int = 4,
                result=None):
-<<<<<<< HEAD
         """(result, Caution) with held marks settled. A held
-=======
-        """(result, Caution) with held marks settled (math §14.1). A held
->>>>>>> main
         change is not just hidden: a held removal keeps the pick (locked) and a
         held add is not taken (withheld), and the answer is solved again, so the
         slot goes to the next pick and the answer still fills the cap and the

@@ -37,12 +37,16 @@ For the concept space projection:
 
 - **Mixed region 0** A region with no distinctive picks is named "mixed" and gets no archetype label. A mixed region far down PCA1 and far out on PCA3 (low on the standard picks, high on the nonstandard ones) usually holds builds that either have no coherent concept or were never really picked through.
 
-## Docs
+## Learning notebooks
 
-- [Public API](docs/api.md)
-- [The scorer and how reviews act](docs/scorer.md)
-- [Evaluation and measured numbers](docs/evaluation.md)
-- [Bot setup](docs/bot.md)
+Interactive notebooks in [notebooks/](notebooks) replace the written docs. Install with `pip install -e ".[notebooks]"` and run `jupyter lab notebooks`.
+
+- [Start here](notebooks/00_start_here.ipynb)
+- [The public API](notebooks/01_api.ipynb)
+- [Similarity, the chasm and supersession](notebooks/02_similarity_and_chasm.ipynb)
+- [Reach, the logit and selection](notebooks/03_reach_and_the_logit.ipynb)
+- [Evaluation and measured numbers](notebooks/04_evaluation.ipynb)
+- [Bot setup, hosting and plots on GitHub Pages](notebooks/05_bot_setup.ipynb)
 
 ## Acknowledgements
 

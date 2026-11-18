@@ -36,6 +36,12 @@ Optional
                             unreviewed duplicates of the same build; 0 keeps rows (they are
                             still never served again)
     PLOT_THEME              dark (default, matches Discord) | light
+    PAGES_REPO, PAGES_TOKEN interactive plots are posted to GitHub Pages of this repository (owner/name)
+                            and linked instead of attached; the token needs Contents read/write
+                            (GITHUB_TOKEN is also read). Unset: the HTML page is attached
+    PAGES_BRANCH, PAGES_URL Pages branch (default gh-pages) and public base URL (default
+                            https://<owner>.github.io/<name>)
+    PAGES_KEEP_DAYS         plots older than this are deleted once a day (default 30; 0 keeps all)
 Builds are read from the public builder page; no game API key is needed.
 """
 from __future__ import annotations
@@ -45,6 +51,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .wire import load_dotenv  # noqa: E402,F401
+from .pages import PagesConfig  # noqa: E402
 
 
 def _user_app(v: str) -> str:
@@ -89,6 +96,7 @@ class Settings:
     dwt_folder: str = "tri"              # DWT_FOLDER: folder id or name for saved proposals ("" = account root)
     dwt_visibility: str = "unlisted"     # DWT_VISIBILITY: public | unlisted | private
     dwt_api: str = "https://api.dwt.sh"  # DWT_API
+    pages: Optional["PagesConfig"] = None  # PAGES_*: interactive plots on GitHub Pages (bot/pages.py)
 
     @classmethod
     def from_env(cls, dotenv: Optional[str] = ".env") -> "Settings":
@@ -131,4 +139,5 @@ class Settings:
                    dwt_api_key=(e.get("DWT_API_KEY") or "").strip() or None,
                    dwt_folder=e.get("DWT_FOLDER", "tri").strip(),
                    dwt_visibility=(e.get("DWT_VISIBILITY") or "unlisted").strip().lower(),
-                   dwt_api=(e.get("DWT_API") or "https://api.dwt.sh").strip())
+                   dwt_api=(e.get("DWT_API") or "https://api.dwt.sh").strip(),
+                   pages=PagesConfig.from_env(e))

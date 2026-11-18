@@ -1,6 +1,6 @@
 """PassEngine methods: the 4.0 scorer.
 
-One per-item logit on each situation (docs/scorer.md):
+One per-item logit on each situation (notebooks/03_reach_and_the_logit.ipynb):
 
     z_t = b + a_f L_t + a_n logit(q_t) + a_d D_t + a_p P_t
 
@@ -30,7 +30,7 @@ from tri.infer.defs import REVIEW, Alternative, Change, _Sit
 from tri.rules.passes import FOUNDATIONAL, LUXURY
 
 _SIGN = {"add": 1.0, "keep": 1.0, "remove": -1.0}
-#: reasons about the item itself: a directed reach (4.0, docs/scorer.md)
+#: reasons about the item itself: a directed reach (4.0, notebooks/03_reach_and_the_logit.ipynb)
 ITEM_REASONS = {Reason.NECESSARY_FOR_ARCHETYPE.value, Reason.GENERALLY_GOOD.value, Reason.NO_SYNERGY.value,
                 Reason.SCENARIO_MISMATCH.value, Reason.BROKEN.value}
 #: reasons about archetype fit: propagated to similar items

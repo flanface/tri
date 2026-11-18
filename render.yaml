@@ -39,6 +39,10 @@ services:
         sync: false
       - key: GITHUB_TOKEN        # optional: raises the GitHub API limit for game data syncs
         sync: false
+      - key: PAGES_REPO          # interactive plots on GitHub Pages (empty: attach the HTML)
+        value: flanface/tri
+      - key: PAGES_TOKEN         # Contents read/write on PAGES_REPO
+        sync: false
       - key: STATE_PATH
         value: /var/data/bot_state.json
       - key: GUILD_CONFIG_PATH

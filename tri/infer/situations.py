@@ -45,11 +45,7 @@ class _Situations:
             ls.note(uq, xa=xa, force=(force or {}).get("key"), transient=True)
         memory = self.ledger.claims_for(b, vec=fv) if self.ledger is not None else {}
         b = self._waive(b, memory)
-<<<<<<< HEAD
         b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules
-=======
-        b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules (math §2.8c)
->>>>>>> main
         if fpt is not None:                    # placed again with the waived build, as before
             fpt = self.space.point(b, partial, latent=force["latent"])
         avail = self.c.availability_in(b)      # met at pre-shrine or final stats
@@ -123,11 +119,7 @@ class _Situations:
         return out
 
     def _same_family(self, memory: dict, arch) -> dict:
-<<<<<<< HEAD
         """ A claim from a review whose reviewer states the build's
-=======
-        """(math §5) A claim from a review whose reviewer states the build's
->>>>>>> main
         archetype ("is" note) does not cross into another family: borders are
         chasms. Generally-good claims and claims on the same build are kept."""
         st = getattr(self, "stated", None) or {}
@@ -213,11 +205,7 @@ class _Situations:
         share: Dict[str, float] = {}
         cand: Dict[str, List[float]] = {}
         wa = getattr(self, "weapon_answer", None)
-<<<<<<< HEAD
         if not allowed and wa:                          # the asker named the class
-=======
-        if not allowed and wa:                          # the asker named the class (math §14.3)
->>>>>>> main
             allowed, src = {wa}, "answer"
         if not allowed:
             for it, cs in tab.items():
@@ -252,11 +240,7 @@ class _Situations:
 
     def _answer_weapon(self, b: Build) -> Build:
         """The weapon the asker named (Answers.weapon, a weapon name) when the build
-<<<<<<< HEAD
         records none: it is read as equipped."""
-=======
-        records none: it is read as equipped (math §14.3)."""
->>>>>>> main
         w = getattr(self, "weapon_name", None)
         if main_weapons(b):
             return b

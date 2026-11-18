@@ -1,5 +1,5 @@
 # the Discord bot with the model in-process (python -m bot):
 # the tri library from the repository root, then the bot distribution (bot/pyproject.toml),
-# which requires tri==4.0.0
+# which requires tri==4.0.1
 .[render]
 ./bot

@@ -15,11 +15,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Iterable, List, Optional
 
 from .wire import REASON_LABELS
-<<<<<<< HEAD
 from tri.api import weapon_label as wlabel
-=======
-from tri.game.weapons import label as wlabel
->>>>>>> main
 
 MARK = {"add": "[+]", "remove": "[-]", "iffy": "[=]", "overturn": "[x]", "uphold": "[v]"}
 ORDER = {"add": 0, "remove": 1, "iffy": 2, "overturn": 3, "uphold": 3}

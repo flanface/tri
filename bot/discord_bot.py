@@ -144,6 +144,9 @@ class TriBot(discord.Client):
                                                  getattr(settings, "dwt_visibility", "unlisted"),
                                                  getattr(settings, "dwt_api", "https://api.dwt.sh")))
         self.fetcher = fetcher
+        from .pages import Pages, PagesConfig
+        pc = getattr(settings, "pages", None) or PagesConfig()
+        self.pages: Optional[Pages] = Pages(pc) if pc.enabled else None   # interactive plots on GitHub Pages
         self.desk = desk or ReviewDesk(settings.state_path, settings.claim_ttl_min * 60)
         self.questions: Dict[int, Session] = {}          # open question sheets by message id
         self.guild_cfg = guilds or GuildConfigStore(self.store, settings.guild_config_path,
@@ -501,6 +504,8 @@ class TriBot(discord.Client):
             await self._health.cleanup()
         await self.store.close()
         await self.fetcher.close()
+        if self.pages is not None:
+            await self.pages.close()
         await super().close()
 
     # ------------------------------------------------------------ permissions

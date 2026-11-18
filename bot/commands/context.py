@@ -106,6 +106,17 @@ def make_context(bot: TriBot) -> SimpleNamespace:
     def plot_files(files) -> List[discord.File]:
         return [discord.File(io.BytesIO(png), name) for name, png in files[:10]]
 
+    async def plot_pages(files, text: str):
+        """HTML pages go to GitHub Pages when configured: (files left to attach, text with the links)."""
+        from ..pages import split_pages
+        keep, urls, errs = await split_pages(getattr(bot, "pages", None), files)
+        if urls:
+            links = "\n".join(f"Interactive plot: <{u}>" for u in urls)
+            text = links + " (live within about a minute)\n" + (text or "")
+        elif errs:
+            text = "Could not post the page to GitHub Pages; it is attached instead.\n" + (text or "")
+        return keep, text
+
     async def plot_fail(inter, e: Exception, what: str):
         if isinstance(e, BuildLinkError):
             return await say(inter, f"Could not read that build: {e}", ephemeral=False)
@@ -161,6 +172,7 @@ def make_context(bot: TriBot) -> SimpleNamespace:
         item_name_ac=item_name_ac,
         plot_builds=plot_builds,
         plot_fail=plot_fail,
+        plot_pages=plot_pages,
         plot_files=plot_files,
         reviewer=reviewer,
         send_insight=send_insight,

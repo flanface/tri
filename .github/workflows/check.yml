@@ -1,0 +1,21 @@
+name: check
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: no merge-conflict markers
+        run: |
+          if git grep -nE '^(<<<<<<<|>>>>>>>)( |$)|^=======$' -- . ':!*.ipynb' ':!*.json'; then
+            echo "::error::merge-conflict markers committed"; exit 1
+          fi
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - name: install
+        run: pip install ".[render]" ./bot pytest
+      - name: tests
+        run: python -m pytest -q tests

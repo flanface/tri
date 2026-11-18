@@ -1,17 +1,14 @@
 [project]
 name = "tri"
-<<<<<<< HEAD
-version = "4.0.0"
+version = "4.0.1"
 description = "Backend learning engine for contextual Deepwoken talent/mantra selection (library; no network, no env)"
-=======
-version = "3.11.1"
-description = "Backend learning engine for contextual Deepwoken talent/mantra selection"
->>>>>>> main
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10", "scikit-learn>=1.3"]
 
 [project.optional-dependencies]
 render = ["matplotlib>=3.7", "seaborn>=0.12", "pillow"]
+# the learning notebooks (notebooks/)
+notebooks = ["matplotlib>=3.7", "jupyterlab>=4", "ipywidgets>=8"]
 # GPU / fast CPU training: CUDA (NVIDIA) or Metal (Apple, mps). For CUDA install the
 # CUDA wheel from https://pytorch.org/get-started/locally/
 accel = ["torch>=2.1"]

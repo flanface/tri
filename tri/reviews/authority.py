@@ -124,10 +124,6 @@ class ReviewLedger:
         self.embed = embed
         self.kernel = kernel
         self.kernel_many = kernel_many                 # (u, V) -> [m]
-<<<<<<< HEAD
-=======
-        self.family_many = family_many                 # (u, V) -> [m] family overlap
->>>>>>> main
         self._vec: Dict[str, np.ndarray] = {}
         self.change_times = dict(change_times or {})
         self.stale: List[Tuple[str, str]] = []        # (review id, item) discounted by a patch
@@ -358,16 +354,6 @@ class ReviewLedger:
                                  for c in self.active_claims(r.review_id) if c.global_scope]
         return g
 
-<<<<<<< HEAD
-=======
-    def _unreturned(self, r: Review) -> frozenset:
-        """Candidates a full review r leaves out of its returned build (memo)."""
-        memo = self.__dict__.setdefault("_unret", {})
-        if r.review_id not in memo:
-            memo[r.review_id] = self._candidates() - self._returned(r)
-        return memo[r.review_id]
-
->>>>>>> main
     def neighbours(self, build: Build, min_sim: Optional[float] = None, vec=None) -> List[Tuple[Review, float]]:
         """Reviewed builds similar to `build` (sim >= min_sim, default cfg.sim_min), newest first.
         vec: the build's concept coordinates when they are not its own placement
@@ -400,13 +386,6 @@ class ReviewLedger:
                             echo[c.item] = v
                     elif c.item not in out or v[1] > out[c.item][1]:
                         out[c.item] = v
-<<<<<<< HEAD
-=======
-        for it, v in self.family_for(build, vec, items).items():     # pooled claims fill gaps and
-            cur = out.get(it)                                         # override a lone claim that only nudges
-            if cur is None or (self.cfg.pool_override and self.binding(v) and not self.binding(cur)):
-                out[it] = v
->>>>>>> main
         for it, v in echo.items():
             out.setdefault(it, v)
         for rid, c in self._global_claims():               # context-free claims, newest first
@@ -419,113 +398,6 @@ class ReviewLedger:
                                "general" if c.general else c.origin, tuple(c.related))
         return out
 
-<<<<<<< HEAD
-=======
-    def _returned(self, r: Review) -> frozenset:
-        """Items of the build a full review returns (original - removals + additions)."""
-        memo = self.__dict__.setdefault("_ret_memo", {})
-        if r.review_id not in memo:
-            rem = {o.item_id for o in r.removed()}
-            memo[r.review_id] = frozenset((set(r.original.items()) - rem) | {o.item_id for o in r.added()})
-        return memo[r.review_id]
-
-    def _candidates(self) -> frozenset:
-        """Every item some reviewed build holds or a review adds (absence is only
-        informative for items reviewers know to be in play)."""
-        if self.__dict__.get("_cand_n") != len(self.reviews):
-            self._cand = frozenset().union(*[self._returned(r) | set(r.original.items()) for r in self.reviews]) \
-                if self.reviews else frozenset()
-            self._cand_n = len(self.reviews)
-        return self._cand
-
-    def family_for(self, build: Build, vec=None, items=None) -> Dict[str, tuple]:
-        """Family reach (math §5.8): {item: claim} pooled over the reviews of
-        builds located in the same family as `build` (family_many overlap >=
-        fam_overlap), newest claim per reviewed build. Echoed picks, iffy marks,
-        rule verdicts and the build's own reviews are left out. A side needs
-        fam_min distinct builds and a weighted share >= fam_share; weight
-        n / (n + fam_kappa) x share; strong (binding) with >= fam_bind strong
-        item-level claims behind it and no strong claim against."""
-        cfg = self.cfg
-        if not cfg.fam_reach or self.embed is None or not self.reviews:
-            return {}
-        V = self._matrix()
-        v = np.asarray(vec if vec is not None else self.embed(build), float)
-        O = np.asarray(self.family_many(v, V), float) if self.family_many is not None else np.zeros(len(V))
-        S = self.sims_to(build, vec)
-        if cfg.pool_sim < 1.0:                        # neighbours pool too (never below sim_min)
-            near = S >= max(cfg.pool_sim, cfg.sim_min)
-            O = np.where(near, np.maximum(O, S), O)
-        if not (O >= cfg.fam_overlap).any():
-            return {}
-        items = self._context(build) if items is None else items
-        have = set(build.items())
-        mine = build_weapons(build)
-        votes: Dict[str, Dict[str, tuple]] = defaultdict(dict)
-        absent: Dict[str, Dict[str, tuple]] = defaultdict(dict)
-        for i in range(len(self.reviews) - 1, -1, -1):  # newest first
-            if O[i] < cfg.fam_overlap:
-                continue
-            r = self.reviews[i]
-            bk = r.original.build_id or r.review_id
-            if build.build_id and bk == build.build_id:
-                continue                               # the build's own reviews act locally
-            theirs = build_weapons(r.original)
-            if mine and theirs and not (mine & theirs):
-                continue
-            claimed = set()
-            for c in self.active_claims(r.review_id):
-                claimed.add(c.item)
-                if c.origin == "echo" or c.label not in ("keep", "add", "remove"):
-                    continue
-                if bk in votes[c.item] or not c.holds_in(items):
-                    continue
-                w = c.weight * float(O[i]) * (cfg.fam_keep if c.label == "keep" else 1.0)
-                strong = c.label in ("add", "remove") and c.strength == "strong" and c.reason not in _RELATIVE
-                votes[c.item][bk] = (POLARITY[c.label], w, strong, c, r.review_id, float(S[i]))
-            if cfg.pool_absent:      # left out of the returned build: absence endorsed
-                for it in self._unreturned(r) - have - claimed:
-                    if bk not in absent[it]:
-                        absent[it][bk] = (float(O[i]) * cfg.fam_keep, r.review_id, float(S[i]))
-        out: Dict[str, tuple] = {}
-        for it, per in absent.items():
-            if it in votes and any(x[0] > 0 for x in votes[it].values()):
-                continue                                  # someone added it: no absence consensus
-            n = len(per)
-            if n >= cfg.fam_min:                          # weak below fam_consensus: it guards worth swaps only
-                top = max(per.values(), key=lambda x: (self.order.get(x[1], -1)))
-                w = n / (n + cfg.fam_kappa)
-                out[it] = ("absent", w, top[1], max(x[2] for x in per.values()), None,
-                           "strong" if n >= cfg.fam_consensus else "weak", "family", (), n)
-        for it, per in votes.items():
-            vs = list(per.values())
-            if it not in have:                      # an add needs explicit adds: a neighbour
-                vs = [x for x in vs if x[3].label != "keep"]   # keeping what it had is no add
-            pos = [x for x in vs if x[0] > 0]
-            neg = [x for x in vs if x[0] < 0]
-            sp, sn = sum(x[1] for x in pos), sum(x[1] for x in neg)
-            if sp + sn <= 0:
-                continue
-            if len(neg) >= cfg.fam_min and sn / (sp + sn) >= cfg.fam_share:
-                lab, sup, opp, share = "remove", neg, pos, sn / (sp + sn)
-            elif len(pos) >= cfg.fam_min and sp / (sp + sn) >= cfg.fam_share and \
-                    (it in have or pos):
-                lab, sup, opp, share = ("keep" if it in have else "add"), pos, neg, sp / (sp + sn)
-            else:
-                continue
-            n = len(sup)
-            agreed = n >= cfg.fam_consensus and share >= cfg.fam_consensus_share
-            strong = not any(x[2] for x in opp) and (
-                agreed or (lab != "keep" and sum(x[2] for x in sup) >= cfg.fam_bind))
-            ex = [x for x in sup if x[3].label != "keep"] or sup
-            top = max(ex, key=lambda x: (x[2], self.order.get(x[4], -1)))
-            c = top[3]
-            out[it] = (lab, n / (n + cfg.fam_kappa) * share, top[4], max(x[5] for x in sup),
-                       c.reason if c.label != "keep" else None, "strong" if strong else "weak", "family",
-                       tuple(c.related), n)
-        return out
-
->>>>>>> main
     def conditions(self) -> Dict[str, Dict[str, Tuple[str, ...]]]:
         """{review_id: {item: related items}} for conditional claims (redundant
         with y, works against y): worth counts such a change only for query
@@ -554,11 +426,6 @@ class ReviewLedger:
         label, w, _rid, sim, reason, strength, origin = (tuple(claim) + (None, None, None))[:7]
         if w < hard:
             return False
-<<<<<<< HEAD
-=======
-        if origin == "family":                             # pooled family claim (math §5.8)
-            return strength == "strong" and label in ("add", "remove", "keep", "absent")
->>>>>>> main
         if origin == "general":                            # generally good, from another build:
             return strength == "strong"                    # strong binds (where feasible), weak nudges
         if sim >= self.cfg.sim_same:
