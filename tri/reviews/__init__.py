@@ -1,1 +1,1 @@
-"""Expert reviews: the authority ledger, consensus, locators and archetype variants."""
+"""Expert reviews: the authority ledger, locators and archetype variants."""

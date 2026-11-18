@@ -46,7 +46,6 @@ class InferConfig:
     strong_margin: float = 0.5     # ... and marks it strong at margin >= this
     fill_capacity: bool = True     # analysis fills empty mantra slots, then talents to the cap, before swaps
     emit_iffy: bool = False        # ... and writes iffy marks (reviewers rarely do: 1 in 150 real marks)
-    consensus_central: float = 0.3  # a family tell confirms a central pick at c p(a | u) a(u) >= this
     central_rounds: int = 4
     repair_rounds: int = 6         # rule re-checks after swaps
     cold_support: float = 1.0      # an unrated item with less local support than this has no worth evidence
@@ -54,6 +53,22 @@ class InferConfig:
     focus_k: int = 150             # class prior: nearest labelled corpus builds
     focus_min_labelled: int = 20   # ... fewer labelled builds than this: choose the class by worth
     focus_min_q: float = 0.3       # the class's talents taken first (before luxuries) at this worth or more
+    # the 4.0 scorer (tri.infer.scorer): z = sc_bias + sc_field L + sc_nbr logit(q) + sc_direct D + sc_prop P
+    sc_bias: float = 0.0
+    sc_field: float = 0.0
+    sc_nbr: float = 1.0
+    sc_direct: float = 3.0
+    sc_prop: float = 1.0
+    sc_keep: float = 0.5           # keep (unmarked) claims count this much of an explicit operation
+    sc_remove: float = -4.0        # a pick scoring below this is removed
+    sc_fill: float = 1.0           # a review fills an empty slot with the best item scoring at least this (completions fill every slot)
+    sc_swap: float = 6.0           # an outside item scoring this much more replaces the weakest pick
+    sc_directed: bool = False      # explicit item-level claims reach along / across the item direction
+    sc_h_par: float = 1.797        # along: the ledger's reach bandwidth, reach / sqrt(-2 ln sim_min)
+    sc_h_perp: float = 4.49        # across: 2.5 x
+    sc_propagate: bool = False     # archetype-fit claims nudge similar unclaimed items
+    sc_nbr_reviews: bool = True    # neighbour rates include reviewed builds (review_weight on touched items)
+    sc_tau: float = 0.5            # ... with mean-centred worth cosine above this
 
 
 @dataclass
@@ -117,6 +132,7 @@ class _Sit:
     family: Optional[str] = None    # located family key of the reading (v2.19 chasm on mined rules)
     focus: Dict = field(default_factory=dict)   # weapon class focus (tri.focus)
     weapon: Dict = field(default_factory=dict)  # hardcoded weapon rules {forbid, require}: item -> why
+    score: Dict = field(default_factory=dict)   # the scorer's parts {z, L, q, D, P, why} (tri.infer.scorer)
 
 
 @dataclass

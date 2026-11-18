@@ -15,7 +15,6 @@ tri.all_rules(item=None, build=None) lists them in one shape:
 
 Drop ids:
     <6 hex>                 a selection rule (mined, authored or review evidence)
-    rv:<KIND>:<a>[:<b>]     a review rule (induced from the reviews)
     sg:<6 hex>              a mined sidegrade
 
 Hardcoded and not droppable: the weapon rules (tri/game/weapon_rules.py), game
@@ -29,10 +28,6 @@ import hashlib
 from typing import List, Optional
 
 PREFIXES = ("rv:", "sg:")      # sc: (standing corrections from audits) is gone
-
-
-def review_rule_id(r) -> str:
-    return f"rv:{r.kind}:{r.subject}" + (f":{r.other}" if r.other else "")
 
 
 def sidegrade_id(g) -> str:
@@ -55,7 +50,6 @@ def _names(r) -> List[str]:
 
 
 def collect(tri, item: Optional[str] = None, build=None) -> List[dict]:
-    from tri.infer.defs import GLOBAL_RULE_KINDS
     from tri.rules.language import rule_id as rid
     from tri.rules.passes import NEVER
     dropped = tri.dropped_ids()
@@ -83,20 +77,6 @@ def collect(tri, item: Optional[str] = None, build=None) -> List[dict]:
                 fires = eng._holds(r, sel - {r.item}, s) if r.effect == NEVER else eng._holds(r, sel, s)
             out.append(_e(rid(r.key), "selection", r.text(rb.region_names), "never" if r.effect == NEVER else "take",
                           names, st, True, "", fires))
-    # review rules (induced)
-    for r in getattr(tri, "review_rules_all", None) or tri.review_rules:
-        names = [r.subject] + ([r.other] if r.other else [])
-        if not on(names):
-            continue
-        i = review_rule_id(r)
-        live = r.status in ("supported", "refined") and r.kind in GLOBAL_RULE_KINDS
-        st = "dropped" if i in dropped else ("active" if live else f"inactive ({r.status}"
-                                             + ("" if r.kind in GLOBAL_RULE_KINDS else ", local kind: acts through review claims") + ")")
-        fires = None
-        if s is not None and st == "active":
-            fires = r.applies(s.build, s.feats) and (r.other is None or r.kind not in ("REDUNDANT", "CONFLICT", "PREFER")
-                                                     or r.other in sel)
-        out.append(_e(i, "review_rule", r.describe(), "never", names, st, True, "", fires))
     # sidegrades
     for g in getattr(tri, "sidegrades", None) or []:
         names = list(g.a) + list(g.b)

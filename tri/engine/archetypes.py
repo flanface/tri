@@ -1,19 +1,18 @@
-"""Tri methods: archetypes: locators, regions, consensus, metrics and concept readings."""
+"""Tri methods: archetypes: locators, regions, metrics and concept readings."""
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from tri.core.types import Action, Build, Reason, Strength, off_archetype
-from tri.reviews.consensus import tally
-from tri.reviews.defs import ConsensusConfig, Locator
+from tri.core.types import Build, off_archetype
+from tri.reviews.defs import Locator
 from tri.reviews.locators import LocatorSet, archetype_key
 from tri.reviews.variants import family_key, join_archetype, read_variant, split_archetype, style_of
 
 
 class _Archetypes:
-    """Tri methods: archetypes: locators, regions, consensus, metrics and concept readings."""
+    """Tri methods: archetypes: locators, regions, metrics and concept readings."""
 
     def _sync_indicators(self) -> None:
         """Indicator notes ("# a: x, y, z") of the reviews -> the locator set (math §6.7).
@@ -76,77 +75,8 @@ class _Archetypes:
             for w in worth.values():
                 w.pop("build", None)
         self._note_worth = list(worth.values())
-        self._sync_consensus()
         self._renote()                               # placements re-note their fine reading
 
-    def _sync_consensus(self) -> None:
-        """Reviewer consensus (math §8.5a): notes and archetype-reasoned edits of
-        every review, per (family, item), tallied into promoted tells."""
-        ls = getattr(self, "locset", None)
-        self.consensus: Dict[str, list] = {}
-        lc = self.cfg.locators
-        if ls is None or self.space is None or not lc.consensus or not self.reviews:
-            if ls is not None:
-                ls.set_consensus([])
-            return
-        ix = self.catalog.index
-        ev: List[dict] = []
-        self._place_many([r.apply(self.catalog) for r in self.reviews])     # one batched solve
-        for r in self.reviews:
-            fam = None
-
-            def family():
-                nonlocal fam
-                if fam is None:
-                    b = r.apply(self.catalog)
-                    rd = ls.read(self._embed(b), b)
-                    fam = family_key(rd.archetype) if rd.archetype else ""
-                return fam or None
-            base = dict(reviewer=r.reviewer_id or r.review_id, timestamp=r.timestamp or 0.0, review_id=r.review_id,
-                        build=r.original.build_id or r.review_id)
-            for n in getattr(r, "notes", None) or []:
-                kind = n.get("kind")
-                if kind == "archetype":
-                    key = family_key(str(n.get("archetype", "")))
-                    for c in n.get("items") or []:
-                        if c in ix:
-                            ev.append(dict(base, key=key, item=c, sign=1, weight=1.0, note=True))
-                elif kind in ("core", "avoid"):
-                    key = family()
-                    for c in n.get("items") or []:
-                        if c in ix and key:
-                            ev.append(dict(base, key=key, item=c, sign=1 if kind == "core" else -1, weight=1.0, note=True))
-            for o in r.operations:
-                if o.item_id not in ix or o.reason is None:
-                    continue
-                if off_archetype(o):                       # strong SM: counts like an avoid note
-                    key = family()
-                    if key:
-                        ev.append(dict(base, key=key, item=o.item_id, sign=-1, weight=1.0, note=True))
-                    continue
-                st = 1.0 if o.strength == Strength.STRONG else 0.5
-                if o.action == Action.ADD and o.reason == Reason.NECESSARY_FOR_ARCHETYPE:
-                    sign = 1
-                elif o.action == Action.REMOVE and o.reason in self._CONSENSUS_REMOVE:
-                    sign = -1
-                else:
-                    continue
-                key = family()
-                if key:
-                    ev.append(dict(base, key=key, item=o.item_id, sign=sign, weight=lc.consensus_op_weight * st, note=False))
-        cc = ConsensusConfig(kappa=lc.consensus_kappa, min_reviewers=lc.consensus_min_reviewers,
-                             unit=getattr(lc, "consensus_unit", "build"))
-        tells = tally(ev, cc)
-        self.consensus = {k: [t.as_dict() for t in v] for k, v in tells.items()}
-        ls.set_consensus([dict(t, t=ix[t["item"]]) for v in self.consensus.values() for t in v])
-
-    def consensus_report(self, archetype: Optional[str] = None) -> Dict[str, list]:
-        """Promoted reviewer tells per family (math §8.5a), optionally for one archetype."""
-        c = getattr(self, "consensus", None) or {}
-        if archetype is None:
-            return {(self.locset.names.get(k, k) if self.locset is not None else k): v for k, v in c.items()}
-        k = family_key(archetype)
-        return {archetype: list(c.get(k, []))}
     # ------------------------------------------------------------ locators
 
     def _locset(self) -> None:

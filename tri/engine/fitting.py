@@ -18,7 +18,6 @@ from tri.infer.engine import PassEngine
 from tri.model.matrix import BuildMatrix
 from tri.model.space import ConceptSpace
 from tri.model.worth import FieldWorth
-from tri.rules.induction import context_features
 from tri.rules.passes import Rulebook
 
 COORDS_DEFAULT = "float32"     # SpaceConfig.coords
@@ -82,7 +81,7 @@ class _Fitting:
         self._Zdata = np.ascontiguousarray(Z[: len(self.data)], dtype=self._coord_dtype())
         self.rulebook = Rulebook(self.catalog, self.cfg.passes)
         self.rulebook.reader = self._archetype_reader
-        self.rulebook.mine(full, None, self.space.region_names, changed_since=self.patches.change_times())
+        self.rulebook.prepare(full, self.space.region_names)    # authored rules only: nothing is mined
         self._mine_sidegrades()
         self._ledger_and_rules()                       # similarity now uses the new space
         self._refresh_worth()
@@ -225,15 +224,6 @@ class _Fitting:
     def _embed(self, b: Build) -> np.ndarray:
         return self._placed(b)[0].copy()
 
-    def _region_feats(self, b: Build) -> set:
-        f = context_features(b)
-        if self.space is not None:
-            f.add(f"region:{self._placed(b)[1]}")
-            fam = self._family_of(b)
-            if fam:
-                f.add(f"family:{fam}")               # scope of OFF_ARCHETYPE rules (strong SM)
-        return f
-
     def _family_of(self, b: Build) -> Optional[str]:
         """Family key of b's archetype, or None. A reviewed build's family is the
         one its reviewer states (# is a, else # a: ... notes naming a single
@@ -302,31 +292,6 @@ class _Fitting:
             ok = (d <= ls.reach) & (P.max(1) >= ls.cfg.min_confidence)
             out += [fam[int(i)] if o else None for i, o in zip(k, ok)]
         return out
-
-    def mine_rules(self, items=None, reset_config: bool = True, verbose: bool = False) -> dict:
-        """Re-mine the rulebook on the stored corpus without touching the concept
-        space (picks up group, archetype and weapon literals and the
-        stricter certification in a run saved before them). reset_config:
-        mine with today's PassConfig defaults (keeping seed, sample, n_jobs and item_rows)."""
-        self._need()
-        t0 = time.time()
-        if reset_config:
-            from tri.rules.defs import PassConfig
-            old = self.cfg.passes
-            self.cfg.passes = PassConfig(seed=old.seed, sample=old.sample, n_jobs=old.n_jobs, item_rows=old.item_rows)
-        if items is None:
-            self.rulebook = Rulebook(self.catalog, self.cfg.passes)
-        else:
-            self.rulebook.cfg = self.cfg.passes
-        self.rulebook.reader = self._archetype_reader
-        self.rulebook.mine(self.data, None, self.space.region_names,
-                           changed_since=self.patches.change_times(), items=items)
-        self._ledger_and_rules(); self._refresh_worth()
-        rep = dict(rules=self.rulebook.summary(), selection=self.selection_report(),
-                   seconds=round(time.time() - t0, 2))
-        if verbose:
-            print(json.dumps(rep, indent=1))
-        return rep
 
     def _review_matrix(self, touched: Optional[list] = None, rids: Optional[list] = None) -> Optional[BuildMatrix]:
         """Corrected builds of active reviews, weighted by their ledger weight.
@@ -423,7 +388,7 @@ class _Fitting:
         old = self.cfg.infer.swap_margin
         for m in self.cfg.swap_grid:
             self.cfg.infer.swap_margin = m
-            eng = PassEngine(self.catalog, self.space, self.rules, self._worth, self.review_rules,
+            eng = PassEngine(self.catalog, self.space, self.rules, self._worth,
                              None, self.cfg.infer)
             scores[m] = _ops_f1(eng, revs)
         best = max(scores, key=lambda m: (scores[m], m))
@@ -432,7 +397,7 @@ class _Fitting:
         old_nf = self.cfg.infer.no_fit_rate
         for v in self.cfg.no_fit_grid:                 # then the "does not fit" threshold
             self.cfg.infer.no_fit_rate = v
-            eng = PassEngine(self.catalog, self.space, self.rules, self._worth, self.review_rules,
+            eng = PassEngine(self.catalog, self.space, self.rules, self._worth,
                              None, self.cfg.infer)
             nf_scores[v] = _ops_f1(eng, revs)
         nf = max(nf_scores, key=lambda v: (nf_scores[v], -abs(v - old_nf)))
@@ -469,10 +434,6 @@ class _Fitting:
             rep["refit"] = self.refit()
         return rep
 
-    def drift(self, since: float, min_drop: float = 0.15) -> List[dict]:
-        """Pass rules whose confidence fell on builds after `since` (patch detection)."""
-        self._need()
-        return self.rulebook.drift(self.data, self.space.region_of(self._Zdata), since, min_drop)
     # ------------------------------------------------------------ catalog sync
 
     def extend_catalog(self, new_catalog: Catalog, time_: Optional[float] = None, name: Optional[str] = None,
