@@ -8,14 +8,13 @@ import dataclasses
 import numpy as np
 
 from tri.core.types import Build, Kind
-from tri.game import priors
 from tri.game.weapon_rules import main_weapons, weapon_rules
 from tri.infer.defs import _Sit
 from tri.model.matrix import context_tokens
 from tri.reviews.variants import family_key
 from tri.rules.defs import Ctx
 from tri.rules.groups import rule_tokens
-from tri.rules.induction import context_features
+from tri.rules.features import context_features
 
 
 class _Situations:
@@ -46,7 +45,11 @@ class _Situations:
             ls.note(uq, xa=xa, force=(force or {}).get("key"), transient=True)
         memory = self.ledger.claims_for(b, vec=fv) if self.ledger is not None else {}
         b = self._waive(b, memory)
+<<<<<<< HEAD
+        b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules
+=======
         b, wr0, memory = self._weapon_base(b, memory)   # hardcoded weapon rules (math §2.8c)
+>>>>>>> main
         if fpt is not None:                    # placed again with the waived build, as before
             fpt = self.space.point(b, partial, latent=force["latent"])
         avail = self.c.availability_in(b)      # met at pre-shrine or final stats
@@ -81,25 +84,12 @@ class _Situations:
         for i, (k, name, p) in enumerate(regs):
             ptq = fpt if fpt is not None else pt if i == 0 and region is None else self.space.point(b, partial, region=k)
             fine = ls.note(ptq.u, xa=xa, force=(force or {}).get("key"), transient=True) if ls is not None else None
-            lr = self.worth.rates(ptq, picks=[self.c.index[i] for i in b.items() if i in self.c.index])
-            q = lr.q.copy()
-            if fine is not None:                                     # overlapping archetypes: the few picks
-                q = ls.adjust(q, ptq.u, fine)                       # that tell them apart (math §6.6)
-                if force is None and region is None and i == 0:
-                    j = int(np.argmax(fine))                         # named by the fine reading, not the region
-                    if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
-                        auto = (self.space.region_auto or [])
-                        nm = ls.names[ls.keys[j]]
-                        name = f"{nm} ({auto[k]})" if k < len(auto) and auto[k] else nm
-            q = priors.adjust_q(q, self.c, b)                        # benchmarks, weapon redundancy (math §2.9)
-            for it, v in memory.items():                             # soft claims nudge worth
-                lab, st = v[0], v[1]
-                t = self.c.index.get(it)
-                if t is not None and not self._binds(v) and lab != "keep":
-                    # (an unmarked pick on a similar build is already counted
-                    # once through worth; it is not a reason to prefer it here)
-                    q[t] = float(np.clip(q[t] + self.cfg.memory_nudge * st * (1 if lab in ("keep", "add") else -1 if lab == "remove" else 0), 0, 1))
-            ind = self._notes_q(q, ptq.u, fine)
+            if fine is not None and force is None and region is None and i == 0:
+                j = int(np.argmax(fine))                             # named by the fine reading, not the region
+                if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
+                    auto = (self.space.region_auto or [])
+                    nm = ls.names[ls.keys[j]]
+                    name = f"{nm} ({auto[k]})" if k < len(auto) and auto[k] else nm
             fam = None
             if ls is not None and (force or {}).get("key") in getattr(ls, "keys", ()):
                 fam = force["key"]                                   # forced: its family, always
@@ -110,6 +100,9 @@ class _Situations:
             arch = family_key(ls.names.get(fam, fam)) if fam is not None else None
             wr = self._forbid_chain(weapon_rules(b, arch or (force or {}).get("name") or name))
             mem = self._same_family(memory, arch)
+            score = self._score(b, ptq, fine, arch, fv)              # the one per-item logit
+            q = 1.0 / (1.0 + np.exp(-score["z"]))
+            ind = score["indicative"]
             guard = self._weapon_guard(wr, avail)
             if guard:                                                # a weapon-required pick and its prerequisite
                 mem = {k: v for k, v in memory.items()                # chain outrank every review claim against them
@@ -121,16 +114,20 @@ class _Situations:
             feats = context_features(b) | {f"region:{k}"}
             if fam is not None:                                      # scope of OFF_ARCHETYPE rules (strong SM)
                 feats.add(f"family:{family_key(ls.names.get(fam, fam))}")
-            out.append(_Sit(b, ctx, feats, q, lr.support, mem, k, name, p, ptq.u,
+            out.append(_Sit(b, ctx, feats, q, score["support"], mem, k, name, p, ptq.u,
                             self.c.oath_of(b), {i for i in b.items() if i not in self.c.index}, indicative=ind,
                             family=fam, focus=foc,
                             weapon=dict(forbid={i: w for i, w in wr.forbid.items() if i in self.c.index},
                                         require={i: w for i, w in wr.require.items() if i in self.c.index},
-                                        guard=sorted(guard))))
+                                        guard=sorted(guard)), score=score))
         return out
 
     def _same_family(self, memory: dict, arch) -> dict:
+<<<<<<< HEAD
+        """ A claim from a review whose reviewer states the build's
+=======
         """(math §5) A claim from a review whose reviewer states the build's
+>>>>>>> main
         archetype ("is" note) does not cross into another family: borders are
         chasms. Generally-good claims and claims on the same build are kept."""
         st = getattr(self, "stated", None) or {}
@@ -147,7 +144,7 @@ class _Situations:
         return out
 
     def _notes_q(self, q: np.ndarray, u: np.ndarray, fine: Optional[np.ndarray]) -> Dict[str, dict]:
-        """Review notes and admin values on worth, in place (math §5.6):
+        """Review notes and admin values on worth, in place:
           indicator / core   q_t += note_worth * w,   w = K(u, u_r) * p(a | u)
           avoid              q_t -= note_worth * w
           value              q_t += clip(delta_t, -value_cap, value_cap)   (every build)
@@ -183,22 +180,6 @@ class _Situations:
                     if it not in out or out[it]["weight"] < w:
                         out[it] = dict(archetype=n.get("archetype"), kind=n["kind"], review_id=n.get("review_id"),
                                        weight=round(w, 3))
-        tells = getattr(ls, "tells", None) if ls is not None else None
-        if tells and ls.cfg.consensus:                       # reviewer consensus (math §8.5a)
-            Pc, dm, _ = ls.read_many(np.asarray(u, float)[None])
-            Pu = fine if fine is not None else Pc[0]
-            act = float(ls.activity(dm)[0])
-            eta = float(ls.cfg.consensus_worth)
-            for t in tells:
-                w = float(Pu[ls.kix[t["key"]]]) * act * float(t["confidence"])
-                if w < self.cfg.note_floor:
-                    continue
-                q[t["t"]] = float(np.clip(q[t["t"]] + t["sign"] * eta * w, 0, 1))
-                if t["sign"] > 0:
-                    it = t["item"]
-                    if it not in out or out[it]["weight"] < w:
-                        out[it] = dict(archetype=ls.names[t["key"]], kind="consensus", review_id=None,
-                                       weight=round(w, 3), reviewers=t.get("reviewers"))
         cap = float(self.cfg.value_cap)
         for it, v in self.values.items():
             t = self.c.index.get(it)
@@ -220,7 +201,7 @@ class _Situations:
 
     def _focus(self, b: Build, memory: Dict[str, tuple], avail: np.ndarray, q: np.ndarray, u) -> Tuple[np.ndarray, dict]:
         """(availability with the other classes' weapon talents switched off,
-        focus) for one situation (tri.focus, math §2.10). The build's own
+        focus) for one situation (tri.focus). The build's own
         picks and items a binding review adds or keeps stay available."""
         if not self.cfg.focus:
             return avail, {}
@@ -232,7 +213,11 @@ class _Situations:
         share: Dict[str, float] = {}
         cand: Dict[str, List[float]] = {}
         wa = getattr(self, "weapon_answer", None)
+<<<<<<< HEAD
+        if not allowed and wa:                          # the asker named the class
+=======
         if not allowed and wa:                          # the asker named the class (math §14.3)
+>>>>>>> main
             allowed, src = {wa}, "answer"
         if not allowed:
             for it, cs in tab.items():
@@ -267,7 +252,11 @@ class _Situations:
 
     def _answer_weapon(self, b: Build) -> Build:
         """The weapon the asker named (Answers.weapon, a weapon name) when the build
+<<<<<<< HEAD
+        records none: it is read as equipped."""
+=======
         records none: it is read as equipped (math §14.3)."""
+>>>>>>> main
         w = getattr(self, "weapon_name", None)
         if main_weapons(b):
             return b
@@ -280,7 +269,7 @@ class _Situations:
 
     def _weapon_base(self, b: Build, memory: Dict[str, tuple]):
         """(build with the rules' lock waivers, the archetype-free rules, memory
-        without claims that keep or add a forbidden pick). math §2.8c."""
+        without claims that keep or add a forbidden pick)."""
         wr = self._forbid_chain(weapon_rules(b))
         if wr.waive:                                  # the waiver covers the prerequisite chain (Knight's Rally > Turtle Shell)
             waive = set(wr.waive) | {x for w in wr.waive for x in self.c.prereq_closure(w)}
@@ -317,7 +306,7 @@ class _Situations:
     def _weapon_guard(self, wr, avail) -> set:
         """the weapon-required picks whose stats are met, with their hard
         prerequisite chain (Knight's Rally for Turtle Shell). Only game data
-        (stats, exclusive_with, the cap) can keep them out (math §2.8c)."""
+        (stats, exclusive_with, the cap) can keep them out."""
         out: set = set()
         for it in wr.require:
             t = self.c.index.get(it)
@@ -334,7 +323,7 @@ class _Situations:
 
     def _waive(self, b: Build, memory: Dict[str, tuple]) -> Build:
         """A review of this very build that adds or keeps an item blocked only by
-        a weapon lock waives that lock here (math §2.8, 2.9a): the build carries
+        a weapon lock waives that lock here: the build carries
         another weapon, wields one it did not select, or the talent works
         without it. Only the reviewed build itself (sim >= sim_same)."""
         if self.ledger is None or not memory:

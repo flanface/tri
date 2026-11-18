@@ -1,4 +1,4 @@
-"""Tri methods: taking reviews: the ledger, induced rules, memory, categories and value overrides."""
+"""Tri methods: taking reviews: the ledger, memory, categories and value overrides."""
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Sequence
@@ -6,15 +6,19 @@ from typing import Dict, List, Optional, Sequence
 import numpy as np
 
 from tri.core.codec import validate_review
-from tri.core.types import Build, Review
+from tri.core.types import Build, Kind, Review
 from tri.engine.defs import CATEGORIES
 from tri.reviews.authority import ReviewLedger
 from tri.reviews.defs import Locator
-from tri.rules.induction import RuleInducer
+from tri.rules.passes import FOUNDATIONAL, LUXURY
 
 
 class _Reviewing:
+<<<<<<< HEAD
+    """Tri methods: taking reviews: the ledger, memory, categories and value overrides."""
+=======
     """Tri methods: taking reviews: the ledger, induced rules, memory, categories and value overrides."""
+>>>>>>> main
 
     def _ledger_and_rules(self) -> None:
         from tri.game.weapons import with_weapon_notes
@@ -31,17 +35,15 @@ class _Reviewing:
         if kern is not None and self._barrier_on():
             h2 = self.cfg.ledger.reach ** 2 / (-2.0 * np.log(self.cfg.ledger.sim_min))
             many = self.locset.kernel_many(h2)
-        fam = self._family_many() if emb is not None else None
         self.ledger = ReviewLedger(self.reviews, self.catalog, self.cfg.ledger, embed=emb,
-                                   kernel=kern, kernel_many=many, family_many=fam,
+                                   kernel=kern, kernel_many=many,
                                    change_times=self.patches.change_times()) if self.reviews else None
-        ind = RuleInducer(self.catalog, authority_min_support=self.cfg.rule_min_support,
-                          features=self._region_feats if self.space is not None else None)
-        self.review_rules_all = ind.induce(self.reviews, ledger=self.ledger) if self.reviews else []
         self._apply_drops()
         self._sync_indicators()
         self._select()
 
+<<<<<<< HEAD
+=======
     def _family_many(self):
         """(u, V) -> [m] family overlap for the ledger's family reach (math §5.8):
         the locators' family posteriors where both builds are located in one
@@ -69,6 +71,7 @@ class _Reviewing:
             return O
         return fam
 
+>>>>>>> main
     # ------------------------------------------------------------ selection rules
     @property
     def rules(self):
@@ -121,8 +124,13 @@ class _Reviewing:
 
     def drop_rule(self, rule_id: str, author: str = "", note: str = "") -> dict:
         """Remove an authored rule, suppress a mined one, or lift a suppression, by id.
+<<<<<<< HEAD
+        also sidegrades (sg:...), switched off and on the same way (a
+        suppression of a 3.x review rule id, rv:..., can still be lifted)."""
+=======
         also review rules (rv:...) and sidegrades (sg:...), switched off
         and on the same way."""
+>>>>>>> main
         from tri.rules.registry import PREFIXES
         e = self.authored.get(rule_id)
         if rule_id.startswith(PREFIXES):
@@ -174,17 +182,12 @@ class _Reviewing:
 
     # ------------------------------------------------------------ every rule
     def dropped_ids(self) -> set:
-        """Ids switched off with drop_rule (selection, rv:, sg:)."""
+        """Ids switched off with drop_rule (selection, sg:)."""
         return set(self.authored.suppressed) if getattr(self, "authored", None) is not None else set()
 
     def _apply_drops(self) -> None:
-        """Review rules and sidegrades minus the dropped ids."""
-        from tri.rules.registry import review_rule_id
+        """Sidegrades minus the dropped ids."""
         d = self.dropped_ids()
-        allr = getattr(self, "review_rules_all", None)
-        if allr is None:
-            allr = self.review_rules_all = list(self.review_rules)
-        self.review_rules = [r for r in allr if review_rule_id(r) not in d]
         self.sidegrades_dropped = {x for x in d if x.startswith("sg:")}
 
     def all_rules(self, item: Optional[str] = None, build: Optional[Build] = None) -> List[dict]:
@@ -244,6 +247,36 @@ class _Reviewing:
         if self.space is not None:
             self._ledger_and_rules(); self._refresh_worth()
 
+    # ------------------------------------------------------------ non-mutating variants
+    def fork(self):
+        """A copy that shares the fitted model (catalog, space, field, corpus)
+        but owns its review state: set_reviews / set_memory on the copy leave
+        this Tri unchanged, so a caller may answer on this one meanwhile."""
+        import copy
+        t = copy.copy(self)
+        for k, v in list(vars(self).items()):
+            if isinstance(v, (dict, list, set)) and not k.startswith("__"):
+                setattr(t, k, copy.copy(v))
+        if getattr(self, "locset", None) is not None:
+            ls = copy.copy(self.locset)
+            for k, v in list(vars(self.locset).items()):
+                if isinstance(v, (dict, list, set)):
+                    setattr(ls, k, copy.copy(v))
+            t.locset = ls
+        return t
+
+    def with_reviews(self, reviews: Sequence[Review]):
+        """A new Tri with this review log (set_reviews on a fork)."""
+        t = self.fork()
+        t.set_reviews(reviews)
+        return t
+
+    def with_memory(self, reviews: Sequence[Review], locators: Sequence[Locator]):
+        """A new Tri with these reviews and locators (set_memory on a fork)."""
+        t = self.fork()
+        t.set_memory(reviews, locators)
+        return t
+
     def add_reviews(self, reviews: Sequence[Review], validate: bool = True) -> dict:
         """Add reviews. Takes effect at once (memory, review rules, worth
         neighbours); pass rules and the space change at the next refit()."""
@@ -257,8 +290,6 @@ class _Reviewing:
     def ledger_report(self) -> dict:
         return self.ledger.report() if self.ledger is not None else dict(reviews=0)
 
-    def rule_report(self, include_proposed: bool = False) -> List[str]:
-        return [r.describe() for r in self.review_rules if include_proposed or r.status != "proposed"]
     # ------------------------------------------------------------ convergence
 
     def review_agreement(self, detail: bool = False):
@@ -286,30 +317,26 @@ class _Reviewing:
     def dry_insert(self, review: Review, probe_builds: Sequence[Build] = ()) -> dict:
         """What one review would change, without keeping it: answers on its own
         build and on probe builds before and after, plus the overrides it causes.
-        Not thread-safe (temporarily swaps the review log)."""
+        Non-mutating: the review is inserted into a fork (this Tri is never
+        changed, so concurrent callers are safe)."""
         self._need()
-        keep = list(self.reviews)
         builds = [review.original] + list(probe_builds)
 
-        def snap():
+        def snap(t):
             out = []
             for b in builds:
-                a = self.review(b, 1, keep_size=True)[0]
+                a = t.review(b, 1, keep_size=True)[0]
                 out.append(dict(build=b.build_id, changes=[f"{c.action} {c.item}" for c in a.changes],
                                 iffy=list(a.iffy)))
             return out
-        before = snap()
-        before_super = len(self.ledger.superseded) if self.ledger else 0
-        try:
-            self.set_reviews(keep + [review])
-            after = snap()
-            overrides = [s.__dict__ for s in (self.ledger.superseded[before_super:] if self.ledger else [])]
-            rules = [r.describe() for r in self.review_rules if r.status != "proposed"
-                     and any(x.review_id == review.review_id for x in r.support + r.counter)]
-            agree = self.review(review.original, 1, keep_size=True)[0]
-        finally:
-            self.set_reviews(keep)
-        return dict(before=before, after=after, overrides=overrides, rules_touched=rules,
+        before = snap(self)
+        old = {(s.item, s.older, s.newer) for s in (self.ledger.superseded if self.ledger else [])}
+        t = self.with_reviews([r for r in self.reviews if r.review_id != review.review_id] + [review])
+        after = snap(t)
+        overrides = [dict(s.__dict__) for s in (t.ledger.superseded if t.ledger else [])
+                     if (s.item, s.older, s.newer) not in old]
+        agree = t.review(review.original, 1, keep_size=True)[0]
+        return dict(before=before, after=after, overrides=overrides,
                     reproduced=sorted(set(agree.items())), validation=self.validate(review))
     # ------------------------------------------------------------ review queue
 
@@ -319,11 +346,30 @@ class _Reviewing:
         return ReviewQueue(self, random_share, seed).next(pool, k)
     # ------------------------------------------------------------ categories
 
-    def categories(self) -> Dict[str, str]:
-        """item -> foundational | central | luxury: the admin category where one
-        is set (set_categories), else the mined pass."""
+    def categories(self, found_rate: float = 0.9) -> Dict[str, str]:
+        """item -> foundational | central | luxury, in this order of authority:
+        the admin category (set_categories); the pass of an authored take rule;
+        foundational for a talent taken by >= found_rate of the corpus builds
+        that can take it; else luxury. Central comes only from an admin category
+        or an authored rule (4.0: the mined pass is gone)."""
         self._need()
-        return {i: self.manual.get(i) or self.rules.pass_of(i) for i in self.catalog.ids}
+        rate = self._eligible_rate()
+        out = {}
+        for i in self.catalog.ids:
+            c = self.manual.get(i) or self.rules.pass_of(i)
+            if c == LUXURY and rate is not None and self.catalog.items[i].kind == Kind.TALENT \
+                    and float(rate[self.catalog.index[i]]) >= found_rate:
+                c = FOUNDATIONAL
+            out[i] = c
+        return out
+
+    def _eligible_rate(self):
+        """Per item, the corpus pick rate among builds that can take it (cached)."""
+        hit = self.__dict__.get("_elig_rate")
+        if hit is None or hit[0] is not self.data:
+            r = self.data.pick_rate()[0] if self.data is not None and len(self.data) else None
+            hit = self._elig_rate = (self.data, r)
+        return hit[1]
 
     def set_categories(self, categories: Dict[str, Optional[str]], replace: bool = False) -> Dict[str, str]:
         """Admin categories, the expert's say on an item for every build:
@@ -333,7 +379,7 @@ class _Reviewing:
           central       defines the build's playstyle (an attunement path, a
                         signature talent such as Blighted Song): taken whenever its
                         requirements are met and respected once picked, removed
-                        only for a clash (math §7.10). Few talents are central.
+                        only for a clash. Few talents are central.
           luxury        never required; taken when a slot is free; never
                         dropped or swapped out for worth
         A category replaces the mined pass of the item and outranks its never
@@ -355,8 +401,8 @@ class _Reviewing:
         return dict(self.manual)
 
     def set_values(self, values: Dict[str, Optional[float]], replace: bool = False) -> Dict[str, float]:
-        """Admin flat value offsets: delta added to an item's worth on every build
-        (math §5.6), within +-cfg.infer.value_cap. None or 0 clears an item.
+        """Admin flat value offsets: delta added to an item's worth on every build,
+        within +-cfg.infer.value_cap. None or 0 clears an item.
         replace=True drops every value not in `values`. Instant."""
         cap = float(self.cfg.infer.value_cap)
         new = {} if replace else dict(self.values)

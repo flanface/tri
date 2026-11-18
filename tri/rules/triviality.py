@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+"""Triviality baselines for statements.
+=======
 """Triviality baselines for statements (math §12.6).
+>>>>>>> main
 
 A rule or fact is stated only when it says more than the game data already
 says. Pom's five baselines; each statement on the left is trivial when the

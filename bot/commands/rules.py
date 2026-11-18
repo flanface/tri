@@ -38,7 +38,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     async def rule_add(inter: discord.Interaction, text: str, note: Optional[str] = None):
         if not await admin(inter):
             return
-        from tri.rules.language import RuleSyntaxError
+        from tri.api import RuleSyntaxError
         await inter.response.defer(ephemeral=True, thinking=True)
         try:
             info = await asyncio.to_thread(bot.svc.add_rule, text, f"discord:{inter.user.id}", note or "")
@@ -57,7 +57,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
     async def rule_edit(inter: discord.Interaction, rule_id: str, text: str, note: Optional[str] = None):
         if not await admin(inter):
             return
-        from tri.rules.language import RuleSyntaxError
+        from tri.api import RuleSyntaxError
         await inter.response.defer(ephemeral=True, thinking=True)
         try:
             info = await asyncio.to_thread(bot.svc.edit_rule, rule_id.strip(), text, f"discord:{inter.user.id}",

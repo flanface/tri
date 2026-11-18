@@ -227,7 +227,7 @@ def _r(x):
 
 
 def score(pairs: Iterable[Tuple[Review, Review]]) -> dict:
-    """The reviewer-agreement scorecard over (predicted, true) sheet pairs (math §11.3)."""
+    """The reviewer-agreement scorecard over (predicted, true) sheet pairs."""
     s = Score()
     for p, t in pairs:
         s.add(p, t)
@@ -277,7 +277,7 @@ _SIM = re.compile(r"similarity\s*([0-9.]+)")
 
 
 def margin_of(a: dict) -> Optional[float]:
-    """Evidence margin of one analysed change in [0, 1] (math §11.4): a rule's
+    """Evidence margin of one analysed change in [0, 1]: a rule's
     certified bound; a review transfer's similarity; a worth change's distance of
     the local pick rate from one half (|2q - 1|); `marginal` when recorded."""
     w = str(a.get("why") or a.get("rule") or "")

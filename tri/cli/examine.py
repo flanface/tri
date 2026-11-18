@@ -67,7 +67,6 @@ def audit_requirements(tri, cat, max_rate: float = 0.01, min_support: float = 10
 
 def learned(tri, cat, axes_k=3):
     rules = tri.rulebook.report()
-    review_rules = tri.rule_report()
     sp = tri.space.report()
     sp["axes"] = tri.space.axes(6)[:axes_k]
     rate = tri.data.pick_rate()[0]
@@ -82,10 +81,10 @@ def learned(tri, cat, axes_k=3):
                          rules=" | ".join(r.text(tri.rulebook.region_names) for r in rs)))
     order = {"foundational": 0, "central": 1, "luxury": 2}
     rows.sort(key=lambda r: (order.get(r["pass_"], 3), -r["pick_rate"]))
-    return rules, review_rules, sp, rows
+    return rules, sp, rows
 
 
-def print_part1(rules, review_rules, sp, rows):
+def print_part1(rules, sp, rows):
     s = {}
     for r in rows:
         s[r["pass_"]] = s.get(r["pass_"], 0) + 1
@@ -95,10 +94,6 @@ def print_part1(rules, review_rules, sp, rows):
         print("  " + line)
     if len(rules) > 60:
         print(f"  ... {len(rules) - 60} more in analysis/rules.txt")
-    if review_rules:
-        print(f"\n== review rules in force ({len(review_rules)})")
-        for line in review_rules[:20]:
-            print("  " + line)
     print(f"\n== concept space: {sp['dim']} latent dims, {sp['coordinates']} coordinates, "
           f"{sp['deviance_explained']:.0%} of deviance explained (vs pick rates alone)")
     for r in sp["regions"]:
@@ -127,10 +122,10 @@ def main(argv=None):
     result = dict(run=run)
 
     if True:
-        rules, review_rules, sp, rows = learned(tri, cat, a.axes)
-        print_part1(rules, review_rules, sp, rows)
+        rules, sp, rows = learned(tri, cat, a.axes)
+        print_part1(rules, sp, rows)
         with open(os.path.join(adir, "rules.txt"), "w") as f:
-            f.write("\n".join(rules + ([""] + review_rules if review_rules else [])) + "\n")
+            f.write("\n".join(rules) + "\n")
         with open(os.path.join(adir, "regions.json"), "w") as f:
             json.dump(sp, f, indent=1, default=str)
         with open(os.path.join(adir, "rules.json"), "w") as f:

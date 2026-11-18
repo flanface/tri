@@ -1,30 +1,23 @@
+<<<<<<< HEAD
+"""The selection rule set: the hand-authored rules in one rulebook that forces
+foundational and central picks and exclusions (4.0: mined rules and rules read
+off the reviews are gone; reviews act through the scorer).
+=======
 """The selection rule set: mined rules, authored rules and review
 evidence in one rulebook that decides foundational and central picks and
 exclusions (math §6.12).
+>>>>>>> main
 
     sel = build_selection(rulebook, authored, vocab, reviews, ledger, family_of, bm)
-    sel.rules            # what fires: authored, standing and refined mined rules
-    sel.evidence[key]    # {status, support, counter, by, was}
+    sel.rules            # what fires: the authored rules
+    sel.evidence[key]    # {status, support, counter, by, corpus}
 
-For each rule, every reviewed build whose original context the rule applies to
-is a case:
+For each authored rule, every reviewed build whose original context the rule
+applies to is a case, shown to its author and never acted on:
 
-    take t:   reviewer adds t, keeps t unmarked (not on a build tri made),
-              upholds a rule-made add of t                         -> support
-              reviewer removes t (not for space), overturns such an add -> counter
+    take t:   reviewer adds t, or keeps t unmarked (not on a build tri made) -> support
+              reviewer removes t (not for space)                              -> counter
     never t:  the mirror image.
-
-Removals for space (LESS_NECESSARY_SPACE, LUXURY_LESS) say nothing about a
-rule; neither do iffy marks. Weights are the ledger's operation weights
-(supersession, staleness, recency) times the operation's strength weight.
-
-A mined rule with no counter stands. With counters it is refined: one literal
-(archetype or other context, group count, related pick, grounded stat) that
-excludes every counter case while keeping the most support, accepted only if
-the refined rule still certifies on the corpus (rate and Wilson bound at the
-mining z, support >= min_support). Otherwise the newest case decides: a counter
-overrules the rule, a support keeps it ("disputed"). Authored rules always fire;
-their evidence is shown, never acted on.
 """
 from __future__ import annotations
 
@@ -34,20 +27,19 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 
-from tri.core.types import Action, Kind, strength_weight
-from tri.rules.defs import Condition, Ctx
-from tri.rules.groups import grounded_stats, related_items, rule_tokens
-from tri.rules.induction import SPACE_REASONS
-from tri.rules.language import rule_id
-from tri.rules.passes import CENTRAL, EXCLUSION, FOUNDATIONAL, NEVER, TAKE, PassRule, Rulebook, wilson
+from tri.core.types import Action, strength_weight
+from tri.rules.defs import Ctx
+from tri.rules.groups import rule_tokens
+from tri.rules.features import SPACE_REASONS
+from tri.rules.passes import TAKE, PassRule, Rulebook, wilson
 from tri.reviews.authority import made_by_tri
 
 
 @dataclass
 class SelectionConfig:
-    refine: bool = True            # try one separating literal before overruling
-    corpus_check: bool = True      # a refinement must still certify on the corpus (needs bm)
     keep_weight: float = 1.0       # an unmarked keep, relative to an explicit operation
+<<<<<<< HEAD
+=======
     # selection rules read off the reviews themselves (math §6.12.5)
     review_rules: bool = True
     family_min: int = 3            # A = a ⇒ t / ¬t: reviews of family a that bear on t
@@ -62,6 +54,7 @@ class SelectionConfig:
     keep_min: int = 4
     keep_share: float = 0.75
     avail_only: bool = True        # denominators count only builds that can take t
+>>>>>>> main
 
 
 @dataclass
@@ -123,6 +116,8 @@ def _evidence(r: PassRule, sig) -> List[_Case]:
     return cs
 
 
+<<<<<<< HEAD
+=======
 def _candidates(r: PassRule, rb: Rulebook, sup: List[_Case], cnt: List[_Case]) -> List[tuple]:
     """(rank, literal) that exclude every counter case."""
     c, groups, step = rb.c, rb.groups, max(rb.cfg.stat_step, 1)
@@ -319,6 +314,7 @@ def _fam_ok(f: Optional[str], never_fams: Sequence[str]) -> bool:
     return f is None or f not in never_fams
 
 
+>>>>>>> main
 def authored_stats(rb: Rulebook, bm, r: PassRule) -> dict:
     """Corpus statistics of an authored rule, shown to its author (never a gate)."""
     if bm is None:
@@ -338,10 +334,11 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
     sel = copy.copy(rb)
     sel.mined = rb
     sel.evidence: Dict[str, dict] = {}
-    sup_ids = set(authored.suppressed) if authored is not None else set()
     sig = _cases(reviews, ledger, rb.c, rb.groups, family_of, cfg) if reviews else {}
     rules: List[PassRule] = []
     auth = list(authored.rules(vocab)) if (authored is not None and vocab is not None) else []
+<<<<<<< HEAD
+=======
     if cfg.review_rules and sig:                       # what the reviews say, as rules
         fo = family_of if family_of is not None else None
         for r in review_rules(sig, _views(reviews, fo, rb.c), rb.c, cfg):
@@ -351,6 +348,7 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
             sel.evidence[r.key] = dict(status="review" if r.status == "active" else "suppressed", id=rid,
                                        support=[], counter=[])
             rules.append(r)
+>>>>>>> main
     for e, r in auth:
         st = authored_stats(rb, bm, r)
         r.confidence = st["rate"] if st["rate"] is not None else (1.0 if r.effect == TAKE else 0.0)
@@ -361,6 +359,8 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
                                    support=[x.rid for x in ev if x.sign > 0],
                                    counter=[x.rid for x in ev if x.sign < 0], corpus=st)
         rules.append(r)
+<<<<<<< HEAD
+=======
     for r0 in rb.rules:
         r = copy.copy(r0)
         rid = rule_id(r.key)
@@ -409,7 +409,9 @@ def build_selection(rb: Rulebook, authored=None, vocab=None, reviews: Sequence =
     for r in rules:                                     # a rewritten rule keeps its evidence
         if was[id(r)] != r.key and was[id(r)] in sel.evidence:
             sel.evidence[r.key] = dict(sel.evidence.pop(was[id(r)]), id=rule_id(r.key))
+>>>>>>> main
     sel.rules = rules
+    sel.pruned = []
     return sel
 
 

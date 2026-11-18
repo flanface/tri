@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, List, Optional
 import discord
 from discord import app_commands
 
-from tri.reviews.locators import archetype_key
-from tri.sources.dwt import parse_drive_link as _dwt_drive
+from tri.api import archetype_key
+from tri.api import parse_drive_link as _dwt_drive
 
 from ..embeds import clip
 from ..guilds import GuildConfig

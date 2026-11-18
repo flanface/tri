@@ -46,7 +46,7 @@ from typing import Dict, List, Optional, Sequence
 import discord
 from discord import app_commands
 
-from tri.reviews.locators import archetype_key
+from tri.api import archetype_key
 
 from .color import paint_embed, paint_msg
 from .commands import register
@@ -704,7 +704,7 @@ class TriBot(discord.Client):
         if rounds and (ans["archetype"] or ans["central"] or ans.get("want") or ans.get("weapon")) and gc.record_answers and self.in_guild(inter):
             st = getattr(self, "store", None)
             if st is not None and hasattr(st, "add_answers"):
-                from tri.core.codec import build_to_dict
+                from tri.api import build_to_dict
                 try:
                     if await st.add_answers(str(inter.user.id), build_to_dict(build), ans):
                         await self.load_answers(self.svc)

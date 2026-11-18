@@ -117,14 +117,17 @@ class ReviewLedger:
     def __init__(self, reviews: Sequence[Review], catalog: Optional[Catalog] = None,
                  cfg: Optional[LedgerConfig] = None, embed: Optional[Callable[[Build], np.ndarray]] = None,
                  kernel: Optional[Callable[[np.ndarray, np.ndarray], float]] = None,
-                 change_times: Optional[Dict[str, float]] = None, kernel_many=None, family_many=None):
+                 change_times: Optional[Dict[str, float]] = None, kernel_many=None, family_many=None):  # family_many: ignored (4.0)
         """embed: build -> concept-space coordinates; kernel: (u, v) -> similarity
         (default: the concept-distance kernel, see reach_kernel); embed None falls back to build_similarity. change_times: item -> latest patch time."""
         self.cfg = cfg or LedgerConfig()
         self.embed = embed
         self.kernel = kernel
         self.kernel_many = kernel_many                 # (u, V) -> [m]
+<<<<<<< HEAD
+=======
         self.family_many = family_many                 # (u, V) -> [m] family overlap
+>>>>>>> main
         self._vec: Dict[str, np.ndarray] = {}
         self.change_times = dict(change_times or {})
         self.stale: List[Tuple[str, str]] = []        # (review id, item) discounted by a patch
@@ -281,6 +284,9 @@ class ReviewLedger:
                     # "generally good" one competes with local claims by build similarity,
                     # so a removal on a different archetype stands
                     sim = 1.0 if (new.broken or old.broken) else self.similarity(old.review_id, new.review_id)
+                    if new.label == "keep" and old.label in ("add", "remove") and \
+                            self.similarity(old.review_id, new.review_id) < self.cfg.sim_same:
+                        continue                          # an unmarked pick overrides an operation on the same build only
                     f = self._factor(sim)
                     if f < f_min:
                         f_min, hit = f, (new, sim)
@@ -295,9 +301,15 @@ class ReviewLedger:
         """Two claims on one item with different labels conflict unless one of
         them is conditional on items the other build does not have: "remove x,
         works against y" and "keep x" on a build without y both stand."""
-        ia = self._context(self.by_id[a.review_id].original)
-        ib = self._context(self.by_id[b.review_id].original)
-        return a.holds_in(ib) and b.holds_in(ia)
+        if not (a.conditional or b.conditional):
+            return True
+        return a.holds_in(self._ctx_of(b.review_id)) and b.holds_in(self._ctx_of(a.review_id))
+
+    def _ctx_of(self, review_id: str) -> set:
+        memo = self.__dict__.setdefault("_ctx", {})
+        if review_id not in memo:
+            memo[review_id] = self._context(self.by_id[review_id].original)
+        return memo[review_id]
 
     @staticmethod
     def _context(b: Build) -> set:
@@ -346,6 +358,8 @@ class ReviewLedger:
                                  for c in self.active_claims(r.review_id) if c.global_scope]
         return g
 
+<<<<<<< HEAD
+=======
     def _unreturned(self, r: Review) -> frozenset:
         """Candidates a full review r leaves out of its returned build (memo)."""
         memo = self.__dict__.setdefault("_unret", {})
@@ -353,6 +367,7 @@ class ReviewLedger:
             memo[r.review_id] = self._candidates() - self._returned(r)
         return memo[r.review_id]
 
+>>>>>>> main
     def neighbours(self, build: Build, min_sim: Optional[float] = None, vec=None) -> List[Tuple[Review, float]]:
         """Reviewed builds similar to `build` (sim >= min_sim, default cfg.sim_min), newest first.
         vec: the build's concept coordinates when they are not its own placement
@@ -362,8 +377,9 @@ class ReviewLedger:
         return [(self.reviews[i], float(S[i])) for i in range(len(self.reviews) - 1, -1, -1) if S[i] >= lo]
 
     def claims_for(self, build: Build, min_sim: Optional[float] = None, vec=None) -> Dict[str, tuple]:
-        """{item: (label, weight, review_id, similarity, reason, strength)}: the
-        newest active claim per item among reviews of similar builds.
+        """{item: (label, weight, review_id, similarity, reason, strength)}: per
+        item, the active claim with the largest weight among reviews of similar
+        builds (ties: the newest); superseded claims already weigh 0.
         weight = claim weight x similarity factor (1.0 for the same build).
         BROKEN claims apply to any build. Whether a claim is binding or only
         nudges worth is decided by binding()."""
@@ -377,20 +393,24 @@ class ReviewLedger:
                 continue                                   # the reviewed build wields another weapon class
             f = 1.0 if sim >= self.cfg.sim_full else sim
             for c in self.active_claims(r.review_id):
-                if c.item not in out and c.holds_in(items):
+                if c.holds_in(items):
                     v = (c.label, c.weight * f, r.review_id, sim, c.reason, c.strength, c.origin, tuple(c.related))
                     if c.origin == "echo":                 # tri's own pick: only where nobody said more
-                        echo.setdefault(c.item, v)
-                    else:
+                        if c.item not in echo or v[1] > echo[c.item][1]:
+                            echo[c.item] = v
+                    elif c.item not in out or v[1] > out[c.item][1]:
                         out[c.item] = v
+<<<<<<< HEAD
+=======
         for it, v in self.family_for(build, vec, items).items():     # pooled claims fill gaps and
             cur = out.get(it)                                         # override a lone claim that only nudges
             if cur is None or (self.cfg.pool_override and self.binding(v) and not self.binding(cur)):
                 out[it] = v
+>>>>>>> main
         for it, v in echo.items():
             out.setdefault(it, v)
         for rid, c in self._global_claims():               # context-free claims, newest first
-            if c.item not in out or out[c.item][6] == "family":
+            if c.item not in out:
                 # local claims (above) take precedence; a generally-good add from
                 # another archetype is marked origin "general" (binding(): strong only)
                 if not c.holds_in(items):
@@ -399,6 +419,8 @@ class ReviewLedger:
                                "general" if c.general else c.origin, tuple(c.related))
         return out
 
+<<<<<<< HEAD
+=======
     def _returned(self, r: Review) -> frozenset:
         """Items of the build a full review returns (original - removals + additions)."""
         memo = self.__dict__.setdefault("_ret_memo", {})
@@ -503,6 +525,7 @@ class ReviewLedger:
                        tuple(c.related), n)
         return out
 
+>>>>>>> main
     def conditions(self) -> Dict[str, Dict[str, Tuple[str, ...]]]:
         """{review_id: {item: related items}} for conditional claims (redundant
         with y, works against y): worth counts such a change only for query
@@ -531,8 +554,11 @@ class ReviewLedger:
         label, w, _rid, sim, reason, strength, origin = (tuple(claim) + (None, None, None))[:7]
         if w < hard:
             return False
+<<<<<<< HEAD
+=======
         if origin == "family":                             # pooled family claim (math §5.8)
             return strength == "strong" and label in ("add", "remove", "keep", "absent")
+>>>>>>> main
         if origin == "general":                            # generally good, from another build:
             return strength == "strong"                    # strong binds (where feasible), weak nudges
         if sim >= self.cfg.sim_same:

@@ -36,14 +36,15 @@ class SpaceConfig:
     metric_k: int = 10             # k for that calibration
     sample: Optional[int] = 200_000   # builds used to fit (None = all)
     seed: int = 0
-    # held-out check of the field (math §6.4); diagnostic, never used to choose parameters
+    # held-out check of the field; diagnostic, never used to choose parameters
     val_frac: float = 0.05         # share of corpus builds held out of training (0 = none)
     val_min: int = 50              # at least this many held-out builds; needs >= 5x as many corpus builds
     val_max: int = 2000            # at most this many
     val_mask: float = 0.2          # share of each held-out build's available entries that is scored
     val_points: int = 10           # held-out deviance is recorded this many times along training
-    # hardware (tri.accel): "auto" = cuda > mps (Apple Metal) > torch cpu > numpy; TRI_DEVICE overrides
+    # hardware (tri.accel): "auto" = cuda > mps (Apple Metal) > torch cpu > numpy
     device: str = "auto"
+    coords: str = "float32"        # storage of the corpus coordinates (float32 halves the largest array; float64)
     device_budget_gb: float = 2.0  # corpus picks kept on the device as uint8 up to this size, else copied per batch
     device_min_rows: int = 256     # latent solves of fewer builds stay on NumPy float64 (single-build answers)
 

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+"""Forced weapon context.
+=======
 """Forced weapon context (math §2.8).
+>>>>>>> main
 
 The planner records what a build equips (Build.meta "weapon", the deepwoken.co
 "weapons" field). Corpus builds rarely act on it, so the pretrain has no sense

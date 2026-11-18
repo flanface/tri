@@ -83,7 +83,7 @@ class ConfirmSubmit(discord.ui.View):
                     if popped.get("rls") else " The pool row stays (`/pool check`); it is not served again.")
         await edit_reply(inter, content=msg, view=None)
         try:                                           # after answering: this can take seconds
-            from tri.core.codec import review_from_dict
+            from tri.api import review_from_dict
             await asyncio.to_thread(bot.svc.add_review, review_from_dict(json.loads(json.dumps(body))))
         except Exception:
             log.exception("adding review to memory")

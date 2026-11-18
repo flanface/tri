@@ -1,5 +1,4 @@
-"""Categorization, facts and stream views for the bot
-(math §12).
+"""Categorization, facts and stream views for the bot.
 
 One entry point, ModelService.insight(kind, **kw) -> dict(files, text, data):
 
@@ -66,8 +65,8 @@ def _cache(svc) -> _Cache:
 
 
 def _atlas(svc):
-    from tri.analysis import categorize as C
-    from tri.views import insight as V
+    from tri.api import categorize as C
+    from tri.api import insight as V
     c = _cache(svc)
     if c.atlas is None:
         c.atlas = C.build_atlas(svc.tri, sample=ATLAS_SAMPLE)
@@ -79,7 +78,7 @@ def _atlas(svc):
 
 
 def _facts(svc):
-    from tri.analysis import facts as F
+    from tri.api import facts as F
     c = _atlas(svc)
     if c.facts is None:
         c.facts = F.mine_facts(svc.tri, c.atlas)
@@ -89,7 +88,7 @@ def _facts(svc):
 
 
 def fact_book(svc):
-    from tri.analysis.facts import FactBook
+    from tri.api import FactBook
     path = os.environ.get("TRI_FACTS_PATH") or os.path.join(os.path.dirname(os.path.abspath(svc.run)), "facts.json")
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -115,7 +114,7 @@ def _item(svc, name: str) -> str:
 
 def _draw(theme: str, fn, *a, **kw) -> bytes:
     """Draw under the theme (the caller holds the plot lock)."""
-    from tri.views import plots as render
+    from tri.api import plots as render
 
     from .plotting import png_bytes as _png
     with render.theme(theme):
@@ -137,12 +136,12 @@ def _diverse(facts):
 
 def _tells(tri, name: str, k: int = 2) -> List[dict]:
     """The picks that tell a locator archetype from its twins: the archetypes the map
-    confuses it with whose split passed the held-out check (math §6.6).
+    confuses it with whose split passed the held-out check.
     [{name, items: [{item, sign}], symbol}]."""
     ls = tri.locset
     if ls is None or not ls.refining:
         return []
-    from tri.reviews.locators import archetype_key
+    from tri.api import archetype_key
     key = archetype_key(name)
     if key not in ls.kix:
         return []
@@ -177,9 +176,9 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
             stat: Optional[str] = None, build=None, limit: int = 10, since: Optional[float] = None,
             status: str = "certified") -> dict:
     """See the module docstring. Returns dict(files=[(name, png)], text, data)."""
-    from tri.analysis import categorize as C, stream as S
-    from tri.infer import active
-    from tri.views import insight as V
+    from tri.api import categorize as C, stream as S
+    from tri.api import active
+    from tri.api import insight as V
     if kind in DEPRECATED:
         raise ValueError(f"the {kind} chart is deprecated")
     if kind not in KINDS:
@@ -255,13 +254,22 @@ def insight(svc, kind: str, theme: str = "dark", archetype: Optional[str] = None
                         new=len(cf.book_update.get("new", [])), retired=len(cf.book_update.get("retired", [])))
             text = f"{n_c} certified · {len(cf.facts) - n_c} candidates"
         elif kind == "rules":                   # how the model answers
+<<<<<<< HEAD
+            from tri.api import statements as ST
+=======
             from tri.rules import statements as ST
+>>>>>>> main
             it = _item(svc, item) if item else None
             data = ST.model_rules(tri, it, limit=limit if limit else 25)
             text = f"{data['total']} rules" + (f" · {data['trivial']} trivial dropped" if data["trivial"] else "")
         elif kind == "lookup":                  # /talent, /mantra
+<<<<<<< HEAD
+            from tri.api import facts as F
+            from tri.api import statements as ST
+=======
             from tri.analysis import facts as F
             from tri.rules import statements as ST
+>>>>>>> main
             it = _item(svc, item)
             cf = _facts(svc)
             if getattr(c, "miner", None) is None:
@@ -315,7 +323,11 @@ def intersect(svc, names: List[str], k: int = 3, exclude=(), picks: int = 8) -> 
     """k representative builds where the named archetypes meet
     (tri.analysis.categorize.intersection); each with its archetype shares
     and its picks with the highest field worth."""
+<<<<<<< HEAD
+    from tri.api import categorize as C
+=======
     from tri.analysis import categorize as C
+>>>>>>> main
 
     from .links import canonical_link, parse_build_link
     from .plotting import PLOT_LOCK

@@ -1,4 +1,4 @@
-"""Graphics of the categorization, the facts and the stream (math §12).
+"""Graphics of the categorization, the facts and the stream.
 Same themes and conventions as tri.views.plots: draw inside
 `with render.theme(name):`; every function returns a matplotlib figure.
 
@@ -274,17 +274,7 @@ def archetype_card(tri, at: Atlas, a: int, traps: Sequence[dict] = (), core_min:
                           items=separating(tri, at.centres[a], at.centres[b], 3)))
     return dict(name=at.names[a], builds=int(m.sum()), share=float(at.share[a]), core=by_pass,
                 contested=cont[:top], sidegrades=sides, traps=list(traps), envelope=env, neighbours=neigh,
-                consensus=consensus_rows(tri, at.names[a]),
                 readings={k: int(((at.top == a) & (at.kind == k)).sum()) for k in ("pure", "leaning", "hybrid")})
-
-
-def consensus_rows(tri, name: str, top: int = 6) -> List[dict]:
-    """Promoted reviewer tells of the family of archetype name (math §8.5a):
-    [{item, sign, reviewers, notes, confidence}], take tells first."""
-    rep = tri.consensus_report(name) if hasattr(tri, "consensus_report") else {}
-    rows = list(rep.get(name, []))
-    return [dict(item=r["item"], sign=r["sign"], reviewers=r["reviewers"], notes=r["notes"],
-                 confidence=r["confidence"]) for r in rows[:top]]
 
 
 def plot_card(card: dict, title: Optional[str] = None):
@@ -590,7 +580,7 @@ def stat_curves(tri, at: Atlas, item: str, stat: Optional[str] = None, rows: int
     from tri.game import priors
     bmk = priors.benchmark_of(item)
     bmk = bmk if bmk and bmk["stat"] == stat else None
-    if bmk:                                            # resolve the steep step (math §2.9)
+    if bmk:                                            # resolve the steep step
         k = int(bmk.get("at", 77))
         values = sorted(set(values) | set(range(k - 3, k + 5)))
     curves = []

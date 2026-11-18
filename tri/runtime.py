@@ -7,8 +7,12 @@
                      size stays at the peak until it trims.
     rss_mb()         resident size now (Linux /proc; None elsewhere).
     peak_mb()        the process's peak resident size (getrusage).
+<<<<<<< HEAD
+    cpu_quota()      CPUs this process may use (cgroup cpu.max, else affinity).
+=======
     cap_threads()    size the BLAS / OpenMP thread pools to the CPU quota
                      (cgroup cpu.max) before numpy loads.
+>>>>>>> main
 """
 from __future__ import annotations
 
@@ -82,6 +86,8 @@ def cpu_quota() -> int:
         except (OSError, ValueError):
             continue
     return max(1, n)
+<<<<<<< HEAD
+=======
 
 
 THREAD_VARS = ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS",
@@ -97,3 +103,4 @@ def cap_threads() -> int:
     for v in THREAD_VARS:
         os.environ.setdefault(v, str(n))
     return n
+>>>>>>> main

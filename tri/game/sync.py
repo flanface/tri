@@ -36,57 +36,21 @@ import copy
 import json
 import os
 import time
-import urllib.request
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
 from tri.core.catalog import Catalog
 from tri.core.types import Item
 from tri.game.defs import GameItem, Patch
-from tri.game.gamedata import API_URL, GameData, fetch_gamedata, name_key
+from tri.game.gamedata import GameData, name_key
 
 SYNC_DIR = "sync"
 
 
-REFS_URL = "https://github.com/pocamind/data.git/info/refs?service=git-upload-pack"
 
 
-def head_commit(ref: str = "main", timeout: float = 15.0) -> dict:
-    """{"sha", "date"} of pocamind/data at `ref`. Uses the GitHub API (with
-    GITHUB_TOKEN if set; unauthenticated it allows 60 requests an hour per IP).
-    If the API refuses (rate limit, outage), falls back to the git protocol's
-    ref list, which is not rate limited but carries no date (date is then
-    the time of the check)."""
-    import os
-    import time as _time
-    hdr = {"User-Agent": "tri", "Accept": "application/vnd.github+json"}
-    if os.environ.get("GITHUB_TOKEN"):
-        hdr["Authorization"] = "Bearer " + os.environ["GITHUB_TOKEN"]
-    try:
-        req = urllib.request.Request(API_URL.format(ref=ref), headers=hdr)
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            c = json.load(r)
-        return dict(sha=c.get("sha"), date=((c.get("commit") or {}).get("committer") or {}).get("date"))
-    except Exception as api_err:
-        sha = _ref_sha(ref, timeout)
-        if sha is None:
-            raise api_err
-        return dict(sha=sha, date=_time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()))
 
 
-def _ref_sha(ref: str, timeout: float) -> Optional[str]:
-    """The sha of a branch or tag from the git smart-HTTP ref advertisement."""
-    if len(ref) == 40 and all(c in "0123456789abcdef" for c in ref.lower()):
-        return ref.lower()
-    req = urllib.request.Request(REFS_URL, headers={"User-Agent": "git/2.40 tri"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        body = r.read().decode("utf-8", "replace")
-    want = {f"refs/heads/{ref}", f"refs/tags/{ref}", ref}
-    for line in body.splitlines():
-        parts = line[4:].split("\x00")[0].split(" ")       # pkt-line: 4 hex length, "<sha> <ref>"
-        if len(parts) == 2 and len(parts[0]) == 40 and parts[1] in want:
-            return parts[0]
-    return None
 
 
 def _fp(it: GameItem) -> str:
@@ -334,16 +298,3 @@ def restore(tri, run_dir: str) -> Optional[dict]:
     return tri.extend_catalog(cat, time_=st.get("time"), name=None, patches=patches)
 
 
-def sync(tri, run_dir: Optional[str], cache_dir: str, ref: str = "main", exclude: Sequence[str] = (),
-         keep_groups: Sequence[str] = (), dry_run: bool = False, force: bool = False) -> dict:
-    """Check pocamind/data and, if its commit moved (or force), plan and apply a
-    sync. dry_run: plan only. Returns the plan summary (+ what was applied)."""
-    state = load_state(run_dir) if run_dir else None
-    head = head_commit(ref)
-    if state and head.get("sha") and state.get("sha") == head["sha"] and not force:
-        return dict(sha=head["sha"], unchanged=True)
-    gd = fetch_gamedata(cache_dir, ref=head.get("sha") or ref, refresh=True)
-    p = plan(tri.catalog, gd, state, exclude, keep_groups, sha=head.get("sha"), commit_date=head.get("date"))
-    if dry_run:
-        return dict(p.summary(), dry_run=True)
-    return apply(tri, p, run_dir)

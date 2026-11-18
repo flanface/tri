@@ -59,7 +59,11 @@ class _Constraints:
         return fallback and getattr(self.cfg, "tier_fallback", False)
 
     def tier_here(self, item: str, s: _Sit) -> str:
+<<<<<<< HEAD
+        """The tier of item on this build: its category, else
+=======
         """The tier of item on this build (math §6.12): its category, else
+>>>>>>> main
         the pass of a take rule that fires here, else luxury. A talent that is
         foundational or central elsewhere but has no rule firing here is luxury
         here: worth ranks it like any other luxury talent."""
@@ -103,12 +107,15 @@ class _Constraints:
         out = {i for i in sel if self.manual.get(i) == CENTRAL and self._kind(i) == "t"}
         out |= {i for i, v in (getattr(s, "indicative", None) or {}).items()
                 if i in sel and self.manual.get(i) != LUXURY
-                and (v.get("kind") in ("indicator", "core")
-                     or (v.get("kind") == "consensus" and v.get("weight", 0) >= self.cfg.consensus_central))}
+                and v.get("kind") in ("indicator", "core")}
         return out
 
     def _firing(self, s: _Sit, pass_: Optional[str] = None) -> List[PassRule]:
+<<<<<<< HEAD
+        """Take rules that fire for s, across the chasm: a mined
+=======
         """Take rules that fire for s, across the chasm (math §5.4): a mined
+>>>>>>> main
         central rule whose covered builds lie in other families (its home) does not
         fire on a build located in a family outside its home. Foundational rules
         (spread over the corpus by construction) and category rules are unchanged."""
@@ -144,7 +151,10 @@ class _Constraints:
         or a reviewer called it a sidegrade to a pick sel already holds."""
         if any(y in sel for y in self._review_sides(s).get(item, ())):
             return True
-        for g in self._sides(sel, s):
+        sel = set(sel)
+        live = self._sides(sel, s) + [g for g in (self.sidegrades or [])     # a side already taken commits,
+                                       if sel & (set(g.a) | set(g.b))]          # core held or not
+        for g in live:
             if item in g.a and g.leaning(sel) < 0:
                 return True
             if item in g.b and g.leaning(sel) > 0:
@@ -177,6 +187,8 @@ class _Constraints:
                 return f'; note: "{t[:80] + ("..." if len(t) > 80 else "")}"'
         return ""
 
+<<<<<<< HEAD
+=======
     def _depends_unmet(self, it: str, sel, s=None) -> Optional[List[str]]:
         """(math §2.8e) The components a supported DEPENDS review rule says `it`
         does not work without (x NW > a, b) that sel lacks, or None. A worth pick
@@ -194,6 +206,7 @@ class _Constraints:
                 return miss
         return None
 
+>>>>>>> main
     def talent_cap(self, sel) -> int:
         """76 - 2m: m = selected mantras that are not Oath / Origin (faction) / Monster mantras."""
         return self._cap_base - self._cap_per * len(self._lowers & set(sel))
@@ -208,7 +221,7 @@ class _Constraints:
                f"{self._cap_base} - {self._cap_per} x {len(self._lowers & set(sel))} non-exempt mantras)"
 
     def fits(self, sel, s: _Sit) -> bool:
-        """Every mantra of sel has a mantra slot of a type it fits (math §2.6)."""
+        """Every mantra of sel has a mantra slot of a type it fits."""
         return self.c.mantras_fit(set(sel) | s.outside, s.oath)
 
     def slot_free(self, sel, s: _Sit) -> int:
@@ -292,6 +305,8 @@ class _Constraints:
             return Reason.SCENARIO_MISMATCH.value, []
         return Reason.NO_SYNERGY.value, []
 
+<<<<<<< HEAD
+=======
     def _rule_block(self, item: str, sel: Set[str], s: _Sit):
         """(reason, related, why) if a review rule rejects item next to sel, else None."""
         if item in (s.weapon or {}).get("guard", ()):
@@ -315,18 +330,37 @@ class _Constraints:
                 return Reason.LESS_NECESSARY_SPACE.value, [], r.describe()
         return None
 
+>>>>>>> main
     def _binds(self, v: tuple) -> bool:
         if self.ledger is None:
             return v[1] >= self.cfg.memory_hard
+        if not self._binds_scored(v):
+            return False
         return self.ledger.binding(v, self.cfg.memory_hard)
+
+    def _binds_scored(self, v: tuple) -> bool:
+        """Under the scorer only the reviewed build itself (similarity >=
+        sim_same), a "does not work" removal, a sidegrade mark and a strong
+        generally-good add bind; every other claim acts through the score."""
+        label, reason = v[0], (v[4] if len(v) > 4 else None)
+        if (len(v) > 6 and v[6] == "general") or reason == Reason.GENERALLY_GOOD.value:
+            return label == "add" and len(v) > 5 and str(v[5]) in ("strong", "Strength.STRONG")
+        if v[3] >= self.ledger.cfg.sim_same:
+            return True
+        return (label == "remove" and reason == Reason.BROKEN.value) or \
+            (label == "iffy" and reason == Reason.SIDEGRADE.value)
 
     @staticmethod
     def _memory_why(verb: str, v: tuple) -> str:
+<<<<<<< HEAD
+        """"added by review X (similarity s)"."""
+=======
         """"added by review X (similarity s)", or for a pooled family claim
         "added by the reviews of n builds of this family (newest X)"."""
         if len(v) > 6 and v[6] == "family":
             n = v[8] if len(v) > 8 else "several"
             return f"{verb} by the reviews of {n} builds of this family (newest {v[2]})"
+>>>>>>> main
         return f"{verb} by review {v[2]} (similarity {v[3]:.2f})"
 
     @staticmethod

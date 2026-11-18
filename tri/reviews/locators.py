@@ -18,8 +18,7 @@ the corpus the field is trained on. They only
            conflicts), honest because no locator trained the field.
   select   the metric power gamma from a small grid by leave-one-out
            log-likelihood, moving from the default only when the paired gain
-           exceeds select_z (2) standard errors and select_min_gain (0.01 nats)
-           (math §6.5).
+           exceeds select_z (2) standard errors and select_min_gain (0.01 nats).
   separate review influence: the ledger kernel and the worth boost of reviewed
            builds are multiplied by
                1 - barrier * a(u) a(v) * TV(p(.|u), p(.|v))
@@ -77,7 +76,10 @@ class LocatorSet:
             self.Al = np.stack([np.asarray(a, float) for _, a in xa])
             self.Xl = self.Xl * self.Al                  # a pick that is not available is no evidence
         self.indicators: List[dict] = []
+<<<<<<< HEAD
+=======
         self.tells: List[dict] = []              # reviewer consensus (math §8.5a)
+>>>>>>> main
         self.anchors: List[dict] = []            # review anchors: {key, u, sign, review_id}
         self._UA = np.zeros((0, 0)); self._labA = np.zeros(0, int); self._sgnA = np.zeros(0)
         self.set_background(background)
@@ -94,7 +96,7 @@ class LocatorSet:
             if self.K is not None:
                 self._fine.clear(); self.pairs = []; self._find_pairs()
 
-    # ------------------------------------------------------------ twin split (math §6.6)
+    # ------------------------------------------------------------ twin split
     def set_background(self, rate: Optional[np.ndarray]) -> None:
         """Background pick rate b_t (corpus rate given availability; default: the
         locators pooled, one pick in two pseudo-builds). Rebuilds the twin pairs."""
@@ -188,21 +190,9 @@ class LocatorSet:
 
     @property
     def refining(self) -> bool:
-        return bool(self.active_pairs) or bool(self.indicators) or bool(getattr(self, "tells", None))
+        return bool(self.active_pairs) or bool(self.indicators)
 
-    # ------------------------------------------------------------ reviewer consensus (math §8.5a)
-    def set_consensus(self, tells: Sequence[dict]) -> None:
-        """Promoted family tells: dicts key, t (column index), item, sign, confidence.
-        Take tells (sign +1) lift the family's odds on builds holding them; every
-        tell moves worth on builds read as the family (FieldWorth is not touched)."""
-        self.tells = [dict(t) for t in tells if t.get("key") in self.kix and t.get("t") is not None]
-        self._weights()
-        self._fine.clear()
-
-    def consensus_of(self, key: str) -> List[dict]:
-        return [t for t in getattr(self, "tells", None) or [] if t["key"] == key]
-
-    # ------------------------------------------------------------ indicator notes (math §6.7)
+    # ------------------------------------------------------------ indicator notes
     def set_indicators(self, indicators: Sequence[dict]) -> None:
         """Reviewers' notes "components C indicate archetype a": dicts with key (archetype
         key), items (column indices), tokens (oath:/murmur: context), u (where the
@@ -216,7 +206,11 @@ class LocatorSet:
         """Reviewed builds whose reviewer said "this build is a" (sign +1) or "is not
         a" (sign -1): dicts with key, u, sign, review_id. A positive anchor joins
         a's locator mean as a pseudo-locator of weight anchor_mass, a
+<<<<<<< HEAD
+        negative one scales k_a by 1 - anchor_veto * K there. Far from
+=======
         negative one scales k_a by 1 - anchor_veto * K there (math §6.7). Far from
+>>>>>>> main
         the noted build K -> 0 and the reading is unchanged."""
         rows = [dict(a) for a in anchors if a.get("key") in self.kix and a.get("u") is not None]
         self.anchors = rows
@@ -360,18 +354,16 @@ class LocatorSet:
         return float(max(0.0, (lb - 1.0 / A) / (1.0 - 1.0 / A)))
 
     def _weights(self) -> None:
-        """Cache omega on every indicator and tell."""
+        """Cache omega on every indicator."""
         for ind in self.indicators:
             ind["omega"] = self.tell_weight(ind["key"], ind.get("items") or (), ind.get("tokens") or ())
-        for t in getattr(self, "tells", None) or []:
-            t["omega"] = self.tell_weight(t["key"], [t["t"]])
 
     def _indicate(self, P: np.ndarray, X, U: Optional[np.ndarray], dmin: Optional[np.ndarray],
                   ctx: Optional[Sequence[set]] = None) -> np.ndarray:
         """Lift the odds of a by e^lift where a build holds every component of an
         indicator for a, sits within reach of the noted build and of a locator, and
         already gives a at least indicator_floor. One lift per archetype (no stacking)."""
-        if (not self.indicators and not getattr(self, "tells", None)) or U is None:
+        if not self.indicators or U is None:
             return P
         U = np.atleast_2d(np.asarray(U, float))
         n = len(P)
@@ -393,59 +385,30 @@ class LocatorSet:
             close = np.sqrt(((U - np.asarray(ind["u"], float)[None]) ** 2).sum(1)) <= self.reach
             ok = have & close & near & (P[:, k] >= self.cfg.indicator_floor)
             lift[ok, k] = np.maximum(lift[ok, k], L * float(ind.get("omega", 1.0)))
-        lift = self._consensus_lift(P, X, near, lift)
         if not lift.any():
             return P
         Q = P * np.exp(lift)
         return Q / Q.sum(1, keepdims=True)
 
-    def _consensus_lift(self, P: np.ndarray, X, near: np.ndarray, lift: np.ndarray) -> np.ndarray:
-        """Family tells on the reading: lambda_c * sum of the confidences of the held take
-        tells of a, where the build is within reach of a locator and p(a | u) >= floor
-        already; the total lift of a is capped at indicator_lift (no stacking past a note)."""
-        tells = [t for t in getattr(self, "tells", None) or [] if t["sign"] > 0]
-        if not tells:
-            return lift
-        L, lam, fl = float(self.cfg.indicator_lift), float(self.cfg.consensus_lift), float(self.cfg.consensus_floor)
-        add = np.zeros_like(P)
-        for t in tells:
-            k = self.kix[t["key"]]
-            col = X[:, t["t"]]
-            col = col.toarray().ravel() if hasattr(col, "toarray") else np.asarray(col).ravel()
-            ok = (col > 0) & near & (P[:, k] >= fl)
-            add[ok, k] += lam * float(t["confidence"]) * float(t.get("omega", 1.0))
-        return np.minimum(np.maximum(lift, add), L)
-
     def indicated(self, u: np.ndarray, b=None) -> List[dict]:
-        """The indicator notes (and promoted family tells) that lift the reading of
-        the build b at u."""
-        if (not self.indicators and not self.tells) or b is None:
+        """The indicator notes that lift the reading of the build b at u."""
+        if not self.indicators or b is None:
             return []
         x, _a = self.vec(b)
         from tri.core.context import build_context
         ctx = [set(build_context(b)[0])]
         P, dmin, _ = self.read_many(np.asarray(u, float)[None])
         out = []
-        save_i, save_t = self.indicators, self.tells
+        save_i = self.indicators
         try:
-            self.tells = []
             for ind in save_i:
                 self.indicators = [ind]
                 Q = self._indicate(P, np.asarray(x, float)[None], np.asarray(u, float)[None], dmin, ctx)
                 if np.abs(Q - P).sum() > 1e-9:
                     out.append({"archetype": self.names[ind["key"]], "components": list(ind.get("names") or []),
                                 "review_id": ind.get("review_id")})
-            self.indicators = []
-            for t in save_t:
-                if t["sign"] <= 0:
-                    continue
-                self.tells = [t]
-                Q = self._indicate(P, np.asarray(x, float)[None], np.asarray(u, float)[None], dmin, ctx)
-                if np.abs(Q - P).sum() > 1e-9:
-                    out.append({"archetype": self.names[t["key"]], "components": [t["item"]],
-                                "consensus": round(float(t["confidence"]), 3), "reviewers": t.get("reviewers")})
         finally:
-            self.indicators, self.tells = save_i, save_t
+            self.indicators = save_i
         return out
 
     def refine(self, P: np.ndarray, X, A, dmin: Optional[np.ndarray] = None, U: Optional[np.ndarray] = None,
@@ -655,8 +618,7 @@ class LocatorSet:
 
     # ------------------------------------------------------------ review barrier
     def barrier_factor(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
-        """[m] the chasm: multiplier for the influence of builds at V on a build at u
-        (math §5.4),
+        """[m] the chasm: multiplier for the influence of builds at V on a build at u:
             chi = 1 - barrier a(u) a(v) (1 - (1 - TV(p(.|u), p(.|v)))^gamma),
         and chi = 1 - barrier when both are located in different families
         (chasm_hard). In [1 - barrier, 1]; 1 for builds of the same family."""
@@ -688,7 +650,11 @@ class LocatorSet:
         return chi
 
     def family_overlap(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
+<<<<<<< HEAD
+        """[m] family reach: 1 - TV of the family posteriors of
+=======
         """[m] family reach (math §5.8): 1 - TV of the family posteriors of
+>>>>>>> main
         a build at u and builds at V when both are located in the same family
         (nearest locator within reach, top family probability >= min_confidence),
         else 0. Never crosses the chasm: different or unlocated families give 0."""

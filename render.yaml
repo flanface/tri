@@ -13,7 +13,7 @@ services:
     runtime: python
     region: oregon
     plan: 1c-2g                 # a full 300k-build run peaks near 1.4 GB; 0.5c-512mb is enough only for small runs
-    buildCommand: pip install -r requirements-bot.txt
+    buildCommand: pip install ".[render]" ./bot
     startCommand: python -m bot
     autoDeployTrigger: commit
     disk:

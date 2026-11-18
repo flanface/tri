@@ -12,8 +12,7 @@ would type under the bot's sheet:
     # core: A, B         confirmed central picks
     # is Gank            the archetype reading, when located
 
-Strength and emission come from the evidence margin of each change (docs/math
-11.7, record.margin_of): a change is emitted only when its margin reaches
+Strength and emission come from the evidence margin of each change (record.margin_of): a change is emitted only when its margin reaches
 InferConfig.emit_margin, and is strong when the margin reaches
 InferConfig.strong_margin. A change without a margin is emitted, strong.
 A change that is not emitted never appears, and the sheet keeps the build's

@@ -18,8 +18,8 @@ import asyncio
 import json
 from typing import List, Sequence, Tuple
 
-from tri.core.codec import review_from_dict, review_to_dict
-from tri.core.types import Review
+from tri.api import review_from_dict, review_to_dict
+from tri.api import Review
 
 from .db import SupabaseStore
 
@@ -41,7 +41,7 @@ def indicator_matches(rows: Sequence[dict], archetype: str, item: str) -> List[d
     archetype. archetype matches by family, case-insensitively ("chime" matches
     "Chime" and "Gank / Chime"); item matches case-insensitively.
     Returns [{id, build, link, note}] in id order."""
-    from tri.reviews.variants import family_key, split_archetype
+    from tri.api import family_key, split_archetype
     want_fam, want_item = family_key(archetype), " ".join(str(item).split()).casefold()
     want_var = (split_archetype(archetype)[1] or "").casefold()
     out = []
@@ -97,7 +97,7 @@ def _body(row: dict):
 
 
 def _families(body: dict) -> set:
-    from tri.reviews.variants import family_key
+    from tri.api import family_key
     return {family_key(str(n.get("archetype") or "")) for n in body.get("notes") or []
             if isinstance(n, dict) and n.get("kind") in ("archetype", "is") and n.get("archetype")}
 
@@ -132,7 +132,7 @@ def purge_plan(rows: Sequence[dict], item: str, mark: str, archetype: str = None
     holds one of these items. Returns [{id, table, build, removed: [text], body}]
     in id order; rows with nothing to undo are left out."""
     import copy
-    from tri.reviews.variants import family_key, split_archetype
+    from tri.api import family_key, split_archetype
     if mark not in PURGE_MARKS:
         raise ValueError(f"unknown mark {mark!r}: one of {', '.join(PURGE_MARKS)}")
     names = [item] if isinstance(item, str) else list(item)
@@ -257,7 +257,7 @@ _ORDER = {"item_values": "item.asc", "tri_rules": "rule_id.asc"}       # tables 
 async def freeze_store(store: SupabaseStore, outdir: str) -> str:
     """Every review-record table as stored, frozen with a manifest (tri.record.freeze).
     A missing table is recorded as empty."""
-    from tri.sources.record import freeze
+    from tri.api import freeze_record as freeze
     export = {}
     try:
         for t in FREEZE_TABLES:
@@ -316,8 +316,8 @@ def main(argv=None):
     for p in problems:
         print("skipped:", p)
     if a.check:
-        from tri.core.codec import validate_review
-        from tri.core.types import ReviewError
+        from tri.api import validate_review
+        from tri.api import ReviewError
 
         from .service import ModelService
         svc = ModelService(a.check)

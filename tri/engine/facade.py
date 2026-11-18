@@ -16,7 +16,7 @@
     tri.sidegrades                      # mined either/or clusters per archetype (tri.sidegrades)
     tri.save(path) / Tri.load(path, catalog)
 
-Three parts (docs/Home.md): the worth field (tri.space, a logistic
+Three parts: the worth field (tri.space, a logistic
 factorisation trained by gradient descent; its coordinates measure worth
 differences), certified rules (tri.passes, conjunctions mined by shallow trees
 and certified on held-out halves), and pass-ordered inference with constraint
@@ -30,7 +30,7 @@ import numpy as np
 
 from tri.analysis.defs import Sidegrade
 from tri.core.catalog import Catalog
-from tri.core.types import Reason, Review
+from tri.core.types import Review
 from tri.engine.answering import _Answering
 from tri.engine.archetypes import _Archetypes
 from tri.engine.defs import TriConfig
@@ -60,8 +60,11 @@ class Tri(_Fitting, _Archetypes, _Reviewing, _Answering, _Persist):
         self.reviews: List[Review] = []
         self.patches = PatchLog()
         self.ledger: Optional[ReviewLedger] = None
+<<<<<<< HEAD
+=======
         self.review_rules: list = []
         self.review_rules_all: list = []            # before drop_rule's rv: ids
+>>>>>>> main
         self.sidegrades_dropped: set = set()
         self._worth: Optional[FieldWorth] = None
         self._Zdata: Optional[np.ndarray] = None
@@ -75,8 +78,6 @@ class Tri(_Fitting, _Archetypes, _Reviewing, _Answering, _Persist):
         self._note_worth: List[dict] = []               # indicator / core / avoid notes, for worth
         self.sidegrades: List[Sidegrade] = []
         self.load_info: Dict[str, str] = {}
-
-    _CONSENSUS_REMOVE = (Reason.NO_SYNERGY, Reason.WORKS_AGAINST, Reason.BROKEN, Reason.SCENARIO_MISMATCH)
 
     # ------------------------------------------------------------ load cache
     LATENTS = "latents.npy"

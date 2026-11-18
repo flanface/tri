@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+"""Rules and facts as two kinds of nontrivial statement.
+=======
 """Rules and facts as two kinds of nontrivial statement (math §12.6).
+>>>>>>> main
 
   rules   how the model generates completions and answers: the hard rules
           (cap, slots, capacity, requirements, locks, weapons, benchmarks,
@@ -81,10 +85,6 @@ def model_rules(tri, item: Optional[str] = None, limit: int = 25, hard: bool = T
             if [c.id() for c in ex] != [c.id() for c in r.conds]:       # what the group literal means
                 sym += "   ≡ " + conj(_sym(c) for c in ex)
         out.append(dict(kind="authored" if r.source == "authored" else r.pass_, symbol=sym))
-    for r in getattr(tri, "review_rules", []) or []:
-        if r.status == "proposed" or item is not None and item not in (r.subject, r.other):
-            continue
-        out.append(dict(kind="review", symbol=r.describe()))
     culled = sum(1 for r in (rb.rules if rb is not None else []) if r.status == "trivial" and
                  (item is None or r.item == item or any(c.key == item for c in r.conds)))
     culled += sum(1 for k, _ in (getattr(rb, "pruned", None) or []) if item is None or f"|{item}|" in k)

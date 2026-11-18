@@ -79,7 +79,7 @@ def register(bot: TriBot, c: SimpleNamespace) -> None:
             # loads (commands answer "no model loaded" meanwhile); TRI_RELOAD_SWAP=1
             # keeps it serving, at twice the memory
             bot.svc = None
-            from tri.runtime import release
+            from tri.api import release
             release()
         try:
             svc = await asyncio.to_thread(bot.open_service, 0.0, True)

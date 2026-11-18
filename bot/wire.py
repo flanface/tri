@@ -6,9 +6,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
-from tri.core.codec import build_from_dict, build_to_dict
-from tri.core.types import Build, Kind
-from tri.game.gamedata import format_reqs, name_key
+from tri.api import build_from_dict, build_to_dict
+from tri.api import Build, Kind
+from tri.api import format_reqs, name_key
 
 REASON_LABELS: Dict[str, str] = {
     "less_necessary_space": "less necessary (make space)",

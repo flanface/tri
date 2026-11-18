@@ -1,22 +1,25 @@
-"""Tri methods: archetypes: locators, regions, consensus, metrics and concept readings."""
+"""Tri methods: archetypes: locators, regions, metrics and concept readings."""
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from tri.core.types import Action, Build, Reason, Strength, off_archetype
-from tri.reviews.consensus import tally
-from tri.reviews.defs import ConsensusConfig, Locator
+from tri.core.types import Build, off_archetype
+from tri.reviews.defs import Locator
 from tri.reviews.locators import LocatorSet, archetype_key
 from tri.reviews.variants import family_key, join_archetype, read_variant, split_archetype, style_of
 
 
 class _Archetypes:
+<<<<<<< HEAD
+    """Tri methods: archetypes: locators, regions, metrics and concept readings."""
+=======
     """Tri methods: archetypes: locators, regions, consensus, metrics and concept readings."""
+>>>>>>> main
 
     def _sync_indicators(self) -> None:
-        """Indicator notes ("# a: x, y, z") of the reviews -> the locator set (math §6.7).
+        """Indicator notes ("# a: x, y, z") of the reviews -> the locator set.
         The newest note per component set wins; components are catalog items or
         oath:/murmur: tokens."""
         ls = getattr(self, "locset", None)
@@ -76,9 +79,10 @@ class _Archetypes:
             for w in worth.values():
                 w.pop("build", None)
         self._note_worth = list(worth.values())
-        self._sync_consensus()
         self._renote()                               # placements re-note their fine reading
 
+<<<<<<< HEAD
+=======
     def _sync_consensus(self) -> None:
         """Reviewer consensus (math §8.5a): notes and archetype-reasoned edits of
         every review, per (family, item), tallied into promoted tells."""
@@ -147,6 +151,7 @@ class _Archetypes:
             return {(self.locset.names.get(k, k) if self.locset is not None else k): v for k, v in c.items()}
         k = family_key(archetype)
         return {archetype: list(c.get(k, []))}
+>>>>>>> main
     # ------------------------------------------------------------ locators
 
     def _locset(self) -> None:
@@ -198,7 +203,7 @@ class _Archetypes:
         raise ValueError(f"unknown archetype {name!r}; known: {known}")
 
     def _chasm(self, u, V):
-        """The chasm of the current locator set (math §5.4); 1 without one."""
+        """The chasm of the current locator set; 1 without one."""
         ls = self.locset
         if ls is None or len(ls.keys) < 2:
             return np.ones(len(np.atleast_2d(V)))

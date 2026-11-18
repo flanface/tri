@@ -1,14 +1,10 @@
 """PassEngine methods: review of full builds and assembling alternatives."""
 from __future__ import annotations
 
-from collections import OrderedDict
+from typing import List, Optional, Sequence, Set
 
-from typing import Dict, List, Optional, Sequence, Set, Tuple
-
-import numpy as np
-
-from tri.core.types import Build, Reason
-from tri.infer.defs import ARCHETYPE, REVIEW, Alternative, Change, _Sit
+from tri.core.types import Build
+from tri.infer.defs import ARCHETYPE, Alternative, _Sit
 from tri.rules.passes import CENTRAL, EXCLUSION, FOUNDATIONAL, LUXURY
 
 
@@ -22,9 +18,11 @@ class _Reviewing:
         """Smallest edits of a full build, one Alternative per plausible archetype
         (force: just the forced one). keep_size: keep the input's counts instead
         of filling its capacity (InferConfig.fill_capacity)."""
-        return [self._review_one(b, s, set(locked), keep_size)
+        return [self._review_scored(b, s, set(locked), keep_size)
                 for s in self.situations(b, max_alternatives, region, force=force)]
 
+<<<<<<< HEAD
+=======
     def _review_one(self, b: Build, s: _Sit, locked: Set[str] = frozenset(), keep_size: bool = False) -> Alternative:
         import dataclasses
         cfg = dataclasses.replace(self.cfg, fill_capacity=False) if keep_size and self.cfg.fill_capacity else self.cfg
@@ -431,6 +429,7 @@ class _Reviewing:
                                       {i for i, v in req.items() if v[1] in ("review", "general", "category")})
         return alt
 
+>>>>>>> main
     def _offers(self, s: _Sit, sel: Set[str], fixed: Set[str]) -> List[dict]:
         """The other side of every sidegrade the answer is committed to: picks
         to remove (not those required or pinned) and the feasible picks to add."""
@@ -446,7 +445,7 @@ class _Reviewing:
             for it in sorted(other, key=lambda i: -float(s.q[self.c.index[i]]) if i in self.c.index else 0):
                 if it in trial or it not in self.c.index:
                     continue
-                if self._feasible(it, trial, s) and not self._rule_block(it, trial, s):
+                if self._feasible(it, trial, s):
                     trial.add(it); add.append(it)
             if g.leaning(trial) * side >= 0:            # the swap must actually change sides
                 continue

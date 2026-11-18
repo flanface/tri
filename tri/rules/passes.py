@@ -1,96 +1,32 @@
-"""The rulebase: certified conjunctive rules, mined from builds.
+"""The rule container: conjunctive rules on one item, with an effect.
 
 A rule is a conjunction of conditions and an effect on one item:
 
     take  ITEM when C1 and C2 and ...     (foundational or central)
     never ITEM when C1 and C2 and ...     (exclusion)
 
-Conditions look at what a build is, never at a fitted archetype label:
-    stat     <stat> >= v  /  <stat> < v        (highest stats; v a multiple of `stat_step`, 5)
-    context  oath / murmur is (not) v
-    item     with ITEM2                        (anchors: picks of the build)
+Conditions look at what a build is:
+    stat     <stat> >= v  /  <stat> < v        (highest stats)
+    context  oath / murmur / weapon class / archetype is (not) v
+    item     with ITEM2
+    group    count of a known group's members >= v / < v
 
-Mining (math §6.3), per item t, on the builds that can take t,
-shuffled and split into halves A (search) and B (certification):
-  1. Candidate conjunctions are the nodes of two shallow decision trees grown
-     on A (entropy splits): one over stats + context + the `co_items` items
-     that share most information with t, one over stats + context only.
-  2. Each candidate is checked on A with a one-sided Wilson bound at
-     confidence z on the weighted rate, with effective sample size
-     n_eff = (sum w)^2 / sum w^2:
-        take   lower bound >= theta_take  and support >= min_support
-        never  upper bound <= theta_never, support >= min_support, and the
-               rule has a contrast: flipping one of its conditions gives a
-               rate >= theta_contrast (an exclusion explains a refusal, it is
-               not merely "rarely taken")
-     and for uniformity: no pick-profile cluster inside the rule's cell (with
-     weight >= uniform_support) clearly contradicts it (a small archetype
-     hidden inside a population-level cell).
-  3. Conditions are dropped greedily while the rule stays certified (shortest
-     certified form). The final form is certified again on B, which played
-     no part in choosing it; only rules passing on B are kept. Duplicates and
-     rules implied by a more general rule of the same item are removed.
-  4. Conflicts: where a take rule and a never rule of one item overlap with
-     enough weight, the observed rate there drops the one it contradicts.
-  5. Pass: a take rule with stat conditions only (or none) whose covered builds
-     are spread over pick-profile clusters like the corpus (breadth >=
-     min_breadth) is foundational; every other take rule is central. Items
-     with no take rule are luxury.
-
-Guarantee: each rule states a rate bound that holds with confidence ~ Phi(z)
-on the distribution its builds came from (per rule; see the docs for the
-multiple-testing caveat). certification_check measures it on held-out builds."""
+4.0: rules are hand-authored (tri.rules.authored); nothing is mined. A run saved
+by 3.x may carry mined rules; they load but no longer act.
+"""
 from __future__ import annotations
 
-import math
 from dataclasses import asdict, dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
-import scipy.sparse as sp
 
-from tri.core.stats import wilson
-from tri.model.matrix import BuildMatrix, group_dot, mat_groups
+from tri.core.stats import wilson  # noqa: F401  (re-exported for the selection)
+from tri.model.matrix import BuildMatrix
 from tri.rules.defs import Condition, Ctx, PassConfig
 
 FOUNDATIONAL, CENTRAL, LUXURY, EXCLUSION = "foundational", "central", "luxury", "exclusion"
 TAKE, NEVER = "take", "never"
-
-
-def _dense_bool(X) -> np.ndarray:
-    out = np.zeros(X.shape, bool)
-    for a in range(0, X.shape[0], 32768):
-        out[a:a + 32768] = X[a:a + 32768].toarray() > 0
-    return out
-
-
-def _n_jobs(f: "PassConfig", n_items: int, n_rows: int) -> int:
-    """Processes for Rulebook.mine: n_jobs if set, else all cores (up to 8) once
-    the corpus is big enough for start-up costs (a few seconds) to pay off.
-    TRI_JOBS (environment) overrides."""
-    import os
-    env = os.environ.get("TRI_JOBS")
-    j = int(env) if env not in (None, "") else int(getattr(f, "n_jobs", 0) or 0)
-    if j == 0:
-        if n_items < 64 or n_rows < 5000:
-            return 1
-        j = min(8, os.cpu_count() or 1)
-    elif j < 0:
-        j = os.cpu_count() or 1
-    try:
-        import joblib  # noqa: F401  (ships with scikit-learn)
-    except Exception:
-        return 1
-    return max(1, min(j, n_items))
-
-
-def _mine_chunk(book: "Rulebook", ctx: dict, items: List[str]) -> List[tuple]:
-    """Worker: [(item, rules, veto info)] for a chunk of items."""
-    out = []
-    for i in items:
-        info: dict = {}
-        out.append((i, book._mine_one(i, ctx, info), info))
-    return out
 
 
 # ---------------------------------------------------------------- aggregates
@@ -230,52 +166,6 @@ def _implied(general: Sequence[Condition], specific: Sequence[Condition]) -> boo
     return all(any(covers(g, c) for c in specific) for g in general)
 
 
-def _picked_available(bm: BuildMatrix) -> sp.csr_matrix:
-    X = bm.X.tocoo()
-    keep = bm.masks[bm.gid[X.row], X.col]
-    return sp.csr_matrix((X.data[keep], (X.row[keep], X.col[keep])), shape=bm.X.shape)
-
-
-def _group_matrix(bm: BuildMatrix) -> sp.csr_matrix:
-    return sp.csr_matrix((np.ones(len(bm)), (np.arange(len(bm)), bm.gid)), shape=(len(bm), len(bm.masks)))
-
-
-def anchor_counts(bm: BuildMatrix, w: np.ndarray, XA=None, G=None):
-    """(num [N,N], den [N,N]): num[a,t] = sum w x_a x_t, den[a,t] = sum w x_a a_t."""
-    XA = _picked_available(bm) if XA is None else XA
-    G = _group_matrix(bm) if G is None else G
-    Xw = sp.diags(w) @ bm.X
-    num = np.asarray((Xw.T @ XA).todense())
-    H = (G.T @ Xw).T.tocsc()                    # [N,G] sparse: a dense [G,N] is 1.5 GB at 265k groups
-    den = mat_groups(H, bm.masks)
-    return num, den
-
-
-def mutual_information(bm: BuildMatrix, w: np.ndarray, signed: bool = False) -> np.ndarray:
-    """[N,N] MI[a,t] between picking a and picking t, over builds that can take t.
-    signed: negative where a lowers the rate of t (an antagonist)."""
-    XA, G = _picked_available(bm), _group_matrix(bm)
-    n11, n1_ = anchor_counts(bm, w, XA, G)
-    wg = np.asarray(G.T @ w).ravel()
-    n_t = group_dot(wg, bm.masks)                 # builds that can take t
-    pos = np.asarray(XA.T @ w).ravel()                        # ... and take it
-    n = np.maximum(n_t, 1e-12)[None, :]
-    p11 = n11 / n; p10 = (n1_ - n11) / n; p01 = (pos[None, :] - n11) / n
-    p00 = np.clip(1 - p11 - p10 - p01, 0, 1)
-    pa = p11 + p10; pt = p11 + p01
-
-    def term(pj, px, py):
-        with np.errstate(divide="ignore", invalid="ignore"):
-            v = pj * np.log(pj / (px * py))
-        return np.nan_to_num(np.where(pj > 0, v, 0.0))
-    mi = term(p11, pa, pt) + term(p10, pa, 1 - pt) + term(p01, 1 - pa, pt) + term(p00, 1 - pa, 1 - pt)
-    np.fill_diagonal(mi, 0)
-    if signed:
-        mi = np.where(p11 < pa * pt, -mi, mi)
-    return mi
-# ---------------------------------------------------------------- rulebook
-
-
 class Rulebook:
     """Certified rules. .firing(ctx) / .forbidding(ctx) give those that apply to a build."""
 
@@ -350,21 +240,19 @@ class Rulebook:
         y = np.asarray(bm.X[:, self.c.index[r.item]].todense()).ravel()[m] > 0
         return float(ww[y].sum() / S), S, float(S * S / max((ww * ww).sum(), 1e-12))
 
-    # ------------------------------------------------------------ mining
-    def mine(self, bm: BuildMatrix, regions: Optional[np.ndarray] = None, region_names: Sequence[str] = (),
-             changed_since: Optional[Dict[str, float]] = None, items: Optional[Iterable[str]] = None) -> "Rulebook":
-        """Mine rules from bm. regions: clusters per row used only for breadth
-        (default: pick-profile clusters, Rulebook.pick_regions).
-        items: re-mine only these items and keep the other items' rules.
-        changed_since: item -> patch time; rules touching a changed item are
-        re-scored on builds after that time and marked stale if too few remain."""
-        f = self.cfg
-        rng = np.random.default_rng(f.seed)
-        if f.sample is not None and len(bm) > f.sample:
-            rows = np.sort(rng.choice(len(bm), f.sample, replace=False))
-            bm = bm.subset(rows)
-            regions = None if regions is None else regions[rows]
+    # ------------------------------------------------------------ preparation
+    def prepare(self, bm: BuildMatrix, region_names: Sequence[str] = ()) -> "Rulebook":
+        """The container the authored rules live in (4.0: nothing is mined):
+        region names, eligible pick rates and the known item groups."""
         self.region_names = list(region_names)
+<<<<<<< HEAD
+        self.pick_rate = bm.pick_rate()[0] if bm is not None and len(bm) else None
+        from tri.rules.groups import derived_groups
+        self.groups = derived_groups(self.c) if self.cfg.groups else {}
+        self.rules, self.vetoed, self.pruned = [], {}, []
+        return self
+
+=======
         w = bm.w
         XA = _picked_available(bm)
         G = _group_matrix(bm)
@@ -953,6 +841,7 @@ class Rulebook:
                     failures=[x for x in rows if not x["holds"]])
 
     # ------------------------------------------------------------ use
+>>>>>>> main
     def active(self) -> List[PassRule]:
         return [r for r in self.rules if r.status == "active"]
 

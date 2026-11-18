@@ -13,7 +13,7 @@ import json
 import time
 from typing import Any, Dict, Optional, Tuple
 
-from tri.sources import dwt as D
+from tri.api import dwt as D
 
 
 class DwtError(RuntimeError):

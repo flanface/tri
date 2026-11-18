@@ -168,13 +168,13 @@ def parse_answers(text: str, questions: Sequence[dict],
         hit = next((o for o in opts if o.casefold() == a), None)
         if hit is None:
             try:
-                from tri.infer.focus import norm_class
+                from tri.api import norm_class
                 hit = norm_class(ans.strip())
             except Exception:                       # noqa: BLE001
                 hit = None
         if hit is None:                              # a weapon name, kept as written in the game data
             try:                                     # (a class name wins: "sword" is the class)
-                from tri.game.weapons import resolve
+                from tri.api import resolve_weapon as resolve
                 names = resolve(ans.strip())
             except Exception:                       # noqa: BLE001
                 names = []

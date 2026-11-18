@@ -19,7 +19,7 @@ class _Answering:
     # ------------------------------------------------------------ answers
     def engine(self) -> PassEngine:
         self._need()
-        e = PassEngine(self.catalog, self.space, self.rules, self._worth, self.review_rules,
+        e = PassEngine(self.catalog, self.space, self.rules, self._worth,
                        self.ledger, self.cfg.infer)
         e.manual = {i: c for i, c in self.manual.items() if i in self.catalog.index}
         e.locset = self.locset
@@ -34,11 +34,25 @@ class _Answering:
         e.rule_home = self._rule_homes()
         e.class_prior = self._class_prior()
         e.solo = self._prereq_solo()
+        if self.cfg.infer.sc_propagate:
+            e.item_cos = self.item_cosine()
         return e
+
+    def item_cosine(self):
+        """[N, N] mean-centred worth cosine of the items (tri.model.itemsim),
+        computed once per space and corpus."""
+        if self.data is None or self.space is None:
+            return None
+        tag = (id(self.space), id(self.data))
+        c = self.__dict__.get("_item_cos")
+        if c is None or c[0] != tag:
+            from tri.model.itemsim import worth_cosine
+            c = self._item_cos = (tag, worth_cosine(self.space, self.data, seed=self.cfg.seed))
+        return c[1]
 
     def _prereq_solo(self):
         """item -> share of the corpus builds with the prerequisite item that
-        take none of the talents it unlocks (math §2.8d). Prerequisites seen in
+        take none of the talents it unlocks. Prerequisites seen in
         fewer than 5 builds are left out. Cached per corpus."""
         if self.data is None:
             return {}
@@ -70,8 +84,7 @@ class _Answering:
         return out
 
     def _class_prior(self):
-        """Weapon-class prior from the corpus's weapon context (tri.focus,
-        math §2.10). Built from the stored corpus on load or (re)fit; no
+        """Weapon-class prior from the corpus's weapon context (tri.infer.focus). Built from the stored corpus on load or (re)fit; no
         refit. Cached per (corpus, coordinates)."""
         if not self.cfg.infer.focus or self.data is None or self._Zdata is None:
             return None
@@ -88,7 +101,11 @@ class _Answering:
         return cp
 
     def _rule_homes(self) -> Dict[str, set]:
+<<<<<<< HEAD
+        """Home families of the mined central take rules: on a
+=======
         """Home families of the mined central take rules (math §5.4): on a
+>>>>>>> main
         reference sample, the families whose located builds the rule covers with at
         least rule_home_min weight and among which the item is still taken at rate
         theta_take. A build located elsewhere is across the chasm: the rule does not
@@ -155,7 +172,7 @@ class _Answering:
                  region: Optional[int] = None, archetype: Optional[str] = None, answers=None,
                  withheld: Sequence[str] = ()) -> Alternative:
         """Fill a partial build in pass order up to the talent cap and the
-        mantra slots (math §2.6). capacity=(talents, mantras) only lowers
+        mantra slots. capacity=(talents, mantras) only lowers
         them; either may be None. archetype: complete it as this archetype."""
         e, archetype, _ = self._answered(build, archetype, (), answers)
         e.withheld = set(withheld) | Answers.of(answers).unwanted
@@ -166,7 +183,7 @@ class _Answering:
         return e.complete(build, capacity, region, force=self.force(archetype))
 
     def _answered(self, build: Build, archetype, locked, answers):
-        """(engine, archetype, locked) with the caution answers applied locally (math §14.3):
+        """(engine, archetype, locked) with the caution answers applied locally:
         an archetype answer forces it; "central" locks the pick and reads it as central here."""
         from tri.infer.caution import Answers
         a = Answers.of(answers)
@@ -190,7 +207,7 @@ class _Answering:
 
     def caution(self, build: Build, result=None, answers=None, archetype: Optional[str] = None,
                 mode: str = "review"):
-        """Caution on an answer (math §14): which worth marks to hold back and which
+        """Caution on an answer: which worth marks to hold back and which
         questions to ask. result: review alternatives or a completion (computed if None)."""
         from tri.infer.caution import assess
         if result is None:
@@ -202,7 +219,11 @@ class _Answering:
     def settle(self, build: Build, mode: str = "review", archetype: Optional[str] = None, answers=None,
                max_alternatives: int = 3, capacity: Optional[Tuple[int, int]] = None, rounds: int = 4,
                result=None):
+<<<<<<< HEAD
+        """(result, Caution) with held marks settled. A held
+=======
         """(result, Caution) with held marks settled (math §14.1). A held
+>>>>>>> main
         change is not just hidden: a held removal keeps the pick (locked) and a
         held add is not taken (withheld), and the answer is solved again, so the
         slot goes to the next pick and the answer still fills the cap and the
@@ -288,7 +309,6 @@ class _Answering:
                             best_swap=best,
                             swap_gain=round(float(s.q[self.catalog.index[best]]) - q, 4) if best else None,
                             rules=[r.text(self.rules.region_names) for r in self.rules.for_item(item) if r.status == "active"][:8],
-                            review_rules=[r.describe() for r in self.review_rules if item in (r.subject, r.other)][:8],
                             region=s.mode, region_name=s.name))
         return out
 
@@ -319,5 +339,4 @@ class _Answering:
         self._need()
         return dict(version=VERSION, items=len(self.catalog), builds=len(self.data) if self.data is not None else 0,
                     reviews=len(self.reviews), space=self.space.report(), rules=self.rulebook.summary(), selection=self.selection_report(),
-                    review_rules=sum(r.status != "proposed" for r in self.review_rules),
                     patches=[p.name for p in self.patches.patches], fitted_at=self.fitted_at)

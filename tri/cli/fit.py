@@ -39,7 +39,7 @@ from dataclasses import asdict
 import numpy as np
 
 from tri import Catalog, PipelineConfig, PretrainSet, Tri, TriConfig  # noqa: E402
-from tri.analysis.evaluate import (certification, completion_benchmark, mapping_benchmark,  # noqa: E402
+from tri.analysis.evaluate import (completion_benchmark, mapping_benchmark,  # noqa: E402
                                    rule_benchmark)
 from tri.sources.pipeline import (catalog_to_json, exclude_items, granted_group,  # noqa: E402
                                   prepare_pretraining)
@@ -90,7 +90,7 @@ def get_gamedata(a):
     from tri.game.gamedata import resolve_gamedata
     dest = os.path.join(a.out, "gamedata")
     try:
-        return resolve_gamedata(a.gamedata or ["auto"], dest, a.refresh_gamedata, a.gamedata_ref, log=log)
+        return resolve_gamedata(a.gamedata or ["auto"], dest, log=log)
     except Exception as e:
         raise SystemExit(f"game data: {e}; pass --gamedata PATH to a local copy or --gamedata none")
 
@@ -115,25 +115,6 @@ def load_tri_cfg(path) -> TriConfig:
     return TriConfig.from_dict(base)
 
 
-def remine(run: str, jobs=None) -> dict:
-    """Re-mine a saved run's rulebook (Tri.mine_rules) and save it back."""
-    t0 = time.time()
-    model = os.path.join(run, "model") if os.path.isdir(os.path.join(run, "model")) else run
-    catp = os.path.join(run, "catalog.json")
-    if not os.path.exists(catp):
-        raise SystemExit(f"{catp} not found: --rules-only needs a run directory from this script")
-    cat = Catalog.from_json(catp)
-    tri = Tri.load(model, cat)
-    if jobs is not None:
-        tri.cfg.passes.n_jobs = jobs
-    old = tri.rulebook.summary()
-    rep = tri.mine_rules()
-    tri.save(model)
-    log(f"re-mined {model}: {old['rules']} -> {rep['rules']['rules']} rules "
-        f"({time.time() - t0:.0f} s); selection {rep['selection']}")
-    return rep
-
-
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Fit tri on a planner builds.json.",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -150,10 +131,9 @@ def main(argv=None):
     ap.add_argument("--reprepare", action="store_true", help="ignore the parse cache")
     # game data
     ap.add_argument("--gamedata", action="append", default=[], metavar="auto|PATH|none",
-                    help="auto (default) = pocamind/data, downloaded once to <out>/gamedata/; "
-                         "all = deepwoken.co + pocamind/data; or local paths (repeat to merge, first wins)")
-    ap.add_argument("--gamedata-ref", default="main", help="branch, tag or commit for --gamedata auto")
-    ap.add_argument("--refresh-gamedata", action="store_true", help="download the game data again")
+                    help="auto (default) = the pocamind/data download in <out>/gamedata/ "
+                         "(python -m bot.gamesource fetch <out>/gamedata); all = deepwoken.co + pocamind/data "
+                         "from the same folder; or local paths (repeat to merge, first wins)")
     ap.add_argument("--keep-group", action="append", default=[], metavar="GROUP",
                     help="granted group to treat as choices, e.g. faction (repeatable)")
     # exclusion
@@ -172,16 +152,17 @@ def main(argv=None):
     ap.add_argument("--device", help="compute device for training and latent solves: auto (cuda > mps > "
                     "torch cpu > numpy), cuda, cuda:N, mps (Apple Metal), cpu (torch), numpy. Needs torch "
                     "except numpy. Default: the config's (auto), or TRI_DEVICE")
+<<<<<<< HEAD
+=======
     ap.add_argument("--jobs", type=int, help="processes for rule mining (0 auto, -1 all cores, 1 off); "
                     "default: the config's (auto), or TRI_JOBS")
     ap.add_argument("--rules-only", metavar="RUN",
                     help="re-mine the rules of a saved run (RUN/model + RUN/catalog.json) with today's "
                          "rule language and certification; the concept space is not touched")
+>>>>>>> main
     a = ap.parse_args(argv)
 
     np.random.seed(a.seed)
-    if a.rules_only:
-        return remine(a.rules_only, a.jobs)
     if not os.path.exists(a.builds):
         raise SystemExit(f"{a.builds} not found (use --builds PATH)")
     t0 = time.time()
@@ -190,8 +171,6 @@ def main(argv=None):
     tcfg.seed = a.seed
     if a.device:
         tcfg.space.device = a.device
-    if a.jobs is not None:
-        tcfg.passes.n_jobs = a.jobs
     cfg.keep_meta = True                      # oath / murmur feed the concept space and rules
 
     # ------------------------------------------------------------ game data
@@ -323,15 +302,13 @@ def main(argv=None):
 
     # ------------------------------------------------------------ measure (held-out lineages)
     test = ps.builds.subset(te_idx)
-    comp = rules = cert = mapping = None
+    comp = rules = mapping = None
     if len(test):
         comp = completion_benchmark(tri, test, n=a.eval_n, seed=a.seed)
         rules = rule_benchmark(tri, test, n=a.eval_n, seed=a.seed)
-        cert = certification(tri, test)
         sub = [test[i] for i in range(min(len(test), 500))]
         mapping = mapping_benchmark(tri, sub, seed=a.seed)
-        log(f"held-out rule certification: {cert.get('share')} of {cert.get('checked')} rules hold; "
-            f"concept-space isometry error {mapping.get('isometry_error', 0):.1e}, "
+        log(f"concept-space isometry error {mapping.get('isometry_error', 0):.1e}, "
             f"worth bound holds on {mapping.get('bound_holds')} of pairs")
         log("held-out completion recall: " + ", ".join(f"{k} {comp[k]:.3f}" for k in ("tri", "worth_only", "popularity")))
         log("by pass (tri): " + ", ".join(f"{p} {v:.2f}" for p, v in comp["by_pass"]["tri"].items()
@@ -343,7 +320,7 @@ def main(argv=None):
         f.write(os.path.abspath(run))
     with open(os.path.join(run, "regions.txt"), "w") as f:
         f.write(json.dumps(tri.space.report(), indent=1, default=str) + "\n")
-    metrics = dict(completion=comp, rules=rules, certification=cert, mapping=mapping, fit=jsonable(rep),
+    metrics = dict(completion=comp, rules=rules, mapping=mapping, fit=jsonable(rep),
                    n_train=int(len(tr_idx)), n_test=int(len(te_idx)), n_items=len(ps.catalog),
                    seconds=dict(prepare=round(t_prep, 1), fit=round(t_fit, 1), total=round(time.time() - t0, 1)),
                    note="agreement with planner conventions, not build quality; reviews measure quality")

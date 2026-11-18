@@ -3,7 +3,7 @@ ledger, consensus and locator configurations; locators and archetype readings.""
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from tri.core.codec import build_from_dict, build_to_dict, legacy_names
@@ -133,6 +133,8 @@ class LedgerConfig:
     # choice: their endorsement counts this much, never binds, and never hides an
     # older explicit claim on the item. Explicit operations keep full weight.
     echo_keep: float = 0.25
+<<<<<<< HEAD
+=======
     # family reach (math §5.8): reviews of builds located in the query's own
     # family, at any distance inside it, pool their claims per item. A pooled
     # claim needs fam_min distinct reviewed builds behind one side and a weighted
@@ -192,6 +194,7 @@ class Tell:
         return dict(key=self.key, item=self.item, sign=self.sign, confidence=round(self.confidence, 3),
                     support=round(self.support, 3), against=round(self.against, 3),
                     reviewers=self.reviewers, notes=self.notes, reviews=list(self.reviews))
+>>>>>>> main
 
 
 @dataclass
@@ -210,7 +213,7 @@ class LocatorConfig:
     select_min_gain: float = 0.01           # ... and at least this many nats per locator (practical size)
     select_min_per_archetype: int = 3         # selection needs this many locators in each of
     select_min_archetypes: int = 2            # ...at least this many archetypes
-    # twin split: archetypes the map confuses told apart by the few picks that differ (math §6.6)
+    # twin split: archetypes the map confuses told apart by the few picks that differ
     refine: bool = True                       # off = the kernel reading alone
     refine_prior: float = 4.0                 # kappa: pseudo-locators at the pair's pooled rate
     refine_min_logodds: float = 1.5           # an item is a tell at |log odds ratio| >= this between the twins (log 4.5)
@@ -219,19 +222,29 @@ class LocatorConfig:
     twin_mass: float = 0.5                    # split only where the pair holds this much of the kernel reading
     twin_clip: float = 4.0                    # largest log-likelihood ratio (nats) the tells may add
     twin_min_gain: int = 1                    # a pair is split only if held-out locators corrected - broken >= this
+<<<<<<< HEAD
+    # indicator notes ("# a: x, y, z" in a review): local, bounded lifts
+=======
     # indicator notes ("# a: x, y, z" in a review, math §6.7): local, bounded lifts
+>>>>>>> main
     indicator_lift: float = 6.0               # nats added to the odds of the noted archetype (own cap)
     indicator_floor: float = 0.05             # ...only where the kernel already gives it this much
     anchor_mass: float = 1.0                  # a reviewed build noted "is a" joins a's locator mean with this weight
     tell_z: float = 1.64                      # Wilson z of a tell's balanced precision among the locators
     anchor_veto: float = 0.9                  # "not a": k_a is scaled by 1 - veto * K at the noted build
+<<<<<<< HEAD
+    # chasm: borders between archetype families are chasms
+=======
     # chasm (math §5.4): borders between archetype families are chasms
+>>>>>>> main
     chasm_power: float = 6.0                  # gamma: chi = 1 - barrier a(u) a(v) (1 - (1 - TV)^gamma)
     chasm_hard: bool = True                   # both builds located in different families -> chi = 1 - barrier
     chasm_corpus: bool = True                 # the chasm also gates corpus neighbours and the cross ring
     chasm_rules: bool = True                  # mined central take rules fire only in their home families
     chasm_rule_min: float = 5.0               # ...a family is home with this much covered weight and rate >= theta_take
     chasm_rule_sample: int = 30000            # reference builds used to find the homes
+<<<<<<< HEAD
+=======
     # reviewer consensus (math §8.5a): repeated notes / edits become family tells
     consensus: bool = True
     consensus_kappa: float = 1.5              # c = net / (net + kappa)
@@ -241,6 +254,7 @@ class LocatorConfig:
     consensus_worth: float = 0.35             # eta_c: q_t += eta_c c p(a | u) a(u)
     consensus_lift: float = 2.0               # lambda_c: nats per held tell (total capped by indicator_lift)
     consensus_floor: float = 0.2              # reading lift needs p(a | u) >= this already
+>>>>>>> main
 
 
 @dataclass

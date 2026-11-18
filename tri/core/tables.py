@@ -70,7 +70,7 @@ def fit_mantra_slots(types: Sequence[Optional[str]], slots: Dict[str, int],
     Wildcard slots. A mantra of unknown type (None) takes only a Wildcard slot
     when the catalog knows slot types (typed, default: some type is known), and
     any slot left in a catalog without slot types. So a Support slot never
-    holds a Combat mantra. This order is optimal (math §2.6).
+    holds a Combat mantra. This order is optimal.
     Returns (used slots by type, mantras that do not fit)."""
     if typed is None:
         typed = any(t is not None for t in types)

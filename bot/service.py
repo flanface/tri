@@ -24,14 +24,14 @@ import time
 from typing import Dict, List, Optional, Sequence
 
 
-from tri import Catalog, Tri
-from tri.core.codec import build_from_dict, validate_review
-from tri.core.types import Build, Review, ReviewError
-from tri.game.gamedata import name_key
-from tri.reviews.defs import Locator
-from tri.reviews.locators import archetype_key
-from tri.sources.defs import PipelineConfig
-from tri.sources.pipeline import parse_record
+from tri.api import Catalog, Tri
+from tri.api import build_from_dict, validate_review
+from tri.api import Build, Review, ReviewError
+from tri.api import name_key
+from tri.api import Locator
+from tri.api import archetype_key
+from tri.api import PipelineConfig
+from tri.api import parse_record
 
 from .wire import CatalogHelpers, LocatorInfo, ParsedBuild  # noqa: F401 (re-exported)
 
@@ -73,11 +73,12 @@ class ModelService(CatalogHelpers):
         t0 = time.monotonic()
         self.run = resolve_run(run)
         self.catalog = Catalog.from_json(os.path.join(self.run, "catalog.json"))
-        self.tri = Tri.load(os.path.join(self.run, "model"), self.catalog)
+        from .runtime import space_overrides
+        self.tri = Tri.load(os.path.join(self.run, "model"), self.catalog, overrides=space_overrides())
         self.sync_info: Optional[dict] = None
         self.sync_error: Optional[str] = None
         try:
-            from tri.game import sync as _sync
+            from tri.api import sync as _sync
             self.sync_info = _sync.restore(self.tri, self.run)
             self.catalog = self.tri.catalog
         except Exception as e:                             # a broken sync never stops the bot
@@ -95,13 +96,21 @@ class ModelService(CatalogHelpers):
         self.item_counts: Dict[str, dict] = ic.get("items", {})
         self.min_item_count = ic.get("min_item_count")
         self.lock = threading.RLock()            # re-entrant, so the bot can hold it around a call
+<<<<<<< HEAD
+        self._writer = threading.Lock()          # one memory rebuild at a time (built on a copy, then swapped)
+=======
+>>>>>>> main
         self._index_names()
         self.memory_skipped: List[str] = []
         self.locators_skipped: List[str] = []
         self.categories_skipped: List[str] = []
         self.values_skipped: List[str] = []
         self.load_seconds = round(time.monotonic() - t0, 2)
+<<<<<<< HEAD
+        from tri.api import release
+=======
         from tri.runtime import release
+>>>>>>> main
         release()                                          # the load's temporaries back to the OS
 
     def load_text(self) -> str:
@@ -109,7 +118,7 @@ class ModelService(CatalogHelpers):
         time and the compute device the next fit would use."""
         if getattr(self, "_load_text", None):
             return self._load_text
-        from tri.model import accel
+        from tri.api import accel
         src = (getattr(self.tri, "load_info", None) or {}).get("latents", "?")
         d = accel.describe(self.tri.cfg.space.device)
         self._load_text = f"loaded in {self.load_seconds}s (latents: {src}); device: {d.get('device')} ({d.get('dtype')})"
@@ -121,16 +130,16 @@ class ModelService(CatalogHelpers):
         return list(((cfg.get("args") or {}).get("keep_group")) or [])
 
     def sync_state(self) -> Optional[dict]:
-        from tri.game import sync as _sync
+        from tri.api import sync as _sync
         return _sync.load_state(self.run)
 
     def sync_plan(self, ref: str = "main", force: bool = False):
         """(head, plan or None): the latest pocamind/data commit and, if it moved
         since the last sync (or force), the plan. Network only, no lock."""
-        from tri.game import sync as _sync
-        from tri.game.gamedata import fetch_gamedata
+        from tri.api import sync as _sync
+        from .gamesource import fetch_gamedata, head_commit
         state = _sync.load_state(self.run)
-        head = _sync.head_commit(ref)
+        head = head_commit(ref)
         if state and head.get("sha") and state.get("sha") == head["sha"] and not force:
             return head, None
         gd = fetch_gamedata(os.path.join(self.run, _sync.SYNC_DIR, "gamedata"), ref=head.get("sha") or ref,
@@ -150,8 +159,8 @@ class ModelService(CatalogHelpers):
         pocamind/data holds every lock the sync reads."""
         if os.environ.get("TRI_SYNC_DWCO", "0").strip().lower() in ("0", "false", "no", "off"):
             return []
-        from tri.game import sync as _sync
-        from tri.game.gamedata import fetch_deepwokenco
+        from tri.api import sync as _sync
+        from .gamesource import fetch_deepwokenco
         try:
             return [fetch_deepwokenco(os.path.join(self.run, _sync.SYNC_DIR, "gamedata"), refresh=True, timeout=30)]
         except Exception as e:
@@ -160,7 +169,7 @@ class ModelService(CatalogHelpers):
 
     def sync_apply(self, plan) -> dict:
         """Apply a plan from sync_plan (no refit) and save it in <run>/sync/."""
-        from tri.game import sync as _sync
+        from tri.api import sync as _sync
         with self.lock:
             rep = _sync.apply(self.tri, plan, self.run)
             self.catalog = self.tri.catalog
@@ -204,7 +213,7 @@ class ModelService(CatalogHelpers):
     def set_rules(self, rows: Sequence[dict]) -> dict:
         """Replace the authored rules with the stored rows; rows that no longer
         parse (an item renamed or removed) are kept but listed as broken."""
-        from tri.rules.authored import AuthoredRules
+        from tri.api import AuthoredRules
         ar = AuthoredRules.from_json(rows)
         with self.lock:
             self.tri.set_authored(ar)
@@ -247,10 +256,6 @@ class ModelService(CatalogHelpers):
         rb = self.tri.rulebook
         return {g: sorted(m) for g, m in (rb.groups if rb is not None else {}).items()}
 
-    def consensus(self, archetype: Optional[str] = None) -> Dict[str, list]:
-        """Promoted reviewer tells per family (math §8.5a)."""
-        return self.tri.consensus_report(archetype)
-
     def _read_json(self, name: str, default):
         p = os.path.join(self.run, name)
         if not os.path.isfile(p):
@@ -278,8 +283,10 @@ class ModelService(CatalogHelpers):
         for r in reviews:
             e = self._valid(r)
             (skipped.append(f"{r.review_id}: {e}") if e else ok.append(r))
-        with self.lock:
-            self.tri.set_reviews(ok)
+        with self._writer:                       # rebuilt on a copy; answers keep running meanwhile
+            t = self.tri.with_reviews(ok)
+            with self.lock:
+                self.tri = t
         self.memory_skipped = skipped
         return dict(loaded=len(ok), skipped=len(skipped))
 
@@ -309,9 +316,11 @@ class ModelService(CatalogHelpers):
                 locs.append(self.locator_from_row(r))
             except Exception as e:
                 lskip.append(f"{r.get('id')}: {e}")
-        with self.lock:
-            self.tri.set_memory(ok, locs)
-        from tri.runtime import release
+        with self._writer:
+            t = self.tri.with_memory(ok, locs)
+            with self.lock:
+                self.tri = t
+        from tri.api import release
         release()
         self.memory_skipped, self.locators_skipped = skipped, lskip
         return dict(loaded=len(ok), skipped=len(skipped), locators=len(locs), locators_skipped=len(lskip))
@@ -321,8 +330,11 @@ class ModelService(CatalogHelpers):
         if it does not validate."""
         if self._valid(review):
             return False
-        with self.lock:
-            self.tri.add_reviews([review], validate=False)
+        with self._writer:
+            keep = [r for r in self.tri.reviews if r.review_id != review.review_id]
+            t = self.tri.with_reviews(keep + [review])
+            with self.lock:
+                self.tri = t
         return True
 
     # ------------------------------------------------------------ locators
@@ -427,7 +439,11 @@ class ModelService(CatalogHelpers):
     def _inherit_weapons(self, b: Build) -> None:
         """A build that records no weapon takes the weapons its newest review
         named (# weapon notes): claims scoped to a weapon then hold on it again."""
+<<<<<<< HEAD
+        from tri.api import equipped
+=======
         from tri.game.weapons import equipped
+>>>>>>> main
         if not b.build_id or equipped(b):
             return
         revs = [r for r in getattr(self.tri, "reviews", None) or ()
@@ -462,7 +478,7 @@ class ModelService(CatalogHelpers):
 
     # ------------------------------------------------------------ applying the model
     def _ops(self, al, b: Optional[Build] = None, held=()) -> dict:
-        from tri.infer.draft import change_margin
+        from tri.api import change_margin
         cat = self.catalog
         held = set(held)
 
@@ -502,7 +518,7 @@ class ModelService(CatalogHelpers):
         """Smallest edits per plausible archetype, and the current picks ranked by worth.
         archetype: analyse as that archetype only (ValueError if unknown). answers:
         the asker's answers (local to this call); caution: ask | hold | off."""
-        from tri.infer.caution import Answers
+        from tri.api import Answers
         a = Answers.of(answers)
         archetype = archetype or a.archetype
         with self.lock:
@@ -539,7 +555,7 @@ class ModelService(CatalogHelpers):
         complete it as that archetype (ValueError if unknown)."""
         with self.lock:
             cap = (talents, mantras) if talents is not None or mantras is not None else None
-            from tri.infer.caution import Answers
+            from tri.api import Answers
             ans = Answers.of(answers)
             archetype = archetype or ans.archetype
             ut, um = self._unknown_room(b)
@@ -572,7 +588,7 @@ class ModelService(CatalogHelpers):
                  unknown=dict((b.meta or {}).get("unknown_items") or {}),
                  mantra_slots=self.catalog.mantra_slot_usage(al.items() + [x for x in b.items() if x not in self.catalog.items],
                                                              self.catalog.oath_of(b)))
-        from tri.core.codec import is_silentheart
+        from tri.api import is_silentheart
         silent = is_silentheart(b)
         d.update(silentheart=silent, mantras_first=not silent and not any(self.kind(x) == "mantra" for x in have)
                  and any(self.kind(c.item) == "mantra" for c in al.changes if c.action == "add"))
