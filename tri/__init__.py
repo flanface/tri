@@ -9,7 +9,7 @@ from __future__ import annotations
 import importlib
 
 _EXPORTS = {
-    "analysis.evaluate": ("certification", "completion_benchmark", "evaluate", "group_split", "mapping_benchmark",
+    "analysis.evaluate": ("completion_benchmark", "evaluate", "group_split", "mapping_benchmark",
                           "review_benchmark", "rule_benchmark", "strictness_benchmark"),
     "core.catalog": ("Catalog",),
     "core.codec": ("validate_review",),
@@ -29,7 +29,7 @@ _EXPORTS = {
     "reviews.defs": ("LedgerConfig", "Locator", "LocatorConfig"),
     "reviews.locators": ("LocatorSet", "new_locator", "archetype_key"),
     "rules.defs": ("Condition", "PassConfig"),
-    "rules.induction": ("Rule", "RuleInducer", "context_features"),
+    "rules.features": ("context_features",),
     "rules.passes": ("PassRule", "Rulebook"),
     "sources.defs": ("PipelineConfig",),
     "sources.pipeline": ("PretrainSet", "prepare_pretraining"),

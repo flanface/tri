@@ -25,8 +25,6 @@ mapping_benchmark      on any builds: checks the concept-space isometry
                        and the worth bound weighted RMS |sigma_a - sigma_b| <= |u_a - u_b| / 4;
                        with labels, the share of same-label pairs closer than
                        different-label pairs (AUC).
-certification          on held-out builds: share of mined rules whose rate on
-                       those builds still meets its threshold (Rulebook.certification_check).
 
 Run on your corpus with `python -m tri.cli.fit --builds builds.json` (it prints completion_benchmark and
 rule_benchmark on held-out lineages, --test-frac); review_benchmark needs held-out reviews.
@@ -263,14 +261,6 @@ def mapping_benchmark(tri, builds: Sequence[Build], labels: Optional[Sequence] =
     return out
 
 
-def certification(tri, builds: Sequence[Build]) -> dict:
-    """Held-out check of the mined rules (see Rulebook.certification_check)."""
-    from tri.model.matrix import BuildMatrix
-    tokens = tri.data.tokens if getattr(tri, "data", None) is not None else None
-    bm = BuildMatrix.from_builds(list(builds), tri.catalog, fields=tri.cfg.context_fields, tokens=tokens)
-    return tri.rulebook.certification_check(bm)
-
-
 def evaluate(tri, builds: Sequence[Build] = (), reviews: Sequence[Review] = (), n: int = 1000, seed: int = 0) -> dict:
     """All benchmarks that have data."""
     out = {}
@@ -278,7 +268,6 @@ def evaluate(tri, builds: Sequence[Build] = (), reviews: Sequence[Review] = (), 
         out["completion"] = completion_benchmark(tri, builds, n=n, seed=seed)
         out["rules"] = rule_benchmark(tri, builds, n=n, seed=seed)
         out["mapping"] = mapping_benchmark(tri, list(builds)[:n], seed=seed)
-        out["certification"] = certification(tri, builds)
     if reviews:
         out["reviews"] = review_benchmark(tri, reviews)
         out["strictness"] = strictness_benchmark(tri, reviews)

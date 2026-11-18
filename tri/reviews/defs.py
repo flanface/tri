@@ -3,7 +3,7 @@ ledger, consensus and locator configurations; locators and archetype readings.""
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from tri.core.codec import build_from_dict, build_to_dict, legacy_names
@@ -133,65 +133,6 @@ class LedgerConfig:
     # choice: their endorsement counts this much, never binds, and never hides an
     # older explicit claim on the item. Explicit operations keep full weight.
     echo_keep: float = 0.25
-    # family reach (math §5.8): reviews of builds located in the query's own
-    # family, at any distance inside it, pool their claims per item. A pooled
-    # claim needs fam_min distinct reviewed builds behind one side and a weighted
-    # share >= fam_share; it nudges, and binds only with fam_bind strong
-    # item-level claims (not slot-relative) behind it and no strong one against.
-    # Local claims (within reach) always take precedence; the chasm is never crossed.
-    fam_reach: bool = True
-    fam_min: int = 2
-    fam_share: float = 0.75
-    fam_bind: int = 3
-    fam_kappa: float = 1.5
-    fam_keep: float = 0.5         # an endorsement (unmarked pick) counts this much of an edit
-    fam_overlap: float = 0.5      # family-posterior overlap 1 - TV a reviewed build needs
-    # builds no locator places (neither of the two) share a family when they share
-    # a concept region; their overlap counts this much
-    fam_region: float = 0.6
-    # a broad consensus binds whatever the strength: >= fam_consensus distinct
-    # builds with share >= fam_consensus_share and no strong claim against
-    fam_consensus: int = 4
-    fam_consensus_share: float = 0.9
-    # nearby reviewed builds (similarity >= pool_sim) join the pool with overlap =
-    # similarity, so a consensus of neighbours counts even outside a located family
-    pool_sim: float = 0.8
-    # a binding pooled claim overrides a single local claim that would only nudge
-    pool_override: bool = True
-    # a full review that leaves an item out of the build it returns endorses its
-    # absence: pooled, a consensus of such reviews ("absent") keeps worth from
-    # swapping the item in (slot filling and requirements are unaffected)
-    pool_absent: bool = True
-
-
-@dataclass
-class ConsensusConfig:
-    kappa: float = 1.5               # pseudo-evidence: c = net / (net + kappa)
-    min_reviewers: int = 2           # distinct units (see unit) before a tell is promoted
-    unit: str = "build"              # "build": (reviewer, build) units; "reviewer": distinct reviewers
-    op_weight: float = 0.5           # an archetype-reasoned edit counts this much of a note
-    worth: float = 0.35              # eta_c: q_t += eta_c * c * p(a | u) * a(u)
-    lift: float = 2.0                # lambda_c: nats per held tell on the reading (capped by indicator_lift)
-    floor: float = 0.2               # the reading lift needs p(a | u) >= floor already
-    enabled: bool = True
-
-
-@dataclass
-class Tell:
-    key: str                         # family key
-    item: str
-    sign: int                        # +1 tell (take), -1 avoid
-    confidence: float
-    support: float                   # summed weight behind the sign
-    against: float                   # summed weight against it
-    reviewers: int                   # distinct reviewers behind the sign
-    notes: int                       # how many of them were notes (not edits)
-    reviews: List[str] = field(default_factory=list)
-
-    def as_dict(self) -> dict:
-        return dict(key=self.key, item=self.item, sign=self.sign, confidence=round(self.confidence, 3),
-                    support=round(self.support, 3), against=round(self.against, 3),
-                    reviewers=self.reviewers, notes=self.notes, reviews=list(self.reviews))
 
 
 @dataclass
@@ -232,15 +173,6 @@ class LocatorConfig:
     chasm_rules: bool = True                  # mined central take rules fire only in their home families
     chasm_rule_min: float = 5.0               # ...a family is home with this much covered weight and rate >= theta_take
     chasm_rule_sample: int = 30000            # reference builds used to find the homes
-    # reviewer consensus (math §8.5a): repeated notes / edits become family tells
-    consensus: bool = True
-    consensus_kappa: float = 1.5              # c = net / (net + kappa)
-    consensus_min_reviewers: int = 2          # distinct (reviewer, build) units before a tell is promoted
-    consensus_unit: str = "build"             # "reviewer": count distinct reviewers (pre-2.23)
-    consensus_op_weight: float = 0.5          # an archetype-reasoned edit counts this much of a note
-    consensus_worth: float = 0.35             # eta_c: q_t += eta_c c p(a | u) a(u)
-    consensus_lift: float = 2.0               # lambda_c: nats per held tell (total capped by indicator_lift)
-    consensus_floor: float = 0.2              # reading lift needs p(a | u) >= this already
 
 
 @dataclass

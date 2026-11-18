@@ -19,7 +19,7 @@ class _Answering:
     # ------------------------------------------------------------ answers
     def engine(self) -> PassEngine:
         self._need()
-        e = PassEngine(self.catalog, self.space, self.rules, self._worth, self.review_rules,
+        e = PassEngine(self.catalog, self.space, self.rules, self._worth,
                        self.ledger, self.cfg.infer)
         e.manual = {i: c for i, c in self.manual.items() if i in self.catalog.index}
         e.locset = self.locset
@@ -34,7 +34,21 @@ class _Answering:
         e.rule_home = self._rule_homes()
         e.class_prior = self._class_prior()
         e.solo = self._prereq_solo()
+        if self.cfg.infer.sc_propagate:
+            e.item_cos = self.item_cosine()
         return e
+
+    def item_cosine(self):
+        """[N, N] mean-centred worth cosine of the items (tri.model.itemsim),
+        computed once per space and corpus."""
+        if self.data is None or self.space is None:
+            return None
+        tag = (id(self.space), id(self.data))
+        c = self.__dict__.get("_item_cos")
+        if c is None or c[0] != tag:
+            from tri.model.itemsim import worth_cosine
+            c = self._item_cos = (tag, worth_cosine(self.space, self.data, seed=self.cfg.seed))
+        return c[1]
 
     def _prereq_solo(self):
         """item -> share of the corpus builds with the prerequisite item that
@@ -288,7 +302,6 @@ class _Answering:
                             best_swap=best,
                             swap_gain=round(float(s.q[self.catalog.index[best]]) - q, 4) if best else None,
                             rules=[r.text(self.rules.region_names) for r in self.rules.for_item(item) if r.status == "active"][:8],
-                            review_rules=[r.describe() for r in self.review_rules if item in (r.subject, r.other)][:8],
                             region=s.mode, region_name=s.name))
         return out
 
@@ -319,5 +332,4 @@ class _Answering:
         self._need()
         return dict(version=VERSION, items=len(self.catalog), builds=len(self.data) if self.data is not None else 0,
                     reviews=len(self.reviews), space=self.space.report(), rules=self.rulebook.summary(), selection=self.selection_report(),
-                    review_rules=sum(r.status != "proposed" for r in self.review_rules),
                     patches=[p.name for p in self.patches.patches], fitted_at=self.fitted_at)

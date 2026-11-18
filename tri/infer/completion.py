@@ -30,8 +30,7 @@ class _Completion:
             if self._general(v):
                 # a generally-good claim made on another archetype yields to what
                 # the reviews say about this one ([X] A = a ⇒ ¬t, strong SM here)
-                if self._forbidden(it, sel, s) is None \
-                        and self._rule_block(it, sel, s) is None:
+                if self._forbidden(it, sel, s) is None:
                     req[it] = (FOUNDATIONAL, "general", f"generally good (foundational talent), review {v[2]}", v[2])
                 continue
             req[it] = (REVIEW, "review", self._memory_why("added", v) + self._note(v[2]), v[2])
@@ -50,9 +49,6 @@ class _Completion:
             t = self.c.index.get(it)                             # (still subject to the cap and slots)
             if t is not None and it not in req and it not in blocked and (it in sel or s.ctx.avail[t]):
                 req[it] = (REVIEW, "answer", f"you said you want {it}", None)
-        for r in self.review_rules:
-            if r.kind == "NECESSARY" and r.applies(s.build, s.feats) and r.subject not in req:
-                req[r.subject] = (CENTRAL, "review_rule", r.describe(), None)
         if self.manual:
             silent = is_silentheart(s.build, s.ctx.tokens)
             for it, c in self.manual.items():
@@ -150,7 +146,8 @@ class _Completion:
             sits = self.situations(res, 1, reg, force=force)
             if not sits:
                 break
-            rv = self._review_one(res, sits[0], set(own) & set(res.items()), keep_size=capacity is not None)
+            rv = self._review_scored(res, sits[0], set(own) & set(res.items()), keep_size=capacity is not None,
+                                     fill_min=-1e9)       # a completion fills every slot it can
             if not rv.changes:
                 break
             added = {c.item for c in alt.changes if c.action == "add"}
@@ -222,8 +219,7 @@ class _Completion:
 
         def ok(p):
             t = self.c.index.get(p)
-            return t is not None and p not in blocked and p not in self._ban and bool(s.ctx.avail[t]) \
-                and self._rule_block(p, sel, s) is None
+            return t is not None and p not in blocked and p not in self._ban and bool(s.ctx.avail[t])
 
         def need(x, depth=0):
             if depth > 8:
@@ -324,6 +320,18 @@ class _Completion:
         have = [i for i in have if i in sel]
         # the talent cap and the mantra slots are strict: an input above them
         # loses its lowest-worth picks that no other pick needs and no rule requires
+        if not self.fits(sel, s):                          # first a talent that grants the missing slot
+            for it in sorted((x for x in self._talents if self.c.slot_grants(x) and x not in sel and x not in blocked
+                              and x not in self._ban and bool(s.ctx.avail[self.c.index[x]])),
+                             key=lambda x: -s.q[self.c.index[x]]):
+                if self.fits(sel, s):
+                    break
+                if self.fits(sel | {it}, s) or self.c.mantra_slot_usage(sel | {it} | s.outside, s.oath)["over"] < \
+                        self.c.mantra_slot_usage(sel | s.outside, s.oath)["over"]:
+                    if self._feasible(it, sel, s) and self.cap_excess(sel | {it}) <= 0:
+                        sel.add(it)
+                        changes.append(Change(it, "add", Reason.SYNERGY_WITH.value, [], float(s.q[self.c.index[it]]),
+                                              "rules", None, FOUNDATIONAL, "grants the mantra slot the input's mantras need"))
         if self.cap_excess(sel) > 0 or not self.fits(sel, s):
             req0 = self._required(s, sel, blocked)
             for kind, over, note in (("t", lambda: self.cap_excess(sel) > 0, lambda: self._cap_note(sel)),
@@ -351,12 +359,10 @@ class _Completion:
             if source == "worth" and not self._worth_ok(it, fallback[0], s):
                 return False
             rules = source not in ("review", "category")
-            if it in blocked or it in self._ban or self._rule_block(it, sel, s):
+            if it in blocked or it in self._ban:
                 return False
             if source == "worth" and ((self._cold(it, s) and not cold_ok) or self._side_block(it, sel | intent, s)):
                 return False
-            if source == "worth" and self._depends_unmet(it, sel, s):
-                return False                         # x NW > y (review rule): never x without y
             if source == "worth" and follow and self._prereq_only(it, sel):
                 # a talent taken almost only to unlock another is taken with it
                 # (the dependant pulls it in as a prerequisite), never alone
@@ -458,8 +464,7 @@ class _Completion:
         for it in sorted(freed, key=lambda x: -s.q[self.c.index[x]]):
             k = self._kind(it)
             if it not in sel and (limit[k] is None or count(k) < limit[k]) and self.cap_excess(sel | {it}) <= 0 \
-                    and self.fits(sel | {it}, s) and self._feasible(it, sel, s, cap=False) \
-                    and not self._rule_block(it, sel, s):
+                    and self.fits(sel | {it}, s) and self._feasible(it, sel, s, cap=False):
                 sel.add(it)                                  # nothing took its slot: it stays
             if it in sel:
                 changes[:] = [c for c in changes if not (c.item == it and c.action == "add")]
@@ -496,7 +501,7 @@ class _Completion:
                 if it in sel or self._kind(it) != "m" or it in blocked or (self._cold(it, s) and not cold_ok):
                     continue
                 if not self._feasible(it, sel, s, cap=False) or not self.fits(sel | {it}, s) or \
-                        self._rule_block(it, sel, s) or self._side_block(it, sel | intent, s):
+                        self._side_block(it, sel | intent, s):
                     continue
                 need = max(0, self.cap_excess(sel | {it}))
                 out, after = [], sel | {it}

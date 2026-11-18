@@ -39,7 +39,7 @@ review(build): slots start full, so the answer is the smallest edit:
 Each change says which pass or review made it, and why."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Set
+from typing import Dict, List, Optional, Set
 
 import numpy as np
 
@@ -47,23 +47,18 @@ from tri.core.catalog import Catalog
 from tri.core.types import Kind
 from tri.infer.completion import _Completion
 from tri.infer.constraints import _Constraints
-from tri.infer.defs import GLOBAL_RULE_KINDS, InferConfig
+from tri.infer.defs import InferConfig
 from tri.infer.reviewing import _Reviewing
+from tri.infer.scorer import _Scoring
 from tri.infer.situations import _Situations
 from tri.rules.passes import NEVER, PassRule, Rulebook
 
 
-class PassEngine(_Situations, _Constraints, _Completion, _Reviewing):
-    def __init__(self, catalog: Catalog, space, rulebook: Rulebook, worth, review_rules: Sequence = (),
+class PassEngine(_Situations, _Constraints, _Completion, _Reviewing, _Scoring):
+    def __init__(self, catalog: Catalog, space, rulebook: Rulebook, worth,
                  ledger=None, cfg: Optional[InferConfig] = None):
         self.c = catalog
         self.space, self.rb, self.worth = space, rulebook, worth
-        # Only context-free review rules generalise globally (BROKEN, REDUNDANT
-        # with a co-picked item, CONFLICT with a co-picked item). Archetype-relative
-        # judgements (necessary / no synergy / prefer) spread through concept-space
-        # proximity in the ledger and through refit, never as global rules.
-        self.review_rules = [r for r in review_rules if r.status in ("supported", "refined")
-                             and r.kind in GLOBAL_RULE_KINDS]
         self.ledger = ledger
         self.cfg = cfg or InferConfig()
         self.manual: Dict[str, str] = {}               # item -> foundational | central | luxury (admin)

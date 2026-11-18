@@ -249,10 +249,6 @@ class ModelService(CatalogHelpers):
         rb = self.tri.rulebook
         return {g: sorted(m) for g, m in (rb.groups if rb is not None else {}).items()}
 
-    def consensus(self, archetype: Optional[str] = None) -> Dict[str, list]:
-        """Promoted reviewer tells per family (math §8.5a)."""
-        return self.tri.consensus_report(archetype)
-
     def _read_json(self, name: str, default):
         p = os.path.join(self.run, name)
         if not os.path.isfile(p):

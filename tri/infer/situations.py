@@ -8,14 +8,13 @@ import dataclasses
 import numpy as np
 
 from tri.core.types import Build, Kind
-from tri.game import priors
 from tri.game.weapon_rules import main_weapons, weapon_rules
 from tri.infer.defs import _Sit
 from tri.model.matrix import context_tokens
 from tri.reviews.variants import family_key
 from tri.rules.defs import Ctx
 from tri.rules.groups import rule_tokens
-from tri.rules.induction import context_features
+from tri.rules.features import context_features
 
 
 class _Situations:
@@ -81,25 +80,12 @@ class _Situations:
         for i, (k, name, p) in enumerate(regs):
             ptq = fpt if fpt is not None else pt if i == 0 and region is None else self.space.point(b, partial, region=k)
             fine = ls.note(ptq.u, xa=xa, force=(force or {}).get("key"), transient=True) if ls is not None else None
-            lr = self.worth.rates(ptq, picks=[self.c.index[i] for i in b.items() if i in self.c.index])
-            q = lr.q.copy()
-            if fine is not None:                                     # overlapping archetypes: the few picks
-                q = ls.adjust(q, ptq.u, fine)                       # that tell them apart (math §6.6)
-                if force is None and region is None and i == 0:
-                    j = int(np.argmax(fine))                         # named by the fine reading, not the region
-                    if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
-                        auto = (self.space.region_auto or [])
-                        nm = ls.names[ls.keys[j]]
-                        name = f"{nm} ({auto[k]})" if k < len(auto) and auto[k] else nm
-            q = priors.adjust_q(q, self.c, b)                        # benchmarks, weapon redundancy (math §2.9)
-            for it, v in memory.items():                             # soft claims nudge worth
-                lab, st = v[0], v[1]
-                t = self.c.index.get(it)
-                if t is not None and not self._binds(v) and lab != "keep":
-                    # (an unmarked pick on a similar build is already counted
-                    # once through worth; it is not a reason to prefer it here)
-                    q[t] = float(np.clip(q[t] + self.cfg.memory_nudge * st * (1 if lab in ("keep", "add") else -1 if lab == "remove" else 0), 0, 1))
-            ind = self._notes_q(q, ptq.u, fine)
+            if fine is not None and force is None and region is None and i == 0:
+                j = int(np.argmax(fine))                             # named by the fine reading, not the region
+                if fine[j] >= ls.cfg.min_confidence and ls.read_many(ptq.u[None])[1][0] <= ls.reach:
+                    auto = (self.space.region_auto or [])
+                    nm = ls.names[ls.keys[j]]
+                    name = f"{nm} ({auto[k]})" if k < len(auto) and auto[k] else nm
             fam = None
             if ls is not None and (force or {}).get("key") in getattr(ls, "keys", ()):
                 fam = force["key"]                                   # forced: its family, always
@@ -110,6 +96,9 @@ class _Situations:
             arch = family_key(ls.names.get(fam, fam)) if fam is not None else None
             wr = self._forbid_chain(weapon_rules(b, arch or (force or {}).get("name") or name))
             mem = self._same_family(memory, arch)
+            score = self._score(b, ptq, fine, arch, fv)              # the one per-item logit
+            q = 1.0 / (1.0 + np.exp(-score["z"]))
+            ind = score["indicative"]
             guard = self._weapon_guard(wr, avail)
             if guard:                                                # a weapon-required pick and its prerequisite
                 mem = {k: v for k, v in memory.items()                # chain outrank every review claim against them
@@ -121,12 +110,12 @@ class _Situations:
             feats = context_features(b) | {f"region:{k}"}
             if fam is not None:                                      # scope of OFF_ARCHETYPE rules (strong SM)
                 feats.add(f"family:{family_key(ls.names.get(fam, fam))}")
-            out.append(_Sit(b, ctx, feats, q, lr.support, mem, k, name, p, ptq.u,
+            out.append(_Sit(b, ctx, feats, q, score["support"], mem, k, name, p, ptq.u,
                             self.c.oath_of(b), {i for i in b.items() if i not in self.c.index}, indicative=ind,
                             family=fam, focus=foc,
                             weapon=dict(forbid={i: w for i, w in wr.forbid.items() if i in self.c.index},
                                         require={i: w for i, w in wr.require.items() if i in self.c.index},
-                                        guard=sorted(guard))))
+                                        guard=sorted(guard)), score=score))
         return out
 
     def _same_family(self, memory: dict, arch) -> dict:
@@ -183,22 +172,6 @@ class _Situations:
                     if it not in out or out[it]["weight"] < w:
                         out[it] = dict(archetype=n.get("archetype"), kind=n["kind"], review_id=n.get("review_id"),
                                        weight=round(w, 3))
-        tells = getattr(ls, "tells", None) if ls is not None else None
-        if tells and ls.cfg.consensus:                       # reviewer consensus (math §8.5a)
-            Pc, dm, _ = ls.read_many(np.asarray(u, float)[None])
-            Pu = fine if fine is not None else Pc[0]
-            act = float(ls.activity(dm)[0])
-            eta = float(ls.cfg.consensus_worth)
-            for t in tells:
-                w = float(Pu[ls.kix[t["key"]]]) * act * float(t["confidence"])
-                if w < self.cfg.note_floor:
-                    continue
-                q[t["t"]] = float(np.clip(q[t["t"]] + t["sign"] * eta * w, 0, 1))
-                if t["sign"] > 0:
-                    it = t["item"]
-                    if it not in out or out[it]["weight"] < w:
-                        out[it] = dict(archetype=ls.names[t["key"]], kind="consensus", review_id=None,
-                                       weight=round(w, 3), reviewers=t.get("reviewers"))
         cap = float(self.cfg.value_cap)
         for it, v in self.values.items():
             t = self.c.index.get(it)
