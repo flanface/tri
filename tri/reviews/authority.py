@@ -360,8 +360,9 @@ class ReviewLedger:
         return [(self.reviews[i], float(S[i])) for i in range(len(self.reviews) - 1, -1, -1) if S[i] >= lo]
 
     def claims_for(self, build: Build, min_sim: Optional[float] = None, vec=None) -> Dict[str, tuple]:
-        """{item: (label, weight, review_id, similarity, reason, strength)}: the
-        newest active claim per item among reviews of similar builds.
+        """{item: (label, weight, review_id, similarity, reason, strength)}: per
+        item, the active claim with the largest weight among reviews of similar
+        builds (ties: the newest); superseded claims already weigh 0.
         weight = claim weight x similarity factor (1.0 for the same build).
         BROKEN claims apply to any build. Whether a claim is binding or only
         nudges worth is decided by binding()."""
@@ -375,11 +376,12 @@ class ReviewLedger:
                 continue                                   # the reviewed build wields another weapon class
             f = 1.0 if sim >= self.cfg.sim_full else sim
             for c in self.active_claims(r.review_id):
-                if c.item not in out and c.holds_in(items):
+                if c.holds_in(items):
                     v = (c.label, c.weight * f, r.review_id, sim, c.reason, c.strength, c.origin, tuple(c.related))
                     if c.origin == "echo":                 # tri's own pick: only where nobody said more
-                        echo.setdefault(c.item, v)
-                    else:
+                        if c.item not in echo or v[1] > echo[c.item][1]:
+                            echo[c.item] = v
+                    elif c.item not in out or v[1] > out[c.item][1]:
                         out[c.item] = v
         for it, v in echo.items():
             out.setdefault(it, v)
