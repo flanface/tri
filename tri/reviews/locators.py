@@ -76,6 +76,10 @@ class LocatorSet:
             self.Al = np.stack([np.asarray(a, float) for _, a in xa])
             self.Xl = self.Xl * self.Al                  # a pick that is not available is no evidence
         self.indicators: List[dict] = []
+<<<<<<< HEAD
+=======
+        self.tells: List[dict] = []              # reviewer consensus (math §8.5a)
+>>>>>>> main
         self.anchors: List[dict] = []            # review anchors: {key, u, sign, review_id}
         self._UA = np.zeros((0, 0)); self._labA = np.zeros(0, int); self._sgnA = np.zeros(0)
         self.set_background(background)
@@ -202,7 +206,11 @@ class LocatorSet:
         """Reviewed builds whose reviewer said "this build is a" (sign +1) or "is not
         a" (sign -1): dicts with key, u, sign, review_id. A positive anchor joins
         a's locator mean as a pseudo-locator of weight anchor_mass, a
+<<<<<<< HEAD
         negative one scales k_a by 1 - anchor_veto * K there. Far from
+=======
+        negative one scales k_a by 1 - anchor_veto * K there (math §6.7). Far from
+>>>>>>> main
         the noted build K -> 0 and the reading is unchanged."""
         rows = [dict(a) for a in anchors if a.get("key") in self.kix and a.get("u") is not None]
         self.anchors = rows
@@ -642,7 +650,11 @@ class LocatorSet:
         return chi
 
     def family_overlap(self, u: np.ndarray, V: np.ndarray) -> np.ndarray:
+<<<<<<< HEAD
         """[m] family reach: 1 - TV of the family posteriors of
+=======
+        """[m] family reach (math §5.8): 1 - TV of the family posteriors of
+>>>>>>> main
         a build at u and builds at V when both are located in the same family
         (nearest locator within reach, top family probability >= min_confidence),
         else 0. Never crosses the chasm: different or unlocated families give 0."""

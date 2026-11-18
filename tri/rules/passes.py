@@ -245,12 +245,603 @@ class Rulebook:
         """The container the authored rules live in (4.0: nothing is mined):
         region names, eligible pick rates and the known item groups."""
         self.region_names = list(region_names)
+<<<<<<< HEAD
         self.pick_rate = bm.pick_rate()[0] if bm is not None and len(bm) else None
         from tri.rules.groups import derived_groups
         self.groups = derived_groups(self.c) if self.cfg.groups else {}
         self.rules, self.vetoed, self.pruned = [], {}, []
         return self
 
+=======
+        w = bm.w
+        XA = _picked_available(bm)
+        G = _group_matrix(bm)
+        elig = group_dot(np.asarray(G.T @ w).ravel(), bm.masks)
+        self.pick_rate = np.asarray(XA.T @ w).ravel() / np.maximum(elig, 1e-12)
+        mi = mutual_information(bm, w, signed=True)
+        rep = mi < 0                                # antagonists may anchor ("works against")
+        mi = np.abs(mi)
+        Xd = _dense_bool(bm.X)                     # bool: an eighth of float64, a quarter of float32
+        H = bm.hi.astype(np.float32)
+        from tri.rules.groups import derived_groups
+        self.groups = derived_groups(self.c) if f.groups else {}
+        tokens, Tk = self.context_matrix(bm)       # planner fields, weapon class, archetype
+        gnames = sorted(self.groups)
+        gidx = [np.array([self.c.index[i] for i in self.groups[g] if i in self.c.index], np.int64) for g in gnames]
+        GC = np.stack([Xd[:, ix].sum(1) for ix in gidx], 1).astype(np.float32) if gnames \
+            else np.zeros((len(bm), 0), np.float32)
+        own = regions is None
+        regions = self.pick_regions(bm, f.breadth_regions) if own else regions
+        R = int(regions.max()) + 1 if len(regions) else 0
+        gmix = np.bincount(regions, weights=w, minlength=R) if R else np.zeros(0)
+        todo = list(self.c.ids) if items is None else [i for i in items if i in self.c.index]
+        keep = [r for r in self.rules if r.item not in set(todo)] if items is not None else []
+        an, ag_grid, AG = aggregate_matrix(H, self.c.stats) if f.aggregates else ([], [], np.zeros((len(bm), 0), np.float32))
+        ctx = dict(w=w, Xd=Xd, H=H, Tk=Tk, mi=mi, rep=rep, regions=regions, gmix=gmix, masks=bm.masks, gid=bm.gid,
+                   tokens=list(tokens), AG=AG, ag_names=an, ag_grid=ag_grid, GC=GC, gnames=gnames, gidx=gidx,
+                   pick_ZC=self._pick_ZC if (own and f.leave_item_out) else None)
+        new: List[PassRule] = []
+        vet: Dict[str, dict] = {}
+        jobs = _n_jobs(f, len(todo), len(bm))
+        if jobs > 1:
+            from joblib import Parallel, delayed
+            lite = Rulebook(self.c, self.cfg)          # what a worker needs: catalog, cfg, pick rates
+            lite.pick_rate, lite.region_names, lite.groups = self.pick_rate, self.region_names, self.groups
+            chunks = [todo[i::jobs * 4] for i in range(jobs * 4)]
+            parts = Parallel(n_jobs=jobs, backend="loky", max_nbytes="1M")(
+                delayed(_mine_chunk)(lite, ctx, ch) for ch in chunks if ch)
+            by = {}
+            for part in parts:
+                for item, rules, info in part:
+                    by[item] = (rules, info)
+            for item in todo:                          # catalog order, as the serial loop
+                rules, info = by.get(item, ([], {}))
+                new.extend(rules)
+                if info:
+                    vet[item] = info
+        else:
+            for item in todo:
+                info: dict = {}
+                new.extend(self._mine_one(item, ctx, info))
+                if info:
+                    vet[item] = info
+        self.vetoed = ({k: v for k, v in self.vetoed.items() if k not in set(todo)} if items is not None else {})
+        self.vetoed.update(vet)
+        self.rules = keep + new
+        if changed_since:
+            self._rescore_changed(bm, changed_since)
+        from tri.rules.triviality import cull, prune    # group baselines, then deletion
+        cull(self.rules, self.c, self.groups)
+        self.rules, self.pruned = prune(self.rules, self.c)
+        return self
+
+    def _mine_one(self, item: str, ctx: dict, info: Optional[dict] = None) -> List[PassRule]:
+        """Rules of one item (Rulebook.mine). grounded stats first; an item
+        left without a take rule is searched once more with every stat
+        (PassConfig.ground_fallback): a stat convention, marked "ungrounded"."""
+        meta: dict = {}
+        out = self._mine_item(item, ctx, info, meta=meta)
+        f = self.cfg
+        if f.grounded and f.ground_fallback and meta.get("cover", 0.0) < f.ground_cover:
+            from tri.rules.groups import grounded_stats
+            if len(grounded_stats(self.c, item, self.groups)) < len(self.c.stats):
+                prior = [r for r in out if r.effect == TAKE]
+                wide = self._mine_item(item, ctx, info, wide=True, prior=prior)
+                takes = [r for r in wide if r.effect == TAKE]
+                for r in takes:
+                    if r not in prior and any(c.kind == "stat" and c.key not in meta.get("grounded", ())
+                                              for c in r.conds):
+                        r.note = (r.note + "; " if r.note else "") + "ungrounded stat convention"
+                out = takes + [r for r in out if r.effect != TAKE]
+        return out
+
+    def _mine_item(self, item: str, ctx: dict, info: Optional[dict] = None, wide: bool = False,
+                   prior: Sequence[PassRule] = (), meta: Optional[dict] = None) -> List[PassRule]:
+        """One search of an item's rules (wide: every stat, not only grounded ones). Independent of every other item,
+        with its own random stream (seed, item index), so the result does not
+        depend on the order items are mined in or on n_jobs. info (if given)
+        receives why the item has no take rule: the cluster that vetoed its
+        unconditional rule."""
+        from sklearn.tree import DecisionTreeClassifier
+        f = self.cfg
+        w, Xd, H, Tk, mi = ctx["w"], ctx["Xd"], ctx["H"], ctx["Tk"], ctx["mi"]
+        regions, gmix, tokens = ctx["regions"], ctx["gmix"], ctx["tokens"]
+        AG = ctx.get("AG"); an = list(ctx.get("ag_names") or []); ag_grid = list(ctx.get("ag_grid") or [])
+        if AG is None:
+            AG = np.zeros((len(H), 0), np.float32)
+        GC = ctx.get("GC"); gn = list(ctx.get("gnames") or [])
+        if GC is None:
+            GC = np.zeros((len(H), 0), np.float32)
+        sidx = list(range(H.shape[1]))
+        if f.grounded and not wide:                 # stats of the item's own requirements and groups
+            from tri.rules.groups import grounded_stats
+            gs = grounded_stats(self.c, item, self.groups)
+            sidx = [i for i, s_ in enumerate(self.c.stats) if s_ in gs]
+        S, K, A, NG = len(sidx), Tk.shape[1], AG.shape[1], GC.shape[1]
+        R = len(gmix)
+        out: List[PassRule] = []
+        t = self.c.index[item]
+        base = float(self.pick_rate[t]) if self.pick_rate is not None else 0.0
+        rng = np.random.default_rng([f.seed, t])
+        rows = np.nonzero(ctx["masks"][ctx["gid"], t])[0]
+        if w[rows].sum() < f.min_support:
+            return out
+        if f.item_rows is not None and len(rows) > f.item_rows:
+            rows = np.sort(rng.choice(rows, f.item_rows, replace=False))
+        rows = rows[rng.permutation(len(rows))]
+        half = len(rows) // 2
+        y_all = Xd[rows, t] > 0
+        w_all = w[rows]
+        excl = set(self.c.items[item].exclusive_with)
+        pool = None
+        if f.anchors == "related":                  # prerequisites, group mates (no dependants)
+            from tri.rules.groups import related_items
+            pool = {self.c.index[i] for i in related_items(self.c, item, self.groups)}
+            if ctx.get("rep") is not None:          # antagonists: picking j lowers the rate of the item
+                pool |= set(np.nonzero(ctx["rep"][:, t])[0].tolist())
+        from tri.rules.groups import dependants, tautological_groups
+        deps = dependants(self.c, item)              # "a dependant ⇒ item" is game data
+        co = [] if f.anchors == "none" else \
+            [j for j in np.argsort(-mi[:, t]) if j != t and mi[j, t] > 1e-4 and self.c.ids[j] not in excl
+             and self.c.ids[j] not in deps and (pool is None or j in pool)][: f.co_items]
+        Grow = GC[rows].copy()                      # group counts without the item itself
+        if NG:
+            ing = np.array([item in self.groups.get(g, ()) for g in gn], bool)
+            if ing.any():
+                Grow[:, ing] -= y_all[:, None].astype(np.float32)
+            taut = tautological_groups(self.c, item, self.groups, deps)
+            tg = np.array([g in taut for g in gn], bool)
+            if tg.any():
+                Grow[:, tg] = 0.0                    # constant: never split on, never a literal
+        names = ([("stat", self.c.stats[s]) for s in sidx] + [("agg", an[a]) for a in range(A)]
+                 + [("context", tokens[k]) for k in range(K)] + [("group", gn[g]) for g in range(NG)]
+                 + [("item", self.c.ids[j]) for j in co])
+        grid = {an[a]: ag_grid[a] for a in range(A)}
+        if f.replicate:                             # discover on A, certify on B, replicate on C
+            q2 = half + (len(rows) - half) // 2
+            A_, B_, C_ = np.arange(half), np.arange(half, q2), np.arange(q2, len(rows))
+        else:
+            A_, B_, C_ = np.arange(half), np.arange(half, len(rows)), None
+        HA = H[rows[A_]][:, sidx]
+        GA = AG[rows[A_]]
+        if f.stat_step > 1:                         # thresholds only at multiples of stat_step
+            HA = np.floor(HA / f.stat_step) * f.stat_step
+            if A:
+                on = np.array(ag_grid, bool)
+                GA = GA.copy(); GA[:, on] = np.floor(GA[:, on] / f.stat_step) * f.stat_step
+        F = np.concatenate([HA, GA, Tk[rows[A_]], Grow[A_], Xd[rows[A_]][:, co]], 1)
+        yA = y_all[A_]
+        cand: Dict[str, List[Condition]] = {"": []}
+        nb = S + A + K + NG
+        for nf in ([F.shape[1], nb] if co else [nb]):
+            if nf == 0 or yA.all() or not yA.any():
+                continue
+            tree = DecisionTreeClassifier(criterion="entropy", max_depth=f.max_depth,
+                                          min_samples_leaf=max(5, int(f.min_support / 3)), random_state=f.seed)
+            tree.fit(F[:, :nf], yA, sample_weight=w_all[A_])
+            for conds in self._paths(tree.tree_, names, f.stat_step, grid):
+                cand.setdefault("&".join(sorted(c.id() for c in conds)), conds)
+        cols = {}                                   # condition masks over this item's rows
+
+        def cm(c: Condition) -> np.ndarray:
+            k = c.id()
+            if k not in cols:
+                if c.kind in ("stat", "agg"):
+                    v = H[rows, self.c.stat_index[c.key]] if c.kind == "stat" else AG[rows, an.index(c.key)]
+                    cols[k] = v >= c.value if c.op == ">=" else v < c.value
+                elif c.kind == "context":
+                    m = Tk[rows, tokens.index(c.key)] > 0 if c.key in tokens else np.zeros(len(rows), bool)
+                    cols[k] = m if c.op == "has" else ~m
+                elif c.kind == "group":
+                    v = Grow[:, gn.index(c.key)] if c.key in gn else np.zeros(len(rows), np.float32)
+                    cols[k] = v >= c.value if c.op == ">=" else v < c.value
+                else:
+                    m = Xd[rows, self.c.index[c.key]] > 0
+                    cols[k] = m if c.op == "has" else ~m
+            return cols[k]
+
+        def cell(conds) -> np.ndarray:
+            m = np.ones(len(rows), bool)
+            for c in conds:
+                m &= cm(c)
+            return m
+
+        def stats(conds, part):
+            m = cell(conds)[part]
+            ww = w_all[part][m]; Sw = float(ww.sum())
+            if Sw <= 0:
+                return 0.0, 0.0, 0.0
+            return float(ww[y_all[part][m]].sum() / Sw), Sw, Sw * Sw / max(float((ww * ww).sum()), 1e-12)
+
+        def contrast(conds, part):
+            best = None
+            for i, c in enumerate(conds):
+                flip = Condition(c.kind, c.key, {">=": "<", "<": ">=", "has": "not", "not": "has"}[c.op], c.value)
+                p, Sw, _ = stats(conds[:i] + [flip] + conds[i + 1:], part)
+                if Sw >= f.min_support / 2 and (best is None or p > best):
+                    best = p
+            return best
+        reg_rows = regions[rows]
+        ZC = ctx.get("pick_ZC")
+        if ZC is not None and R:                    # leave item t out of its own cluster assignment
+            Z, C = ZC
+            Zr = Z[rows]
+            sc = np.asarray((Zr @ C.T)) if not sp.issparse(Zr @ C.T) else (Zr @ C.T).toarray()
+            zt = np.asarray(Zr[:, t].todense()).ravel()
+            reg_rows = np.asarray(np.argmax(sc - zt[:, None] * C[:, t][None, :], 1)).ravel()
+
+        def veto(conds, part, eff):
+            """The pick-profile cluster that contradicts the rule inside its cell,
+            or None. A cluster vetoes if it carries at least
+            max(uniform_support, uniform_share x cell weight), its own bound is on
+            the wrong side of the threshold, and its rate differs from the rest of
+            the cell by a two-proportion test at z (a real minority archetype
+            hidden in a population-level cell, not a handful of builds)."""
+            m = cell(conds)[part]
+            rg, ww, yy = reg_rows[part][m], w_all[part][m], y_all[part][m]
+            tot = np.bincount(rg, weights=ww, minlength=R)
+            pos = np.bincount(rg, weights=ww * yy, minlength=R)
+            Sw, P = float(tot.sum()), float(pos.sum())
+            need = max(f.uniform_support, f.uniform_share * Sw)
+            worst, wv = None, 0.0
+            for g in np.nonzero(tot >= need)[0]:
+                pg = pos[g] / tot[g]
+                lo, hi = wilson(pg, tot[g], f.z)
+                bad = (eff == TAKE and hi < f.theta_take) or (eff == NEVER and lo > f.theta_never)
+                if not bad:
+                    continue
+                rest = Sw - tot[g]
+                if rest >= 1.0:
+                    pr = (P - pos[g]) / rest
+                    pp = min(max(P / max(Sw, 1e-12), 1e-6), 1 - 1e-6)
+                    zs = (pr - pg if eff == TAKE else pg - pr) / math.sqrt(pp * (1 - pp) * (1 / tot[g] + 1 / rest))
+                    if zs < f.z:
+                        continue
+                if tot[g] > wv:
+                    worst, wv = int(g), float(tot[g])
+            return worst
+        last_veto: Dict[str, Optional[int]] = {}
+
+        def certify(conds, part, ms, z=None):
+            z = f.z if z is None else z
+            p, Sw, ne = stats(conds, part)
+            if Sw < ms:
+                return None
+            lo, hi = wilson(p, ne, z)
+            if lo >= f.theta_take:
+                if conds and base < f.theta_take and p < (1 + f.min_lift) * base:
+                    return None                      # the condition adds nothing over the item's base rate
+                g = veto(conds, part, TAKE)
+                last_veto["g"] = g
+                return (TAKE, p, lo, Sw, ne, None) if g is None else None
+            if hi <= f.theta_never and conds and veto(conds, part, NEVER) is None:
+                ct = contrast(conds, part)
+                if ct is not None and ct >= max(f.theta_contrast, f.contrast_ratio * hi):
+                    return (NEVER, p, hi, Sw, ne, ct)
+            return None
+
+        def repair(conds, g):
+            """Literal (from the same features) that best splits cluster g off the cell, on A."""
+            m = cell(conds)[A_]
+            if m.sum() < 10:
+                return None
+            tgt = reg_rows[A_][m] == g
+            if tgt.all() or not tgt.any():
+                return None
+            st = DecisionTreeClassifier(criterion="entropy", max_depth=1, min_samples_leaf=5, random_state=f.seed)
+            st.fit(F[m], tgt, sample_weight=w_all[A_][m])
+            tr = st.tree_
+            if tr.node_count < 3:
+                return None
+            l, r = tr.children_left[0], tr.children_right[0]
+            share = lambda n: tr.value[n][0][1] / max(tr.value[n][0].sum(), 1e-12)
+            side = "l" if share(l) < share(r) else "r"
+            kind, key = names[tr.feature[0]]
+            th = float(tr.threshold[0])
+            if kind == "group":
+                return Condition("group", key, "<" if side == "l" else ">=", float(math.floor(th) + 1))
+            if kind in ("stat", "agg"):
+                step = f.stat_step if (kind == "stat" or grid.get(key, True)) else 1
+                v = float(step * (math.floor(th / step) + 1))
+                return Condition(kind, key, "<" if side == "l" else ">=", v)
+            if kind == "context":
+                return Condition("context", key, "not" if side == "l" else "has")
+            return Condition("item", key, "has") if side == "r" else None
+        ms = f.min_support / 2                       # each half carries half the weight
+        msB = f.min_support / (4 if C_ is not None else 2)
+
+        def necessary(conds, part, eff) -> bool:
+            """every literal must matter on the certification split: the
+            builds it alone excludes differ from the rule's builds by a
+            one-sided two-proportion test at z (math §6.12)."""
+            m = cell(conds)[part]
+            ww = w_all[part][m]; S1 = float(ww.sum())
+            if S1 <= 0:
+                return False
+            p1 = float(ww[y_all[part][m]].sum()) / S1
+            n1 = S1 * S1 / max(float((ww * ww).sum()), 1e-12)
+            for i in range(len(conds)):
+                mo = cell(conds[:i] + conds[i + 1:])[part] & ~m
+                wo = w_all[part][mo]; So = float(wo.sum())
+                if So < 1.0:
+                    return False                     # the literal excludes nothing: it says nothing
+                po = float(wo[y_all[part][mo]].sum()) / So
+                no = So * So / max(float((wo * wo).sum()), 1e-12)
+                pp = min(max((p1 * n1 + po * no) / (n1 + no), 1e-6), 1 - 1e-6)
+                zs = ((p1 - po) if eff == TAKE else (po - p1)) / math.sqrt(pp * (1 - pp) * (1 / n1 + 1 / no))
+                if zs < f.z:
+                    return False
+            return True
+        found: Dict[str, Tuple[List[Condition], tuple]] = {}
+        for ck, conds in cand.items():
+            last_veto.clear()
+            res = certify(conds, A_, ms)
+            conds = list(conds)
+            if res is None and last_veto.get("g") is not None:
+                if ck == "" and info is not None:
+                    g = last_veto["g"]
+                    mA = reg_rows[A_] == g
+                    tw = float(w_all[A_][mA].sum())
+                    info.update(cluster=int(g), weight=round(2 * tw, 1),
+                                rate=round(float(w_all[A_][mA & yA].sum() / max(tw, 1e-12)), 4))
+                for _ in range(f.repair_steps):
+                    lit = repair(conds, last_veto["g"])
+                    if lit is None or any(c.id() == lit.id() for c in conds):
+                        break
+                    conds = conds + [lit]
+                    last_veto.clear()
+                    res = certify(conds, A_, ms)
+                    if res is not None or last_veto.get("g") is None:
+                        break
+            if res is None:
+                continue
+            while True:                              # shortest form that still passes on A
+                best = None
+                for i in range(len(conds)):
+                    trial = conds[:i] + conds[i + 1:]
+                    r2 = certify(trial, A_, ms)
+                    if r2 is not None and r2[0] == res[0] and (best is None or r2[3] > best[1][3]):
+                        best = (trial, r2)
+                if best is None:
+                    break
+                conds, res = best
+            found.setdefault("&".join(sorted(c.id() for c in conds)), (conds, res))
+        zB = f.z
+        if f.multiple_testing == "bonferroni" and len(found) > 1:
+            from statistics import NormalDist
+            alpha = 1 - NormalDist().cdf(f.z)
+            zB = NormalDist().inv_cdf(1 - alpha / len(found))
+        got: Dict[str, PassRule] = {}
+        scale = float(w_all.sum()) / max(float(w_all[B_].sum()), 1e-12)
+        for conds, res in found.values():
+            fin = certify(conds, B_, msB, zB)        # the certificate: independent split
+            if fin is None or fin[0] != res[0]:
+                continue
+            if C_ is not None:                       # replicated on a third split
+                rp = certify(conds, C_, msB, f.z)    # a replication, at the unadjusted level
+                if rp is None or rp[0] != res[0]:
+                    continue
+            if f.necessity and conds and not necessary(conds, B_, fin[0]):
+                continue
+            eff, p, b, Sw, ne, ct = fin
+            rule = PassRule(CENTRAL if eff == TAKE else EXCLUSION, item, conds, p, b, scale * Sw, ne,
+                            p / max(base, 1e-12), ct, eff)
+            got.setdefault(rule.key, rule)
+        wr = w_all
+        if wide:                                     # the grounded take rules compete with the wide ones
+            if prior:
+                got = {k: r for k, r in got.items() if r.effect == TAKE}
+            for r in prior:
+                got.setdefault(r.key, r)
+        rs = sorted(got.values(), key=lambda r: (len(r.conds), -r.support))
+        kept: List[PassRule] = []
+        for r in rs:                                 # drop rules implied by a more general one
+            if any(k.effect == r.effect and _implied(k.conds, r.conds) for k in kept):
+                continue
+            kept.append(r)
+        kept = self._resolve_conflicts(kept, cm, y_all, w_all, len(rows))
+        if f.max_overlap < 1.0:                      # one take rule per set of covered builds (proxy families)
+            dd: List[Tuple[PassRule, np.ndarray]] = []
+            arch = lambda r: any(c.kind == "context" and c.key.startswith("archetype:") for c in r.conds)
+            for r in sorted(kept, key=lambda r: not arch(r)):   # the archetype reading over its proxies
+                m = cell(r.conds)
+                if r.effect == TAKE and any(k.effect == TAKE and
+                       float(wr[m & mk].sum()) >= f.max_overlap * max(float(wr[m | mk].sum()), 1e-12)
+                       for k, mk in dd):
+                    continue
+                dd.append((r, m))
+            kept = [r for r, _ in dd]
+        if wide and prior:                           # a grounded rule whose cell lies inside a wider
+            pk = {r.key for r in prior}              # (ungrounded) take rule is its proxy: drop it
+            ms_ = {r.key: cell(r.conds) for r in kept if r.effect == TAKE}
+            kept = [r for r in kept if not (r.key in pk and any(
+                k.effect == TAKE and k.key not in pk and k.support > r.support and
+                float(wr[ms_[r.key] & ms_[k.key]].sum()) >= f.max_overlap * max(float(wr[ms_[r.key]].sum()), 1e-12)
+                for k in kept))]
+        kept = [r for r in kept if r.effect == TAKE][: f.max_rules_per_item] + \
+               [r for r in kept if r.effect == NEVER][: f.max_never_per_item]
+        for r in kept:
+            if r.effect == TAKE and all(c.kind in ("stat", "agg", "group") for c in r.conds):
+                # group counts are build-wide too: a rule spread over the
+                # corpus's pick profiles is foundational whichever literal carries it
+                m = cell(r.conds)
+                r.breadth = round(self._breadth(regions[rows][m], wr[m], gmix), 3)
+                if r.breadth >= f.min_breadth:
+                    r.pass_ = FOUNDATIONAL
+            out.append(r)
+        if meta is not None:                          # share of the item's takers its take rules cover
+            yw = float(wr[y_all].sum())
+            cov = np.zeros(len(rows), bool)
+            for r in out:
+                if r.effect == TAKE:
+                    cov |= cell(r.conds)
+            meta["cover"] = float(wr[cov & y_all].sum()) / yw if yw > 0 else 1.0
+            meta["grounded"] = {self.c.stats[s_] for s_ in sidx}
+        if info is not None and any(r.effect == TAKE for r in out):
+            info.clear()
+        return out
+
+    def _resolve_conflicts(self, rules: List[PassRule], cm, y, w, n) -> List[PassRule]:
+        """A take rule and a never rule of one item can both apply to a build.
+        Where their cells overlap with enough weight (uniform_support), the
+        observed rate there decides which one is wrong: a rate clearly above
+        theta_never drops the never rule, clearly below theta_take drops the
+        take rule. Smaller overlaps are left; the answer reports them."""
+        f = self.cfg
+
+        def mask(r):
+            m = np.ones(n, bool)
+            for c in r.conds:
+                m &= cm(c)
+            return m
+        drop = set()
+        takes = [r for r in rules if r.effect == TAKE]
+        nevers = [r for r in rules if r.effect == NEVER]
+        for a in takes:
+            ma = mask(a)
+            for b in nevers:
+                m = ma & mask(b)
+                Sw = float(w[m].sum())
+                if Sw < f.uniform_support:
+                    continue
+                lo, hi = wilson(float(w[m][y[m]].sum()) / Sw, Sw, f.z)
+                if lo > f.theta_never:
+                    drop.add(id(b))
+                if hi < f.theta_take:
+                    drop.add(id(a))
+        return [r for r in rules if id(r) not in drop]
+
+    def pick_regions(self, bm: BuildMatrix, k: int, iters: int = 30) -> np.ndarray:
+        """Clusters of builds by what they pick (spherical k-means on picks
+        weighted by -log pick rate). Used only for breadth: it must not see stats,
+        or a stat convention would look narrow because the clusters encode the stat."""
+        rng = np.random.default_rng(self.cfg.seed)
+        idf = np.minimum(-np.log(np.clip(self.pick_rate, 1e-6, 1)), 4.0)
+        Z = sp.csr_matrix(bm.X.multiply(idf[None, :]), dtype=np.float64)      # sparse: corpus-sized
+        nrm = np.sqrt(np.asarray(Z.multiply(Z).sum(1)).ravel())
+        Z = sp.diags(1.0 / np.maximum(nrm, 1e-12)) @ Z
+        n = Z.shape[0]
+        k = min(k, n)
+        if k <= 1:
+            return np.zeros(n, np.int64)
+        C = Z[rng.choice(n, k, replace=False)].toarray()
+        for _ in range(iters):
+            lab = np.asarray((Z @ C.T).argmax(1)).ravel()
+            M = sp.csr_matrix((bm.w, (lab, np.arange(n))), shape=(k, n))
+            newC = np.asarray((M @ Z).todense())
+            nn = np.linalg.norm(newC, axis=1, keepdims=True)
+            newC = np.where(nn > 1e-9, newC / np.maximum(nn, 1e-12), C)
+            if np.allclose(newC, C):
+                break
+            C = newC
+        self._pick_ZC = (Z, C)
+        return np.asarray((Z @ C.T).argmax(1)).ravel()
+
+    @staticmethod
+    def _breadth(reg: np.ndarray, w: np.ndarray, gmix: np.ndarray) -> float:
+        if not len(gmix) or gmix.sum() <= 0:
+            return 1.0
+        f = np.bincount(reg, weights=w, minlength=len(gmix))
+        if f.sum() <= 0:
+            return 0.0
+        return float(np.minimum(f / f.sum(), gmix / gmix.sum()).sum())
+
+    @staticmethod
+    def _paths(tr, names, step: int = 1, grid: Optional[Dict[str, bool]] = None) -> List[List[Condition]]:
+        """Condition lists of every node of a fitted sklearn tree (root = []).
+        step: the tree saw stats floored to multiples of step, so a split between
+        two grid values becomes the exact raw threshold at the upper grid value.
+        Negative item conditions are left out (absence of a pick is not evidence
+        on an unfinished build); a stat or context bound is kept at its tightest."""
+        out = []
+
+        def norm(conds):
+            best: Dict[Tuple[str, str, str], Condition] = {}
+            for c in conds:
+                k = (c.kind, c.key, c.op)
+                if k in best and c.kind in ("stat", "agg", "group"):
+                    o = best[k]
+                    c = c if (c.value > o.value if c.op == ">=" else c.value < o.value) else o
+                best[k] = c
+            return list(best.values())
+
+        def walk(node, conds):
+            out.append(norm(conds))
+            l, r = tr.children_left[node], tr.children_right[node]
+            if l < 0:
+                return
+            kind, key = names[tr.feature[node]]
+            th = float(tr.threshold[node])
+            if kind in ("stat", "agg"):
+                st = step if (kind == "stat" or (grid or {}).get(key, True)) else 1
+                v = float(st * (math.floor(th / st) + 1))       # x <= th  <=>  x < st*(floor(th/st)+1)
+                lc, rc = Condition(kind, key, "<", v), Condition(kind, key, ">=", v)
+            elif kind == "group":
+                v = float(math.floor(th) + 1)
+                lc, rc = Condition("group", key, "<", v), Condition("group", key, ">=", v)
+            elif kind == "context":
+                lc, rc = Condition("context", key, "not"), Condition("context", key, "has")
+            else:
+                lc, rc = None, Condition("item", key, "has")
+            walk(l, conds + ([lc] if lc else []))
+            walk(r, conds + [rc])
+        walk(0, [])
+        return out
+
+    def _rescore_changed(self, bm: BuildMatrix, changed_since: Dict[str, float]) -> None:
+        f = self.cfg
+        ts = np.nan_to_num(bm.ts, nan=-np.inf)
+        for r in self.rules:
+            names = {r.item} | {c.key for c in r.conds if c.kind == "item"}
+            t0 = max([changed_since[i] for i in names if i in changed_since], default=None)
+            if t0 is None:
+                continue
+            p, Sw, ne = self.rule_stats(bm, r, bm.w * (ts >= t0))
+            if Sw >= f.min_support:
+                lo, hi = wilson(p, ne, f.z)
+                ok = lo >= f.theta_take if r.effect == TAKE else hi <= f.theta_never
+                r.confidence, r.support, r.n_eff = p, Sw, ne
+                r.bound = lo if r.effect == TAKE else hi
+                r.status = "active" if ok else "stale"
+                r.note = f"re-scored on builds after the patch ({Sw:.0f})"
+            else:
+                r.status, r.note = "stale", f"changed by a patch; only {Sw:.0f} builds since"
+
+    # ------------------------------------------------------------ checks
+    def drift(self, bm: BuildMatrix, regions: np.ndarray, since: float, min_drop: float = 0.15) -> List[dict]:
+        """Rules whose rate on builds after `since` moved by >= min_drop against
+        the rule (or whose support vanished): how a patch shows up in the data."""
+        ts = np.nan_to_num(bm.ts, nan=-np.inf)
+        post = bm.w * (ts >= since); pre = bm.w - post
+        out = []
+        if post.sum() <= 0 or pre.sum() <= 0:
+            return out
+        for r in self.rules:
+            c0, s0, _ = self.rule_stats(bm, r, pre)
+            c1, s1, _ = self.rule_stats(bm, r, post)
+            moved = (c0 - c1) if r.effect == TAKE else (c1 - c0)
+            if s0 >= self.cfg.min_support and (moved >= min_drop or s1 < 0.1 * s0 * post.sum() / pre.sum()):
+                out.append(dict(rule=r.text(self.region_names), before=round(c0, 3), after=round(c1, 3),
+                                support_before=round(s0, 1), support_after=round(s1, 1)))
+        return sorted(out, key=lambda d: -abs(d["after"] - d["before"]))
+
+    def certification_check(self, bm: BuildMatrix, min_support: Optional[float] = None) -> dict:
+        """Re-measure every active rule on other builds (e.g. held out). A take
+        rule holds if its rate there is >= theta_take, a never rule if <= theta_never."""
+        ms = self.cfg.min_support if min_support is None else min_support
+        rows, held = [], 0
+        for r in self.active():
+            p, Sw, _ = self.rule_stats(bm, r)
+            if Sw < ms:
+                continue
+            ok = p >= self.cfg.theta_take if r.effect == TAKE else p <= self.cfg.theta_never
+            held += ok
+            rows.append(dict(rule=r.text(self.region_names), rate=round(p, 4), support=round(Sw, 1), holds=bool(ok)))
+        return dict(checked=len(rows), holding=held, share=round(held / len(rows), 4) if rows else None,
+                    failures=[x for x in rows if not x["holds"]])
+
+    # ------------------------------------------------------------ use
+>>>>>>> main
     def active(self) -> List[PassRule]:
         return [r for r in self.rules if r.status == "active"]
 

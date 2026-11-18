@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Caution: hold back a mark when the evidence for it is thin,
+=======
+"""Caution (math §14): hold back a mark when the evidence for it is thin,
+>>>>>>> main
 or ask the person asking a few questions first.
 
 Only worth-sourced changes can be held. Rule changes are certified and review
@@ -147,7 +151,11 @@ def assess(tri, build, alts: Sequence, answers=None, mode: str = "review",
             pop = None
 
     def pooled(it, q, n) -> bool:
+<<<<<<< HEAD
         """ An archetype with few builds or reviews has thin local
+=======
+        """(math §14.1) An archetype with few builds or reviews has thin local
+>>>>>>> main
         support everywhere. There the population rate stands in when it sits clearly
         on the same side of 1/2 as the local rate, instead of asking."""
         if pop is None or n >= cc.pool_thin:

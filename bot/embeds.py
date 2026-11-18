@@ -21,7 +21,11 @@ SEP = " · "                                  # separator in /plot captions
 #: One-line key to the symbols in facts and rules.
 SYMBOLS = "⇒ then · ∧ and · ¬ not · ⊥ works against · P share taking · w worth · Δ change · p fluke chance"
 #: /rules and /facts each carry their own key (tri.statements).
+<<<<<<< HEAD
 from tri.api import FACT_SYMBOLS, RULE_SYMBOLS  # noqa: E402
+=======
+from tri.rules.statements import FACT_SYMBOLS, RULE_SYMBOLS  # noqa: E402
+>>>>>>> main
 
 
 # ---------------------------------------------------------------- formatting (pure, testable)

@@ -1,7 +1,12 @@
 [project]
 name = "tri"
+<<<<<<< HEAD
 version = "4.0.0"
 description = "Backend learning engine for contextual Deepwoken talent/mantra selection (library; no network, no env)"
+=======
+version = "3.11.1"
+description = "Backend learning engine for contextual Deepwoken talent/mantra selection"
+>>>>>>> main
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10", "scikit-learn>=1.3"]
 

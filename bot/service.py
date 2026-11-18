@@ -96,14 +96,21 @@ class ModelService(CatalogHelpers):
         self.item_counts: Dict[str, dict] = ic.get("items", {})
         self.min_item_count = ic.get("min_item_count")
         self.lock = threading.RLock()            # re-entrant, so the bot can hold it around a call
+<<<<<<< HEAD
         self._writer = threading.Lock()          # one memory rebuild at a time (built on a copy, then swapped)
+=======
+>>>>>>> main
         self._index_names()
         self.memory_skipped: List[str] = []
         self.locators_skipped: List[str] = []
         self.categories_skipped: List[str] = []
         self.values_skipped: List[str] = []
         self.load_seconds = round(time.monotonic() - t0, 2)
+<<<<<<< HEAD
         from tri.api import release
+=======
+        from tri.runtime import release
+>>>>>>> main
         release()                                          # the load's temporaries back to the OS
 
     def load_text(self) -> str:
@@ -432,7 +439,11 @@ class ModelService(CatalogHelpers):
     def _inherit_weapons(self, b: Build) -> None:
         """A build that records no weapon takes the weapons its newest review
         named (# weapon notes): claims scoped to a weapon then hold on it again."""
+<<<<<<< HEAD
         from tri.api import equipped
+=======
+        from tri.game.weapons import equipped
+>>>>>>> main
         if not b.build_id or equipped(b):
             return
         revs = [r for r in getattr(self.tri, "reviews", None) or ()

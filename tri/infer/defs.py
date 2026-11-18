@@ -36,16 +36,28 @@ class InferConfig:
     review_rounds: int = 3         # completions re-asked of the reviews on their own result
     review_pass_rounds: int = 2    # completions reviewed as full builds before they are returned
     prereq_solo_min: float = 0.3   # a prerequisite the corpus takes without its dependants less often is
+<<<<<<< HEAD
                                    #   taken only with one
+=======
+                                   #   taken only with one (math §2.8d)
+>>>>>>> main
     package_min_q: float = 0.2     # ... and only with a dependant at this worth or more
     memory_nudge: float = 0.3      # worth nudge per unit of soft claim strength
     note_worth: float = 0.35       # worth added to indicator / core components near the noted build
     note_floor: float = 0.02       # ...only where kernel x archetype weight reaches this
     value_cap: float = 0.5         # largest admin flat value offset, either way
+<<<<<<< HEAD
     emit_margin: float = 0.0       # Tri.as_review emits a change only at evidence margin >= this
     strong_margin: float = 0.5     # ... and marks it strong at margin >= this
     fill_capacity: bool = True     # analysis fills empty mantra slots, then talents to the cap, before swaps
     emit_iffy: bool = False        # ... and writes iffy marks (reviewers rarely do: 1 in 150 real marks)
+=======
+    emit_margin: float = 0.0       # Tri.as_review emits a change only at evidence margin >= this (math §11.4)
+    strong_margin: float = 0.5     # ... and marks it strong at margin >= this
+    fill_capacity: bool = True     # analysis fills empty mantra slots, then talents to the cap, before swaps
+    emit_iffy: bool = False        # ... and writes iffy marks (reviewers rarely do: 1 in 150 real marks)
+    consensus_central: float = 0.3  # a family tell confirms a central pick at c p(a | u) a(u) >= this
+>>>>>>> main
     central_rounds: int = 4
     repair_rounds: int = 6         # rule re-checks after swaps
     cold_support: float = 1.0      # an unrated item with less local support than this has no worth evidence
@@ -132,7 +144,10 @@ class _Sit:
     family: Optional[str] = None    # located family key of the reading (v2.19 chasm on mined rules)
     focus: Dict = field(default_factory=dict)   # weapon class focus (tri.focus)
     weapon: Dict = field(default_factory=dict)  # hardcoded weapon rules {forbid, require}: item -> why
+<<<<<<< HEAD
     score: Dict = field(default_factory=dict)   # the scorer's parts {z, L, q, D, P, why} (tri.infer.scorer)
+=======
+>>>>>>> main
 
 
 @dataclass

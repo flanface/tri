@@ -36,9 +36,15 @@ FIELD_CORE = 0.8            # atlas: share of those builds (nearest the median) 
 
 
 def _out(sc, name: str, view, interactive: bool, title: str, axes) -> tuple:
+<<<<<<< HEAD
     from tri.api import figure as F
     if interactive:
         from tri.api import interactive_page as page
+=======
+    from tri.views import figure as F
+    if interactive:
+        from tri.views.interactive import page
+>>>>>>> main
         return f"{name}.html", page(sc, title, axes, view).encode("utf-8")
     return f"{name}.png", F.png(F.draw(sc, view))
 
@@ -47,7 +53,11 @@ def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ",
                norms: Optional[Sequence[float]] = None) -> List[str]:
     """Per pair: cosine, angle, orthogonality |sin theta| and, given the norms,
     each vector's projection length on the other (|a| cos theta on b, |b| cos theta on a)."""
+<<<<<<< HEAD
     from tri.api import figure as F
+=======
+    from tri.views import figure as F
+>>>>>>> main
     C = np.asarray(C, float)
     out = []
     for a in range(len(names)):
@@ -64,7 +74,11 @@ def pair_lines(names: Sequence[str], C: np.ndarray, indent: str = "  ",
 def png_bytes(fig, dpi: int = 110) -> bytes:
     """Transparent PNG of a matplotlib figure with depth cues and trimmed
     margins (for the /archetype, /facts and graphic views); closes the figure."""
+<<<<<<< HEAD
     from tri.api import export_depth as export
+=======
+    from tri.views.depth import export
+>>>>>>> main
     return export(fig, dpi, 0.06)
 
 
@@ -98,7 +112,11 @@ def _mark_lines(svc: "ModelService", marks: Sequence[tuple], U: np.ndarray) -> L
 
 def place_lines(svc: "ModelService", marks: Sequence[tuple], sample: int = 3000) -> List[str]:
     """Per mark (label, Build): its regions and archetype."""
+<<<<<<< HEAD
     from tri.api import plots as render
+=======
+    from tri.views import plots as render
+>>>>>>> main
     with svc.lock:
         cm = _concept_map(svc, sample)
         bs = [replace(b, build_id=str(lbl)[:40]) for lbl, b in marks]
@@ -140,8 +158,13 @@ def plot_atlas(svc: "ModelService", style: str = "fields", candidates: bool = Tr
     (margin >= FIELD_MARGIN) grouped by archetype (polytopes or dots),
     archetype centres, locators, candidate archetypes and marks as stars.
     text: archetypes, located share, candidates."""
+<<<<<<< HEAD
     from tri.api import figure as F
     from tri.api import plots as render
+=======
+    from tri.views import figure as F
+    from tri.views import plots as render
+>>>>>>> main
 
     from .insight import _atlas
     style = _style(style)
@@ -206,7 +229,11 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
     """Items on worth axes 4-5-6 (talents and mantras in two muted colours). Requested items are
     arrows from the origin (the dense cluster); text: cosine, angle and
     orthogonality of every pair of them and each one's closest items by cosine."""
+<<<<<<< HEAD
     from tri.api import figure as F
+=======
+    from tri.views import figure as F
+>>>>>>> main
     with PLOT_LOCK:
         with svc.lock:
             ws = worth_space(svc, relative, sample)
@@ -238,7 +265,11 @@ def plot_worth(svc: "ModelService", items: Sequence[str] = (), relative: bool = 
 
 def worth_pair(svc: "ModelService", a: str, b: str, relative: bool = False, sample: int = 2000) -> dict:
     """Cosine, angle and orthogonality of two items' worth vectors (axes 4-5-6, from the dense origin)."""
+<<<<<<< HEAD
     from tri.api import figure as F
+=======
+    from tri.views import figure as F
+>>>>>>> main
     with svc.lock:
         ws = worth_space(svc, relative, sample)
     miss = [i for i in (a, b) if i not in ws["items"]]

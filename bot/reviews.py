@@ -24,8 +24,14 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
+<<<<<<< HEAD
 from tri.api import build_from_dict, build_to_dict, exclusion_message, review_to_dict, validate_review
 from tri.api import ADD_REASONS, IFFY_REASONS, PRESENT_CONDITION, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build, Kind, Operation, Reason, Review, ReviewError, Strength
+=======
+from tri.core.codec import build_from_dict, build_to_dict, exclusion_message, review_to_dict, validate_review
+from tri.core.types import (ADD_REASONS, IFFY_REASONS, PRESENT_CONDITION, RELATIONAL_REASONS, REMOVE_ONLY_REASONS, Action, Build,
+                            Kind, Operation, Reason, Review, ReviewError, Strength)
+>>>>>>> main
 
 SCHEMA = "tri.review/1"
 REMOVE_REASONS = [r for r in Reason if r not in ADD_REASONS and r not in IFFY_REASONS]
@@ -315,7 +321,11 @@ class ReviewDesk:
             if not x:
                 continue
             if str(x).startswith("weapon:"):            # the claim holds where this weapon is wielded
+<<<<<<< HEAD
                 from tri.api import weapon_token
+=======
+                from tri.game.weapons import weapon_token
+>>>>>>> main
                 wt = weapon_token(x)
                 if wt is None:
                     raise DraftError(f"'{x[7:]}' is not a known weapon.")
@@ -345,7 +355,11 @@ class ReviewDesk:
         if note:
             op["note"] = note
         if r in PRESENT_CONDITION:                       # + x SY > weapon: the build wields it
+<<<<<<< HEAD
             from tri.api import equipped
+=======
+            from tri.game.weapons import equipped
+>>>>>>> main
             have_w = set(equipped(b)) | {w for n in d.notes if n.get("kind") == "weapon" for w in n.get("weapons") or []}
             new_w = [y[7:] for y in rel if y.startswith("weapon:") and y[7:] not in have_w]
             if new_w:
@@ -429,7 +443,11 @@ class ReviewDesk:
         r = Review(review_id=rid, original=d.build_obj(), operations=ops,
                    reviewer_id=f"discord:{d.user_id}", ruleset=getattr(catalog, "ruleset", None) or d.build.get("ruleset"),
                    timestamp=now, notes=[dict(n) for n in d.notes])
+<<<<<<< HEAD
         from tri.api import is_weapon_token, weapon_token
+=======
+        from tri.game.weapons import is_weapon_token, weapon_token
+>>>>>>> main
         here = r.original.item_set() | {a.item_id for a in r.added()}
         for o in ops:
             if o.reason in (Reason.NEEDS, Reason.SIDEGRADE):
@@ -497,7 +515,11 @@ def parse_numbers(spec: str, total: int, what: str = "item") -> List[int]:
 
 def describe_op(o: dict, labels: Optional[Dict[str, str]] = None) -> str:
     """One line for a draft listing."""
+<<<<<<< HEAD
     from tri.api import weapon_label as wlabel
+=======
+    from tri.game.weapons import label as wlabel
+>>>>>>> main
     from .wire import REASON_LABELS
     labels = labels or REASON_LABELS
     tail = f"  // {o['note']}" if o.get("note") else ""
