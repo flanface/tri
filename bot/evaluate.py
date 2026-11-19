@@ -73,7 +73,7 @@ def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="bot.evaluate")
     p.add_argument("cmd", choices=["snapshot", "run"])
     p.add_argument("path")
-    p.add_argument("--run", default="runs/live")
+    p.add_argument("--run", default="runs", help="run dir, or a runs folder (LATEST, else its newest run)")
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--save")
     p.add_argument("--env", default=".env")
@@ -81,7 +81,8 @@ def main(argv=None) -> None:
     if a.cmd == "snapshot":
         asyncio.run(_snapshot(a.path, a.env))
     else:
-        _run(a.path, a.run, a.workers, a.save)
+        from bot.site import newest_run
+        _run(a.path, newest_run(a.run), a.workers, a.save)
 
 
 if __name__ == "__main__":

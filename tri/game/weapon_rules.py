@@ -125,6 +125,5 @@ def weapon_rules(b, archetype: Optional[str] = None) -> WeaponRules:
 
 
 def needs_weapon(b) -> bool:
-    """True when the rules above cannot be read: the build records no main weapon
-    and no weapon class was answered."""
+    """redundancy helper function that is true when the rules above cannot be read (no main weapon sent in build and weapon specifications not answered)"""
     return not main_weapons(b) and not answered_class(b)

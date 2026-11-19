@@ -1,8 +1,9 @@
 """The interactive graphs as a static site with tabs, for GitHub Pages.
 
-    python -m bot.site build --run runs/live                    # reads the tables (.env)
-    python -m bot.site build --run runs/live --snapshot snap.json
-    python -m bot.site build --run runs/live --no-tables        # the run alone: no reviews or locators
+    python -m bot.site build                                    # newest run in runs/, tables from .env
+    python -m bot.site build --run runs/20261119-100041         # a given run
+    python -m bot.site build --snapshot snap.json               # tables from a snapshot
+    python -m bot.site build --no-tables                        # the run alone: no reviews or locators
 
 writes site/ (index.html with one tab per graph, and one self-contained page
 per graph). Commit site/ to main: .github/workflows/pages.yml publishes it to
@@ -172,17 +173,34 @@ def build(svc, out: str, run_name: str = "", note: str = "") -> List[str]:
     return written
 
 
+def newest_run(path: str) -> str:
+    """A run dir as given; else a runs folder's LATEST; else its newest run (by name, then time)."""
+    from .service import resolve_run
+    try:
+        return resolve_run(path)
+    except FileNotFoundError:
+        if not os.path.isdir(path):
+            raise
+    runs = [os.path.join(path, d) for d in os.listdir(path)
+            if os.path.isfile(os.path.join(path, d, "catalog.json")) and os.path.isdir(os.path.join(path, d, "model"))]
+    if not runs:
+        raise FileNotFoundError(f"no fitted run in {path} (a run has catalog.json and model/)")
+    return os.path.abspath(max(runs, key=lambda r: (os.path.basename(r), os.path.getmtime(r))))
+
+
 def _main(argv: Optional[list] = None) -> None:
     from .evaluate import _snapshot, load_service
     ap = argparse.ArgumentParser(prog="python -m bot.site", description="tri's interactive graphs for GitHub Pages")
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build", help="write the site")
-    b.add_argument("--run", default="runs/live", help="fitted run dir, or a runs folder with LATEST")
+    b.add_argument("--run", default="runs", help="fitted run dir, or a runs folder (LATEST, else its newest run)")
     b.add_argument("--out", default="site")
     b.add_argument("--snapshot", help="table snapshot (python -m bot.evaluate snapshot); default: read the tables")
     b.add_argument("--no-tables", action="store_true", help="the run alone: no reviews or locators")
     b.add_argument("--env", default=".env")
     a = ap.parse_args(argv)
+    run = newest_run(a.run)
+    print(f"run {run}")
     if a.no_tables:
         data = {"reviews": []}
     elif a.snapshot:
@@ -194,8 +212,8 @@ def _main(argv: Optional[list] = None) -> None:
         asyncio.run(_snapshot(tmp, a.env))
         data = json.load(open(tmp))
         shutil.rmtree(os.path.dirname(tmp), ignore_errors=True)
-    svc = load_service(data, a.run)
-    run_name = os.path.basename(os.path.abspath(getattr(svc, "run", a.run)))
+    svc = load_service(data, run)
+    run_name = os.path.basename(run)
     for p in build(svc, a.out, run_name):
         print(f"{p}  {os.path.getsize(p) / 1e6:.2f} MB")
 
