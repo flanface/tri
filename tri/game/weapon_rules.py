@@ -34,7 +34,7 @@ TURTLE_SHELL = "Turtle Shell"
 
 FF_NO = frozenset({"Cursed Flames", "Pleeksty's Inferno"})
 TS_LIGHT_OK = frozenset({"The Flippers of Fate", "Flareblood Kamas", "Frostthorn"})
-TS_HEAVY_NO = frozenset({"Purple Cloud", "Wyrmtooth", "Railblade", "Duskpole", "Sancticar", "Imperial Staff"})
+TS_HEAVY_NO = frozenset({"Purple Cloud", "Wyrmtooth", "Railblade"})
 SD_WORTH = ("trackstar", "support")          # archetypes where worth decides Speed Demon
 
 ITEMS = (SPEED_DEMON, FLAMING_FLOURISH, TURTLE_SHELL)
